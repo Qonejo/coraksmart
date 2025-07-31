@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <title>Lobby de la Arena</title>
+    <!-- ... (tus etiquetas <link> y estilos) ... -->
+</head>
+<body>
+    <div id="status-box">
+        <h1>Buscando Duelo...</h1>
+        <p id="countdown"></p>
+    </div>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script>
+        const socket = io();
+        const statusBox = document.getElementById('status-box');
+        const countdownEl = document.getElementById('countdown');
+
+        socket.on('connect', () => {
+            socket.emit('join_lobby', { emoji: '{{ session.get("logged_in_user_emoji") }}' });
+        });
+
+        socket.on('waiting_for_opponent', () => {
+            statusBox.querySelector('h1').textContent = 'Esperando Oponente...';
+        });
+
+        socket.on('match_found', (data) => {
+            statusBox.querySelector('h1').textContent = `¡Duelo contra ${data.opponent_emoji}!`;
+        });
+        
+        socket.on('countdown', (data) => {
+            countdownEl.textContent = `La batalla comienza en ${data.time}...`;
+        });
+
+        socket.on('game_start', () => {
+            window.location.href = '/arena'; // Redirige al tablero de juego
+        });
+    </script>
+</body>
+</html>
