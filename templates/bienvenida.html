@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acceso a Coraksmart</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <!-- Usamos "cache busting" para asegurar que se carga la última versión -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style_bienvenida.css') }}?v=1.2">
+</head>
+<body>
+    <!-- El lienzo para la animación de Matrix -->
+    <canvas id="matrix-canvas"></canvas>
+
+    <!-- El contenido principal de la página -->
+    <div class="main-container">
+        <h1>Elige tu Avatar de Acceso</h1>
+        
+        <p class="instructions">
+            Selecciona un avatar libre (emoji sin candado) para registrarte y utiliza una contraseña nueva exclusiva para este sitio, o selecciona tu avatar (emoji) con 🔒 para iniciar sesión.
+        </p>
+
+        <div id="emoji-grid">
+            <!-- Los emojis se cargarán aquí con JavaScript -->
+        </div>
+    </div>
+
+    <!-- El Modal (Pop-up) para Login/Registro, inicialmente oculto -->
+    <div id="access-modal" class="modal-hidden">
+        <div class="modal-content">
+            <h2 id="modal-title">Acceder</h2>
+            <div id="selected-emoji" class="modal-emoji"></div>
+            <form id="access-form">
+                <input type="password" id="password-input" placeholder="Introduce tu contraseña" required autocomplete="current-password">
+                <button type="submit">Continuar</button>
+            </form>
+            <p id="error-message" class="error"></p>
+            <button id="close-modal-btn">Cerrar</button>
+        </div>
+    </div>
+    
+    <!-- ¡LA LÍNEA MÁS IMPORTANTE! Enlaza el archivo JavaScript -->
+    <script src="{{ url_for('static', filename='script_bienvenida.js') }}"></script>
+</body>
+</html>

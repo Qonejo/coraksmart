@@ -1,0 +1,57 @@
+```html
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Crear Paquete Promocional</title>
+    <!-- ... (los mismos estilos y fuentes de admin.html) ... -->
+    <style>
+        body { font-family: 'Press Start 2P', cursive; background-color: #222; color: #fff; padding: 20px; }
+        h1, h2 { border-bottom: 2px solid #fff; padding-bottom: 10px; }
+        form { background-color: #333; padding: 20px; border: 2px solid #888; max-width: 800px; margin: auto; }
+        label { display: block; margin-bottom: 5px; font-size: 0.9em; }
+        input[type="text"], input[type="number"], textarea { width: 95%; padding: 10px; font-family: inherit; background-color: #555; border: 1px solid #888; color: #fff; margin-bottom: 15px; }
+        button, a.btn { font-family: inherit; font-size: 1em; padding: 10px 15px; border: none; cursor: pointer; text-decoration: none; }
+        button[type="submit"] { background-color: #28a745; color: white; }
+        a.btn { background-color: #6c757d; color: white; display: inline-block; margin-left: 10px; }
+        .item-selector { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .item-field { display: flex; align-items: center; gap: 10px; }
+        .item-field input { width: 60px; }
+    </style>
+</head>
+<body>
+    <h1>Crear Nuevo Paquete Promocional</h1>
+    <form method="POST" enctype="multipart/form-data">
+        <p>
+            <label for="nombre">Nombre del Paquete:</label>
+            <input type="text" name="nombre" id="nombre" required>
+        </p>
+        <p>
+            <label for="bundle_precio">Precio del Paquete:</label>
+            <input type="number" name="bundle_precio" id="bundle_precio" step="0.01" required>
+        </p>
+        <p>
+            <label for="descripcion">Descripción (acepta HTML):</label>
+            <textarea name="descripcion" id="descripcion" rows="4"></textarea>
+        </p>
+        <p>
+            <label for="imagen">Imagen del Paquete:</label>
+            <input type="file" name="imagen" id="imagen" accept="image/*">
+        </p>
+
+        <h2>Contenido del Paquete</h2>
+        <p>Define cuántas unidades de cada producto incluirá este paquete.</p>
+        <div class="item-selector">
+            {% for id, prod in productos_simples.items() %}
+                <div class="item-field">
+                    <label for="item-{{ id }}">{{ prod.nombre }}:</label>
+                    <input type="number" name="item-{{ id }}" id="item-{{ id }}" value="0" min="0">
+                </div>
+            {% endfor %}
+        </div>
+        <br>
+        <button type="submit">Crear Paquete</button>
+        <a href="{{ url_for('admin_view') }}" class="btn">Cancelar</a>
+    </form>
+</body>
+</html>

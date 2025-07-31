@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Editar Producto</title>
+    <!-- Mismos estilos que add_product.html -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Press Start 2P', cursive; background-color: #222; color: #fff; padding: 20px; }
+        h1 { border-bottom: 2px solid #fff; padding-bottom: 10px; }
+        form { background-color: #333; padding: 20px; border: 2px solid #888; }
+        label { display: block; margin-bottom: 5px; font-size: 0.9em; }
+        input[type="text"], input[type="number"], textarea { width: 95%; padding: 10px; font-family: inherit; background-color: #555; border: 1px solid #888; color: #fff; }
+        textarea { height: 80px; }
+        button, a.btn { font-family: inherit; font-size: 1em; padding: 10px 15px; border: none; cursor: pointer; text-decoration: none; }
+        button[type="submit"] { background-color: #007bff; color: white; }
+        a.btn { background-color: #6c757d; color: white; display: inline-block; margin-left: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Editar: {{ producto.nombre }}</h1>
+    <form method="POST" enctype="multipart/form-data">
+        <p>
+            <label for="nombre">Nombre:</label>
+            <input type="text" name="nombre" id="nombre" value="{{ producto.nombre }}" required>
+        </p>
+        <p>
+            <label for="descripcion">Descripción (acepta HTML):</label>
+            <textarea name="descripcion" id="descripcion" rows="4">{{ producto.get('descripcion', '') }}</textarea>
+        </p>
+
+        <!-- Solo mostramos precio/stock para productos simples. La gestión de variaciones se haría aquí en el futuro. -->
+        {% if not producto.variaciones %}
+        <p>
+            <label for="precio">Precio:</label>
+            <input type="number" name="precio" id="precio" step="0.01" value="{{ producto.precio }}" required>
+        </p>
+        <p>
+            <label for="stock">Stock:</label>
+            <input type="number" name="stock" id="stock" value="{{ producto.stock }}" required>
+        </p>
+        {% endif %}
+
+        <p>
+            Imagen Actual: <img src="{{ url_for('static', filename=producto.imagen) }}" style="max-width: 100px;"><br><br>
+            <label for="imagen">Subir nueva imagen (deja en blanco para no cambiar):</label>
+            <input type="file" name="imagen" id="imagen" accept="image/*">
+        </p>
+        <button type="submit">Guardar Cambios</button>
+        <a href="{{ url_for('admin_view') }}" class="btn">Cancelar</a>
+    </form>
+</body>
+</html>

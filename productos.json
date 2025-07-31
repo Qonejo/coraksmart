@@ -1,0 +1,214 @@
+{
+    "gomita__brownie": {
+        "nombre": "Gomita + Brownie",
+        "descripcion": "<span class='amarillo'>\u00a1El pack de inicio perfecto!</span>",
+        "imagen": "promoa.png",
+        "bundle_precio": 190.0,
+        "bundle_items": {
+            "gomitas": 1,
+            "brow": 1
+        },
+        "promocion": true,
+        "orden": 1
+    },
+    "gomitas": {
+        "nombre": "Gomita",
+        "precio": 60.0,
+        "imagen": "gomitas.png",
+        "stock": 12,
+        "descripcion": "<span class='amarillo'>Un cl\u00e1sico reconstituyente. \u00a1Restaura </span><span class='verde'>250mg THC</span><span class='amarillo'>!</span>",
+        "orden": 4
+    },
+    "pelon": {
+        "nombre": "Pel\u00f3n pone rico",
+        "precio": 60,
+        "imagen": "pelon.png",
+        "stock": 27,
+        "descripcion": "<span class='amarillo'>Un cl\u00e1sico reconstituyente. \u00a1Restaura </span><span class='verde'>10 HP</span><span class='amarillo'>!</span>",
+        "orden": 3
+    },
+    "brow": {
+        "nombre": "Brownies",
+        "precio": 150,
+        "imagen": "brow.png",
+        "stock": 12,
+        "descripcion": "<span class='amarillo'>Un cl\u00e1sico reconstituyente. \u00a1Restaura </span><span class='verde'>10 HP</span><span class='amarillo'>!</span>",
+        "orden": 2
+    },
+    "Caps": {
+        "nombre": "C\u00e1psulas concen. x10",
+        "precio": 450,
+        "imagen": "caps.png",
+        "stock": 9,
+        "descripcion": "<span class='amarillo'>Un cl\u00e1sico reconstituyente. \u00a1Restaura </span><span class='verde'>10 HP</span><span class='amarillo'>!</span>",
+        "orden": 6
+    },
+    "Oll2": {
+        "nombre": "Regular comercial",
+        "imagen": "Oll2.png",
+        "descripcion": "<span class='amarillo'>Un cl\u00e1sico reconstituyente. \u00a1Restaura </span><span class='verde'>10 HP</span><span class='amarillo'>!</span>",
+        "variaciones": {
+            "28 gr": {
+                "precio": 280,
+                "stock": 18
+            },
+            "1 gr": {
+                "precio": 12,
+                "stock": 100
+            }
+        },
+        "orden": 5
+    },
+    "Oll3": {
+        "nombre": "Hibrida Sinaloa",
+        "imagen": "Oll3.png",
+        "descripcion": "<span class='amarillo'>Un cl\u00e1sico reconstituyente. \u00a1Restaura </span><span class='verde'>10 HP</span><span class='amarillo'>!</span>",
+        "variaciones": {
+            "28 gr": {
+                "precio": 350,
+                "stock": 0
+            },
+            "1 gr": {
+                "precio": 15,
+                "stock": 0
+            }
+        },
+        "orden": 7
+    },
+    "Oll4": {
+        "nombre": "Hybrido, Bubba Kush",
+        "imagen": "Oll4.png",
+        "descripcion": "<span class='amarillo'>Un cl\u00e1sico reconstituyente. \u00a1Restaura </span><span class='verde'>10 HP</span><span class='amarillo'>!</span>",
+        "variaciones": {
+            "28 gr": {
+                "precio": 400,
+                "stock": 20
+            },
+            "1 gr": {
+                "precio": 18,
+                "stock": 100
+            }
+        },
+        "orden": 8
+    },
+    "ner": {
+        "nombre": "Nerds bites",
+        "precio": 120,
+        "imagen": "ner.png",
+        "stock": 27,
+        "descripcion": "<span class='amarillo'>Un cl\u00e1sico reconstituyente. \u00a1Restaura </span><span class='verde'>10 HP</span><span class='amarillo'>!</span>",
+        "orden": 9
+    },
+    "goter": {
+        "nombre": "Gotero 60 ml",
+        "precio": 500,
+        "imagen": "goter.png",
+        "stock": 5,
+        "descripcion": "<span class='amarillo'>Un cl\u00e1sico reconstituyente. \u00a1Restaura </span><span class='verde'>10 HP</span><span class='amarillo'>!</span>",
+        "orden": 10
+    },
+    "ruffles": {
+        "nombre": "Ruffles de queso",
+        "precio": 180,
+        "imagen": "ruffles.png",
+        "stock": 4,
+        "descripcion": "<span class='amarillo'>Un cl\u00e1sico reconstituyente. \u00a1Restaura </span><span class='verde'>10 HP</span><span class='amarillo'>!</span>",
+        "orden": 11
+    },
+    "salv": {
+        "nombre": "Salvia 10X 1g",
+        "precio": 130,
+        "imagen": "salv.png",
+        "stock": 10,
+        "descripcion": "<span class='amarillo'>Un cl\u00e1sico reconstituyente. \u00a1Restaura </span><span class='verde'>10 HP</span><span class='amarillo'>!</span>",
+        "orden": 12
+    },
+    "galle": {
+        "nombre": "Galletas Oreo",
+        "precio": 130,
+        "imagen": "galle.png",
+        "stock": 10,
+        "descripcion": "<span class='amarillo'>Un cl\u00e1sico reconstituyente. \u00a1Restaura </span><span class='verde'>10 HP</span><span class='amarillo'>!</span>",
+        "orden": 13
+    },
+    "barrita": {
+        "nombre": "Barrita de chocolate",
+        "precio": 150,
+        "imagen": "barrita.png",
+        "stock": 0,
+        "descripcion": "<span class='amarillo'>Un cl\u00e1sico reconstituyente. \u00a1Restaura </span><span class='verde'>10 HP</span><span class='amarillo'>!</span>",
+        "orden": 14
+    },
+    "bombon": {
+        "nombre": "Bombones",
+        "precio": 120,
+        "imagen": "bombon.png",
+        "stock": 0,
+        "descripcion": "<span class='amarillo'>Un cl\u00e1sico reconstituyente. \u00a1Restaura </span><span class='verde'>10 HP</span><span class='amarillo'>!</span>",
+        "orden": 15
+    },
+    "nerdsrope": {
+        "nombre": "Nerds rope",
+        "precio": 150.0,
+        "imagen": "nerdsropea.png",
+        "stock": 4,
+        "descripcion": "<span class='amarillo'>Un cl\u00e1sico reconstituyente. \u00a1Restaura </span><span class='verde'>10 HP</span><span class='amarillo'>!</span>",
+        "orden": 15
+    },
+    "buzzbar_vape": {
+        "nombre": "BuzzBar Vape",
+        "descripcion": "Blue Gelato - 3 gramos",
+        "imagen": "buzzbarazul.png",
+        "stock": 10,
+        "precio": 1200.0,
+        "orden": 17
+    },
+    "buzzbar_vape_1": {
+        "nombre": "BuzzBar Vape",
+        "descripcion": "Bubblicious Push 3 gr",
+        "imagen": "buzzbarrojo.png",
+        "stock": 10,
+        "precio": 1200.0,
+        "orden": 18
+    },
+    "b_preheat": {
+        "nombre": "B Preheat",
+        "descripcion": "Two grams",
+        "imagen": "hywat.png",
+        "stock": 10,
+        "precio": 1000.0,
+        "orden": 19
+    },
+    "choise_labs": {
+        "nombre": "Choise Labs",
+        "descripcion": "vape",
+        "imagen": "choices.png",
+        "stock": 10,
+        "precio": 1000.0,
+        "orden": 20
+    },
+    "whole_melt_extracts": {
+        "nombre": "Whole Melt extracts",
+        "descripcion": "live diamond vaporizer\r\nNitro Taffy\r\n2g",
+        "imagen": "nitrotaf.png",
+        "stock": 9,
+        "precio": 1000.0,
+        "orden": 21
+    },
+    "boutiq_switch": {
+        "nombre": "Boutiq Switch",
+        "descripcion": "Liquid live diamonds\r\n+Sativa Pink Pineaple\r\n+Hybrid Chery Chem\r\nTanque dual 2 g",
+        "imagen": "equtiq.png",
+        "stock": 10,
+        "precio": 1000.0,
+        "orden": 22
+    },
+    "besos": {
+        "nombre": "Besos",
+        "descripcion": "Liquid diamonds\r\nindica 2 g",
+        "imagen": "besos.png",
+        "stock": 7,
+        "precio": 1050.0,
+        "orden": 22
+    }
+}

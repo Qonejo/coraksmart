@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coraksmart</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <!-- Usamos una nueva versión para forzar la recarga del CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=6.0">
+</head>
+<body>
+    <header>
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo de la Tienda" id="logo">
+
+        <!-- Contenedor para la información del usuario (Aura y Perfil) -->
+        <div class="header-user-info">
+            {% if aura_data %}
+            <div class="aura-display">
+                <span class="aura-text">Aura</span>
+                <span class="aura-points">{{ aura_data.points }}</span>
+                <img src="{{ url_for('static', filename='flame_' + aura_data.level_info.flame_color + '.gif') }}"
+                     alt="Flama de Aura" class="aura-flame">
+            </div>
+            {% endif %}
+
+            <!-- ENLACE A "MI PERFIL" EN SU NUEVA UBICACIÓN -->
+            <a href="{{ url_for('perfil_usuario') }}" class="perfil-link">
+                <span class="perfil-emoji-header">{{ session.get('logged_in_user_emoji') }}</span>
+                <span class="perfil-text-header">Mi Perfil</span>
+            </a>
+        </div>
+    </header>
+
+    <main class="rpg-container">
+        <!-- ===== PANEL IZQUIERDO: PRODUCTOS (UNA SOLA CUADRÍCULA UNIFICADA) ===== -->
+        <div id="productos-panel">
+            <h2>Objetos a la Venta</h2>
+            <div class="productos-grid">
+
+                <!-- Bucle de promociones corregido -->
+ {% for id, prod in PRODUCTOS_ORDENADOS if prod.get('promocion') %}
+     {% include 'product_card.html' %}
+ {% endfor %}
+
+ <!-- Bucle de venta general corregido -->
+ {% for id, prod in PRODUCTOS_ORDENADOS if not prod.get('promocion') %}
+     {% include 'product_card.html' %}
+ {% endfor %}
+
+            </div>
+        </div>
+
+        <!-- ===== PANEL DERECHO: INVENTARIO (ESTRUCTURA ÚNICA Y LIMPIA) ===== -->
+        <div id="carrito-panel">
+            <h2>Inventario</h2>
+            <div id="carrito-contenido">
+                <ul id="carrito-lista">
+                    <li class="empty-cart-message">Tu inventario está vacío.</li>
+                </ul>
+            </div>
+            <div id="carrito-resumen">
+                <div class="total-line">
+                    <span>TOTAL:</span>
+                    <span id="carrito-total">$0.00</span>
+                </div>
+                <a id="comprar-btn" href="/comprar" class="boton-comprar disabled">
+                    FINALIZAR COMPRA
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+
+    <!-- Estructura del Modal de Imagen (sin cambios) -->
+    <div id="image-modal" class="modal-hidden">
+        <span id="close-modal" class="close-button" onclick="closeImageModal()">×</span>
+        <img id="modal-image" class="modal-content-image">
+    </div>
+</body>
+</html>

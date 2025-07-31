@@ -1,0 +1,149 @@
+/* --- ESTILOS PARA EL FONDO ANIMADO DE MATRIX --- */
+#matrix-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1; /* Lo pone detrás del contenido */
+    display: block;
+}
+
+/* --- FIX PARA EL DESTELLO: Body con fondo sólido --- */
+body {
+    background-color: #000; /* Fondo negro sólido */
+    color: #fff;
+    font-family: 'Press Start 2P', cursive;
+    margin: 0;
+    padding: 20px;
+    text-align: center;
+}
+/* ------------------------------------------- */
+
+.main-container {
+    max-width: 800px;
+    margin: auto;
+}
+
+h1 {
+    font-size: 1.5em;
+    border-bottom: 4px solid #fff;
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+}
+
+/* Estilos para el recuadro de instrucciones */
+.instructions {
+    font-size: 0.8em;
+    color: #ffff00; /* Texto amarillo */
+    background-color: rgba(0, 0, 0, 0.7); /* Fondo negro semi-transparente */
+    border: 3px solid #ff0000; /* Borde rojo */
+    padding: 15px;
+    margin: 20px auto;
+    max-width: 600px;
+}
+
+#emoji-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+    gap: 15px;
+    margin: 30px auto;
+    padding: 15px;
+    border: 4px solid #555;
+    background-color: rgba(10, 10, 10, 0.5); /* Fondo ligeramente transparente */
+}
+
+.emoji-slot {
+    font-size: 2.5em;
+    cursor: pointer;
+    border: 2px solid #888;
+    padding: 10px;
+    transition: transform 0.2s, border-color 0.2s;
+    position: relative;
+    background-color: #111;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.emoji-slot:hover {
+    transform: scale(1.2);
+    border-color: #ffcc00;
+}
+
+.occupied-icon {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    font-size: 0.4em;
+    color: #ff3333;
+    /* FIX: Usa una fuente de emojis para que se vea el candado */
+    font-family: 'Segoe UI Emoji', 'Apple Color Emoji', 'sans-serif';
+}
+
+/* Estilos para el Modal */
+.modal-hidden {
+    display: none !important;
+}
+
+#access-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+}
+
+.modal-content {
+    background: #111;
+    padding: 30px;
+    border: 4px solid #fff;
+    text-align: center;
+}
+
+.modal-emoji {
+    font-size: 4em;
+    margin-bottom: 15px;
+}
+
+#access-form input {
+    font-family: inherit;
+    font-size: 1em;
+    padding: 10px;
+    border: 2px solid #888;
+    background-color: #333;
+    color: #fff;
+    text-align: center;
+    width: 80%;
+}
+
+#access-form button, #close-modal-btn {
+    font-family: inherit;
+    font-size: 0.9em;
+    padding: 10px 20px;
+    margin-top: 20px;
+    border: none;
+    cursor: pointer;
+}
+
+#access-form button {
+    background-color: #ffcc00;
+    color: #000;
+}
+
+#close-modal-btn {
+    background-color: #555;
+    color: #fff;
+    margin-left: 10px;
+}
+
+.error {
+    color: #ff3333;
+    margin-top: 15px;
+    height: 1em; /* Para evitar que el layout salte */
+}
