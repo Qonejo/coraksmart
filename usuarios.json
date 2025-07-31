@@ -1,15 +1,15 @@
 {
     "\ud83d\udcc8": {
         "password_hash": "scrypt:32768:8:1$9rGcL5YFtVxy9VWX$0d79f8cd7719adfa43e296ffb47323f121efe228ebe2b012f038a8a75a5bdc3203dccbdbdbedbe381b719b26f550c8999fa545ef5094225a964031d28bb53298",
-        "aura_points": 1
+        "aura_points": 0
     },
     "\ud83d\uddff": {
         "password_hash": "scrypt:32768:8:1$CRzBV99GS5l5fT9z$8f5139680692351f0e2ee194635b7f16af937bff2d571479606226129f17bffa0d0e1029abce687ad4fc0c218c15bcba000d3a89cdf968b5ceed2c295ac9fbb8",
-        "aura_points": 1
+        "aura_points": 0
     },
     "\ud83d\udc8c": {
         "password_hash": "scrypt:32768:8:1$8S2IxjtoahgYqVZn$09871c1816d18daa380a4db72bb8d1c85b02d5aea2d77b2cf8009ec89d29ea27ba01a8c2577a21baf7659da82ecf72a40b64886d35828632816f4fee92c2dba3",
-        "aura_points": 1
+        "aura_points": 0
     },
     "\ud83d\udc7d": {
         "password_hash": "scrypt:32768:8:1$h5uDTaE5bfVTfVjS$48114e61214c2afe10d8a43bb227b60953963306a71c38332255999af83551f45b749b400146b63f611087068421461b963ee12aba37d209eea098758798529e",

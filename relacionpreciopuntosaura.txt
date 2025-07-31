@@ -1,0 +1,25 @@
+vapes   1200$x3  = 3600
+vapes   1000$x3.5= 3500
+gotero  500$x6   = 3000
+caps    450$x5.5 = 2025
+olla4   400$x5   = 2000
+olla3   350$x5   = 1750
+oll2    280$x5   = 1400
+ruffles 180$x6   = 1080
+brownie 150$x5.5 = 825
+nerd ro 150$x5.5 = 825
+barrita 150$x5.5 = 825
+salvia  130$x6   = 780 !!!!
+galleta 130 $x5  = 650
+bombone 120$x5   = 600
+nerdbit 120$x5   = 600
+pelon   60$x4.5  = 270
+gomitas 60$x4    = 240
+
+
+
+
+
+
+
+

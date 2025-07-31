@@ -139,6 +139,42 @@ h2 {
 .aura-flame { width: 96px; height: 96px; }
 @keyframes aura-glow { 0%, 100% { text-shadow: 0 0 5px #ff00ff; } 25% { text-shadow: 0 0 5px #00ffff; } 50% { text-shadow: 0 0 5px #ffff00; } 75% { text-shadow: 0 0 5px #00ff00; } }
 
+.aura-info { 
+    display: flex; 
+    align-items: center; 
+    gap: 10px; 
+}
+.aura-progress-bar { 
+    width: 100%; 
+    height: 8px; 
+    background-color: #555; 
+    border: 1px solid #888; 
+}
+.aura-progress-fill { 
+    height: 100%; 
+    background-color: #ffcc00; 
+    width: 0%; /* El width se controla desde el HTML (inline style) */
+}
+.header-actions { 
+    display: flex; 
+    gap: 20px; 
+    align-items: center;
+    margin-top: 10px;
+}
+.lobby-link {
+    /* Estilos para el botón de la arena */
+    color: #ff3333;
+    text-decoration: none;
+    font-size: 0.9em;
+    border: 2px solid #ff3333;
+    padding: 5px 10px;
+    border-radius: 4px;
+    transition: background-color 0.2s, color 0.2s;
+}
+.lobby-link:hover {
+    background-color: #ff3333;
+    color: #000;
+}
 /* ... (Todo tu CSS desde 'body' hasta '.rpg-container' se queda igual) ... */
 
 /* --- TÍTULOS DE SECCIÓN DE ANCHO COMPLETO (FIX) --- */

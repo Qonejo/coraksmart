@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Snake Arena PvP - Coraksmart</title>
+    <style>
+        body { margin: 0; background: #000; display: flex; justify-content: center; align-items: center; height: 100vh; color: white; font-family: 'Press Start 2P', cursive; }
+        canvas { display: block; border: 2px solid #555; }
+        #message-box { position: absolute; font-size: 1.5em; text-shadow: 2px 2px #ff00ff; }
+    </style>
+</head>
+<body>
+    <div id="message-box">Buscando oponente...</div>
+    <canvas id="game-canvas"></canvas>
+
+    <!-- Librería de Socket.IO para el cliente -->
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <!-- Nuestro script del juego -->
+    <script src="{{ url_for('static', filename='game.js') }}"></script>
+</body>
+</html>

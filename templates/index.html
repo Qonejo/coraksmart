@@ -12,26 +12,35 @@
 </head>
 <body>
     <header>
-        <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo de la Tienda" id="logo">
-
-        <!-- Contenedor para la información del usuario (Aura y Perfil) -->
-        <div class="header-user-info">
-            {% if aura_data %}
-            <div class="aura-display">
+    <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo de la Tienda" id="logo">
+    
+    <div class="header-user-info">
+        {% if aura_data %}
+        <div class="aura-display">
+            <div class="aura-info">
                 <span class="aura-text">Aura</span>
-                <span class="aura-points">{{ aura_data.points }}</span>
-                <img src="{{ url_for('static', filename='flame_' + aura_data.level_info.flame_color + '.gif') }}"
-                     alt="Flama de Aura" class="aura-flame">
+                <!-- Formato de puntos con signo +/- -->
+                <span class="aura-points">
+                    {% if aura_data.points >= 0 %}+{% else %}-{% endif %}
+                    {{ "{:,.0f}".format(aura_data.points|abs) }}
+                </span>
+                <img src="{{ url_for('static', filename='flame_' + aura_data.level_info.flame_color + '.png') }}">
             </div>
-            {% endif %}
-
-            <!-- ENLACE A "MI PERFIL" EN SU NUEVA UBICACIÓN -->
-            <a href="{{ url_for('perfil_usuario') }}" class="perfil-link">
-                <span class="perfil-emoji-header">{{ session.get('logged_in_user_emoji') }}</span>
-                <span class="perfil-text-header">Mi Perfil</span>
-            </a>
+            <!-- ¡NUEVA BARRA DE PROGRESO! -->
+            {% set next_level = AURA_LEVELS[aura_data.level_info.level] if aura_data.level_info.level < 7 else None %}
+            <div class="aura-progress-bar">
+                <div class="aura-progress-fill" style="width: {{ (aura_data.points / next_level.points_needed * 100) if next_level else 100 }}%;"></div>
+            </div>
         </div>
-    </header>
+        {% endif %}
+        
+        <div class="header-actions">
+            <a href="{{ url_for('perfil_usuario') }}" class="perfil-link">... Mi Perfil</a>
+            <!-- ¡NUEVO ENLACE AL LOBBY! -->
+            <a href="{{ url_for('lobby') }}" class="lobby-link">⚔️ Arena PvP</a>
+        </div>
+    </div>
+</header>
 
     <main class="rpg-container">
         <!-- ===== PANEL IZQUIERDO: PRODUCTOS (UNA SOLA CUADRÍCULA UNIFICADA) ===== -->

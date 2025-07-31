@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
+from flask_socketio import SocketIO, emit, join_room, leave_room # ¡NUEVOS IMPORTS!
 from datetime import datetime
 import urllib.parse
 import os
@@ -14,6 +15,8 @@ app.jinja_env.add_extension('jinja2.ext.do')
 app.secret_key = os.urandom(24)
 UPLOAD_FOLDER = 'static'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+# --- ¡NUEVO! INICIALIZACIÓN DE SOCKETIO ---
+socketio = SocketIO(app)
 
 # --- CONFIGURACIÓN DE ARCHIVOS ---
 ADMIN_PASSWORD = "coraker"
@@ -41,15 +44,16 @@ def cargar_usuarios():
 def guardar_usuarios(usuarios):
     with open(USUARIOS_FILE, 'w', encoding='utf-8') as f: json.dump(usuarios, f, indent=4)
 
-# --- SISTEMA DE AURA Y GENERADOR DE IDS ---
+# --- ¡NUEVO SISTEMA DE AURA REVISADO! ---
 AURA_LEVELS = [
-    {"level": 1, "points_needed": 0,   "flame_color": "white",  "prize": "Acceso Básico"},
-    {"level": 2, "points_needed": 5,   "flame_color": "blue",   "prize": "Cupón de 5% de Descuento"},
-    {"level": 3, "points_needed": 15,  "flame_color": "green",  "prize": "Producto Sorpresa Pequeño"},
-    {"level": 4, "points_needed": 30,  "flame_color": "yellow", "prize": "Cupón de 10% de Descuento"},
-    {"level": 5, "points_needed": 50,  "flame_color": "orange", "prize": "Envío Gratis"},
-    {"level": 6, "points_needed": 75,  "flame_color": "red",    "prize": "Acceso a Productos Exclusivos"},
-    {"level": 7, "points_needed": 100, "flame_color": "purple", "prize": "Regalo Misterioso de Alto Valor"}
+    {"level": 0, "points_needed": -float('inf'), "flame_color": "black",  "prize": "Sin Rango"},
+    {"level": 1, "points_needed": 0,         "flame_color": "white",  "prize": "Gomita + Pelón"},
+    {"level": 2, "points_needed": 8000,      "flame_color": "blue",   "prize": "Cupón 10%"},
+    {"level": 3, "points_needed": 20000,     "flame_color": "green",  "prize": "Producto Sorpresa"},
+    {"level": 4, "points_needed": 50000,     "flame_color": "yellow", "prize": "Cupón 15%"},
+    {"level": 5, "points_needed": 100000,    "flame_color": "orange", "prize": "1 : : + Salvia"},
+    {"level": 6, "points_needed": 250000,    "flame_color": "red",    "prize": "Cupón del 20%"},
+    {"level": 7, "points_needed": 500000,    "flame_color": "purple", "prize": "Regalo Misterioso"}
 ]
 def get_user_aura_info(user_emoji):
     usuarios = cargar_usuarios()
@@ -78,6 +82,74 @@ def generar_id_pedido():
     return f"{parte_fecha}-{parte_hora}-{parte_pedido}-{sello_aleatorio}"
 
 # --- VISTAS PRINCIPALES ---
+@app.route("/arena")
+def arena():
+    if not session.get("logged_in_user_emoji"):
+        return redirect(url_for("entrar"))
+    return render_template("lobby.html")
+
+
+# --- ¡NUEVA LÓGICA DEL JUEGO EN TIEMPO REAL (SOCKETIO)! ---
+# Diccionario en memoria para guardar el estado de las partidas
+# La estructura será: { "nombre_sala": { "jugadores": [...], "estado": {...} } }
+active_games = {}
+waiting_player = None # Para emparejar jugadores
+
+@socketio.on('connect')
+def handle_connect():
+    print(f"Cliente conectado: {request.sid}")
+
+@socketio.on('join_arena')
+def handle_join_arena(data):
+    global waiting_player
+    
+    player_sid = request.sid
+    player_emoji = data.get('emoji')
+
+    if waiting_player:
+        # Si hay un jugador esperando, empezamos una partida
+        player2_sid = waiting_player['sid']
+        player2_emoji = waiting_player['emoji']
+        
+        room_name = f"game-{player2_sid}-{player_sid}"
+        
+        join_room(room_name, sid=player_sid)
+        join_room(room_name, sid=player2_sid)
+        
+        # Creamos el estado inicial del juego
+        active_games[room_name] = {
+            "players": {
+                player_sid: {"emoji": player_emoji, "snake": [{"x": 50, "y": 100}], "direction": "right"},
+                player2_sid: {"emoji": player2_emoji, "snake": [{"x": 750, "y": 100}], "direction": "left"}
+            },
+            # ... (aquí irían las balas, power-ups, etc. en el futuro)
+        }
+        
+        # Avisamos a ambos jugadores que la partida ha empezado
+        emit('game_started', {"room": room_name, "players": active_games[room_name]["players"]}, room=room_name)
+        
+        waiting_player = None # Limpiamos la sala de espera
+    else:
+        # Si no hay nadie, este jugador se pone a esperar
+        waiting_player = {"sid": player_sid, "emoji": player_emoji}
+        emit('waiting_for_opponent')
+
+@socketio.on('player_input')
+def handle_player_input(data):
+    # Recibimos el movimiento del jugador (ej: 'w', 'a', 's', 'd')
+    # Aquí iría la lógica para cambiar la dirección de la serpiente
+    # y para disparar
+    pass
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    global waiting_player
+    if waiting_player and waiting_player['sid'] == request.sid:
+        waiting_player = None
+    # Aquí también iría la lógica para terminar una partida si un jugador se desconecta
+    print(f"Cliente desconectado: {request.sid}")
+
+
 @app.route("/entrar")
 def entrar():
     return render_template("bienvenida.html")
@@ -434,57 +506,99 @@ def api_limpiar():
     session.pop('carrito', None)
     return jsonify(_get_cart_data())
 
-# --- ACCIÓN DE COMPRA ---
+# --- ACCIÓN DE COMPRA (VERSIÓN FINAL CON LÓGICA UNIFICADA) ---
 @app.route("/comprar")
 def comprar():
     if not session.get("logged_in_user_emoji"): return redirect(url_for("entrar"))
+
     productos = cargar_productos()
     carrito = session.get('carrito', {})
     if not carrito: return redirect(url_for("index"))
+
+    puntos_aura_ganados = 0
+
+    # --- BUCLE DE VALIDACIÓN DE STOCK Y CÁLCULO DE PUNTOS ---
+    # En esta primera pasada, solo verificamos que todo esté en orden antes de modificar el stock.
     for cart_id, cant in carrito.items():
-        prod_data = productos.get(cart_id)
-        if prod_data and "bundle_items" in prod_data:
+        parts = cart_id.split('-', 1)
+        base_id = parts[0]
+        variation_id = parts[1] if len(parts) > 1 else None
+
+        prod_data = productos.get(base_id)
+        if not prod_data:
+            flash(f"El producto '{base_id}' ya no existe en la tienda.", "error")
+            return redirect(url_for("index"))
+
+        precio_item = 0
+        multiplier = prod_data.get("aura_multiplier", 1)
+        
+        # Lógica para Paquetes (Bundles)
+        if "bundle_items" in prod_data:
+            precio_item = prod_data.get("bundle_precio", 0)
             for item_id, cant_nec in prod_data["bundle_items"].items():
                 if productos.get(item_id, {}).get("stock", 0) < (cant_nec * cant):
-                    flash(f"No hay suficiente stock para el paquete '{prod_data['nombre']}'.", "error")
+                    flash(f"No hay suficiente stock para completar el paquete '{prod_data['nombre']}'.", "error")
                     return redirect(url_for("index"))
+        
+        # Lógica para Productos con Variaciones
+        elif variation_id and "variaciones" in prod_data:
+            variation_data = prod_data["variaciones"].get(variation_id)
+            if not variation_data or variation_data.get("stock", 0) < cant:
+                flash(f"No hay suficiente stock para {prod_data['nombre']} ({variation_id}).", "error")
+                return redirect(url_for("index"))
+            precio_item = variation_data.get("precio", 0)
+        
+        # Lógica para Productos Simples
+        elif "precio" in prod_data:
+            if prod_data.get("stock", 0) < cant:
+                flash(f"No hay suficiente stock para {prod_data['nombre']}.", "error")
+                return redirect(url_for("index"))
+            precio_item = prod_data.get("precio", 0)
+        
+        else:
+            flash(f"Producto '{base_id}' no está configurado correctamente para la venta.", "error")
+            return redirect(url_for("index"))
+        
+        puntos_aura_ganados += (precio_item * multiplier) * cant
+
+    # --- BUCLE DE DEDUCCIÓN DE STOCK ---
+    # Si llegamos aquí, significa que hay stock suficiente para todo. Ahora sí modificamos.
+    for cart_id, cant in carrito.items():
+        parts = cart_id.split('-', 1)
+        base_id = parts[0]
+        variation_id = parts[1] if len(parts) > 1 else None
+        prod_data = productos.get(base_id) # Sabemos que existe por la validación anterior
+
+        if "bundle_items" in prod_data:
             for item_id, cant_nec in prod_data["bundle_items"].items():
                 productos[item_id]["stock"] -= (cant_nec * cant)
-        else:
-            parts = cart_id.split('-', 1)
-            base_id = parts[0]
-            variation_id = parts[1] if len(parts) > 1 else None
-            prod_data_var = productos.get(base_id)
-            if not prod_data_var:
-                flash(f"Producto '{base_id}' ya no existe.", "error")
-                return redirect(url_for("index"))
-            if variation_id and "variaciones" in prod_data_var:
-                if prod_data_var["variaciones"][variation_id]["stock"] >= cant:
-                    prod_data_var["variaciones"][variation_id]["stock"] -= cant
-                else:
-                    flash(f"No hay suficiente stock para {prod_data_var['nombre']} ({variation_id}).", "error")
-                    return redirect(url_for("index"))
-            elif not variation_id and "stock" in prod_data_var:
-                if prod_data_var["stock"] >= cant:
-                    prod_data_var["stock"] -= cant
-                else:
-                    flash(f"No hay suficiente stock para {prod_data_var['nombre']}.", "error")
-                    return redirect(url_for("index"))
-            else:
-                flash(f"Producto '{base_id}' no encontrado o mal configurado.", "error")
-                return redirect(url_for("index"))
+        elif variation_id and "variaciones" in prod_data:
+            productos[base_id]["variaciones"][variation_id]["stock"] -= cant
+        elif "stock" in prod_data:
+            productos[base_id]["stock"] -= cant
+
     guardar_productos(productos)
+    
+    # --- SUMAR PUNTOS Y GUARDAR PEDIDO ---
+    # (Esta lógica se movió a /admin/completar-pedido, así que ya no va aquí)
+    
     cart_data = _get_cart_data()
     total_general = cart_data["total"]
     libro_de_pedidos = cargar_pedidos()
+    
     nuevo_id_pedido = generar_id_pedido()
     nuevo_pedido = {
-        "id": nuevo_id_pedido, "timestamp": datetime.now().strftime("%d de %B, %Y a las %H:%M"),
-        "detalle": carrito.copy(), "total": round(total_general, 2), "completado": False,
+        "id": nuevo_id_pedido,
+        "timestamp": datetime.now().strftime("%d de %B, %Y a las %H:%M"),
+        "detalle": carrito.copy(),
+        "total": round(total_general, 2),
+        "completado": False,
         "user_emoji": session.get("logged_in_user_emoji")
     }
     libro_de_pedidos.append(nuevo_pedido)
     guardar_pedidos(libro_de_pedidos)
+
+    # Crear mensaje de WhatsApp
     mensaje_partes = [f"*¡Que onda Corak! ocupo:* 🛍️\n\n*Pedido #{nuevo_id_pedido}*\nResumen:"]
     for cart_id, cant in carrito.items():
         nombre_item = cart_data["productos_detalle"].get(cart_id, {}).get("nombre", "Item")
@@ -494,8 +608,9 @@ def comprar():
     mensaje_final = "\n".join(mensaje_partes)
     mensaje_formateado = urllib.parse.quote(mensaje_final)
     whatsapp_url = f"https://wa.me/5215513361764?text={mensaje_formateado}"
+    
     session.pop('carrito', None)
     return redirect(whatsapp_url)
-
+# Ya no usamos app.run(), usamos socketio.run()
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    socketio.run(app, host='0.0.0.0', port=5000, debug=True)

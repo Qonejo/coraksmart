@@ -16,6 +16,7 @@
         "precio": 60.0,
         "imagen": "gomitas.png",
         "stock": 12,
+        "aura_multiplier": 4,
         "descripcion": "<span class='amarillo'>Un cl\u00e1sico reconstituyente. \u00a1Restaura </span><span class='verde'>250mg THC</span><span class='amarillo'>!</span>",
         "orden": 4
     },
@@ -23,6 +24,7 @@
         "nombre": "Pel\u00f3n pone rico",
         "precio": 60,
         "imagen": "pelon.png",
+        "aura_multiplier": 4.5,
         "stock": 27,
         "descripcion": "<span class='amarillo'>Un cl\u00e1sico reconstituyente. \u00a1Restaura </span><span class='verde'>10 HP</span><span class='amarillo'>!</span>",
         "orden": 3
@@ -31,6 +33,7 @@
         "nombre": "Brownies",
         "precio": 150,
         "imagen": "brow.png",
+        "aura_multiplier": 5.5,
         "stock": 12,
         "descripcion": "<span class='amarillo'>Un cl\u00e1sico reconstituyente. \u00a1Restaura </span><span class='verde'>10 HP</span><span class='amarillo'>!</span>",
         "orden": 2
@@ -39,6 +42,7 @@
         "nombre": "C\u00e1psulas concen. x10",
         "precio": 450,
         "imagen": "caps.png",
+        "aura_multiplier": 5.5,
         "stock": 9,
         "descripcion": "<span class='amarillo'>Un cl\u00e1sico reconstituyente. \u00a1Restaura </span><span class='verde'>10 HP</span><span class='amarillo'>!</span>",
         "orden": 6
@@ -47,6 +51,7 @@
         "nombre": "Regular comercial",
         "imagen": "Oll2.png",
         "descripcion": "<span class='amarillo'>Un cl\u00e1sico reconstituyente. \u00a1Restaura </span><span class='verde'>10 HP</span><span class='amarillo'>!</span>",
+        "aura_multiplier": 5,
         "variaciones": {
             "28 gr": {
                 "precio": 280,
@@ -63,6 +68,7 @@
         "nombre": "Hibrida Sinaloa",
         "imagen": "Oll3.png",
         "descripcion": "<span class='amarillo'>Un cl\u00e1sico reconstituyente. \u00a1Restaura </span><span class='verde'>10 HP</span><span class='amarillo'>!</span>",
+        "aura_multiplier": 5,
         "variaciones": {
             "28 gr": {
                 "precio": 350,
@@ -79,6 +85,7 @@
         "nombre": "Hybrido, Bubba Kush",
         "imagen": "Oll4.png",
         "descripcion": "<span class='amarillo'>Un cl\u00e1sico reconstituyente. \u00a1Restaura </span><span class='verde'>10 HP</span><span class='amarillo'>!</span>",
+        "aura_multiplier": 5, 
         "variaciones": {
             "28 gr": {
                 "precio": 400,
@@ -95,6 +102,7 @@
         "nombre": "Nerds bites",
         "precio": 120,
         "imagen": "ner.png",
+        "aura_multiplier": 5,
         "stock": 27,
         "descripcion": "<span class='amarillo'>Un cl\u00e1sico reconstituyente. \u00a1Restaura </span><span class='verde'>10 HP</span><span class='amarillo'>!</span>",
         "orden": 9
@@ -103,6 +111,7 @@
         "nombre": "Gotero 60 ml",
         "precio": 500,
         "imagen": "goter.png",
+        "aura_multiplier": 6, 
         "stock": 5,
         "descripcion": "<span class='amarillo'>Un cl\u00e1sico reconstituyente. \u00a1Restaura </span><span class='verde'>10 HP</span><span class='amarillo'>!</span>",
         "orden": 10
@@ -111,6 +120,7 @@
         "nombre": "Ruffles de queso",
         "precio": 180,
         "imagen": "ruffles.png",
+        "aura_multiplier": 6,
         "stock": 4,
         "descripcion": "<span class='amarillo'>Un cl\u00e1sico reconstituyente. \u00a1Restaura </span><span class='verde'>10 HP</span><span class='amarillo'>!</span>",
         "orden": 11
@@ -119,6 +129,7 @@
         "nombre": "Salvia 10X 1g",
         "precio": 130,
         "imagen": "salv.png",
+        "aura_multiplier": 6,
         "stock": 10,
         "descripcion": "<span class='amarillo'>Un cl\u00e1sico reconstituyente. \u00a1Restaura </span><span class='verde'>10 HP</span><span class='amarillo'>!</span>",
         "orden": 12
@@ -127,6 +138,7 @@
         "nombre": "Galletas Oreo",
         "precio": 130,
         "imagen": "galle.png",
+        "aura_multiplier": 5,
         "stock": 10,
         "descripcion": "<span class='amarillo'>Un cl\u00e1sico reconstituyente. \u00a1Restaura </span><span class='verde'>10 HP</span><span class='amarillo'>!</span>",
         "orden": 13
@@ -135,6 +147,7 @@
         "nombre": "Barrita de chocolate",
         "precio": 150,
         "imagen": "barrita.png",
+        "aura_multiplier": 5.5,
         "stock": 0,
         "descripcion": "<span class='amarillo'>Un cl\u00e1sico reconstituyente. \u00a1Restaura </span><span class='verde'>10 HP</span><span class='amarillo'>!</span>",
         "orden": 14
@@ -143,6 +156,7 @@
         "nombre": "Bombones",
         "precio": 120,
         "imagen": "bombon.png",
+        "aura_multiplier": 5,
         "stock": 0,
         "descripcion": "<span class='amarillo'>Un cl\u00e1sico reconstituyente. \u00a1Restaura </span><span class='verde'>10 HP</span><span class='amarillo'>!</span>",
         "orden": 15
@@ -151,6 +165,7 @@
         "nombre": "Nerds rope",
         "precio": 150.0,
         "imagen": "nerdsropea.png",
+        "aura_multiplier": 5.5,
         "stock": 4,
         "descripcion": "<span class='amarillo'>Un cl\u00e1sico reconstituyente. \u00a1Restaura </span><span class='verde'>10 HP</span><span class='amarillo'>!</span>",
         "orden": 15
@@ -159,6 +174,7 @@
         "nombre": "BuzzBar Vape",
         "descripcion": "Blue Gelato - 3 gramos",
         "imagen": "buzzbarazul.png",
+        "aura_multiplier": 3,
         "stock": 10,
         "precio": 1200.0,
         "orden": 17
@@ -167,6 +183,7 @@
         "nombre": "BuzzBar Vape",
         "descripcion": "Bubblicious Push 3 gr",
         "imagen": "buzzbarrojo.png",
+        "aura_multiplier": 3,
         "stock": 10,
         "precio": 1200.0,
         "orden": 18
@@ -175,6 +192,7 @@
         "nombre": "B Preheat",
         "descripcion": "Two grams",
         "imagen": "hywat.png",
+        "aura_multiplier": 3.5,
         "stock": 10,
         "precio": 1000.0,
         "orden": 19
@@ -183,6 +201,7 @@
         "nombre": "Choise Labs",
         "descripcion": "vape",
         "imagen": "choices.png",
+        "aura_multiplier": 3.5,
         "stock": 10,
         "precio": 1000.0,
         "orden": 20
@@ -191,6 +210,7 @@
         "nombre": "Whole Melt extracts",
         "descripcion": "live diamond vaporizer\r\nNitro Taffy\r\n2g",
         "imagen": "nitrotaf.png",
+        "aura_multiplier": 3.5,
         "stock": 9,
         "precio": 1000.0,
         "orden": 21
@@ -199,6 +219,7 @@
         "nombre": "Boutiq Switch",
         "descripcion": "Liquid live diamonds\r\n+Sativa Pink Pineaple\r\n+Hybrid Chery Chem\r\nTanque dual 2 g",
         "imagen": "equtiq.png",
+        "aura_multiplier": 3.5,
         "stock": 10,
         "precio": 1000.0,
         "orden": 22
@@ -207,6 +228,7 @@
         "nombre": "Besos",
         "descripcion": "Liquid diamonds\r\nindica 2 g",
         "imagen": "besos.png",
+        "aura_multiplier": 3.5,
         "stock": 7,
         "precio": 1050.0,
         "orden": 22
