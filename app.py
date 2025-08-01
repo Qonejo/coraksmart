@@ -82,98 +82,24 @@ def generar_id_pedido():
     return f"{parte_fecha}-{parte_hora}-{parte_pedido}-{sello_aleatorio}"
 
 # --- VISTAS PRINCIPALES ---
-@app.route("/arena")
-def arena():
-    if not session.get("logged_in_user_emoji"):
-        return redirect(url_for("entrar"))
-    return render_template("lobby.html")
-
-
-# --- ¡NUEVA LÓGICA DEL JUEGO EN TIEMPO REAL (SOCKETIO)! ---
-# Diccionario en memoria para guardar el estado de las partidas
-# La estructura será: { "nombre_sala": { "jugadores": [...], "estado": {...} } }
-active_games = {}
-waiting_player = None # Para emparejar jugadores
-
-@socketio.on('connect')
-def handle_connect():
-    print(f"Cliente conectado: {request.sid}")
-
-@socketio.on('join_arena')
-def handle_join_arena(data):
-    global waiting_player
-    
-    player_sid = request.sid
-    player_emoji = data.get('emoji')
-
-    if waiting_player:
-        # Si hay un jugador esperando, empezamos una partida
-        player2_sid = waiting_player['sid']
-        player2_emoji = waiting_player['emoji']
-        
-        room_name = f"game-{player2_sid}-{player_sid}"
-        
-        join_room(room_name, sid=player_sid)
-        join_room(room_name, sid=player2_sid)
-        
-        # Creamos el estado inicial del juego
-        active_games[room_name] = {
-            "players": {
-                player_sid: {"emoji": player_emoji, "snake": [{"x": 50, "y": 100}], "direction": "right"},
-                player2_sid: {"emoji": player2_emoji, "snake": [{"x": 750, "y": 100}], "direction": "left"}
-            },
-            # ... (aquí irían las balas, power-ups, etc. en el futuro)
-        }
-        
-        # Avisamos a ambos jugadores que la partida ha empezado
-        emit('game_started', {"room": room_name, "players": active_games[room_name]["players"]}, room=room_name)
-        
-        waiting_player = None # Limpiamos la sala de espera
-    else:
-        # Si no hay nadie, este jugador se pone a esperar
-        waiting_player = {"sid": player_sid, "emoji": player_emoji}
-        emit('waiting_for_opponent')
-
-@socketio.on('player_input')
-def handle_player_input(data):
-    # Recibimos el movimiento del jugador (ej: 'w', 'a', 's', 'd')
-    # Aquí iría la lógica para cambiar la dirección de la serpiente
-    # y para disparar
-    pass
-
-@socketio.on('disconnect')
-def handle_disconnect():
-    global waiting_player
-    if waiting_player and waiting_player['sid'] == request.sid:
-        waiting_player = None
-    # Aquí también iría la lógica para terminar una partida si un jugador se desconecta
-    print(f"Cliente desconectado: {request.sid}")
-
-
 @app.route("/entrar")
 def entrar():
     return render_template("bienvenida.html")
 @app.route("/")
 def index():
     if not session.get("logged_in_user_emoji"): return redirect(url_for("entrar"))
-
     user_emoji = session["logged_in_user_emoji"]
     aura_data = get_user_aura_info(user_emoji)
-
     productos_dict = cargar_productos()
-
     productos_ordenados = sorted(productos_dict.items(), key=lambda item: item[1].get('orden', 999))
-
-    # --- ¡CAMBIO IMPORTANTE AQUÍ! ---
-    # Pasamos la lista ordenada como 'PRODUCTOS_ORDENADOS'
-    # y el diccionario original como 'PRODUCTOS_DICT'
+    productos = OrderedDict(productos_ordenados)
     return render_template(
         "index.html",
         PRODUCTOS_ORDENADOS=productos_ordenados,
         PRODUCTOS_DICT=productos_dict,
-        aura_data=aura_data
+        aura_data=aura_data,
+        AURA_LEVELS=AURA_LEVELS
     )
-
 @app.route("/perfil")
 def perfil_usuario():
     if not session.get("logged_in_user_emoji"): return redirect(url_for("entrar"))
@@ -185,22 +111,16 @@ def perfil_usuario():
 @app.route("/admin")
 def admin_view():
     if not session.get("logged_in"): return redirect(url_for("login"))
-
     pedidos = cargar_pedidos()
     productos_dict = cargar_productos()
-
-    # --- LÓGICA DE ORDENAMIENTO (TAMBIÉN GENERA UNA LISTA) ---
     productos_ordenados_admin = sorted(productos_dict.items(), key=lambda item: item[1].get('orden', 999))
-
     pedidos_agrupados = {}
     for pedido in reversed(pedidos):
         emoji_key = pedido.get("user_emoji", "Pedidos Antiguos / Sin Usuario")
         if emoji_key not in pedidos_agrupados:
             pedidos_agrupados[emoji_key] = []
         pedidos_agrupados[emoji_key].append(pedido)
-
     return render_template("admin.html", PEDIDOS_AGRUPADOS=pedidos_agrupados, PRODUCTOS_ORDENADOS=productos_ordenados_admin, PRODUCTOS=productos_dict)
-
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -216,7 +136,7 @@ def logout():
     session.pop("logged_in_user_emoji", None)
     return redirect(url_for("entrar"))
 
-# --- RUTAS DE ADMINISTRACIÓN COMPLETAS ---
+# --- RUTAS DE ADMINISTRACIÓN ---
 @app.route("/admin/actualizar-productos", methods=["POST"])
 def admin_actualizar_productos():
     if not session.get("logged_in"): return redirect(url_for("login"))
@@ -385,6 +305,22 @@ def admin_crear_paquete():
             flash("Error: Un paquete debe contener al menos un producto.", "error")
     productos_simples = {pid: pdata for pid, pdata in productos.items() if "precio" in pdata}
     return render_template("add_bundle.html", productos_simples=productos_simples)
+
+# --- LÓGICA DE LA ARENA Y SOCKETIO ---
+@app.route("/lobby")
+def lobby():
+    if not session.get("logged_in_user_emoji"): return redirect(url_for("entrar"))
+    return render_template("lobby.html")
+active_games = {}
+waiting_player = None
+@socketio.on('connect')
+def handle_connect():
+    print(f"Cliente conectado: {request.sid}")
+@socketio.on('join_lobby')
+def handle_join_lobby(data):
+    # ... (código de SocketIO)
+@socketio.on('disconnect')
+def handle_disconnect():
 
 @app.route("/admin/toggle-promocion/<product_id>", methods=["POST"])
 def admin_toggle_promocion(product_id):
