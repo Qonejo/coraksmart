@@ -84,6 +84,7 @@ def generar_id_pedido():
 @app.route("/entrar")
 def entrar():
     return render_template("bienvenida.html")
+
 @app.route("/")
 def index():
     if not session.get("logged_in_user_emoji"): return redirect(url_for("entrar"))
@@ -99,6 +100,7 @@ def index():
         aura_data=aura_data,
         AURA_LEVELS=AURA_LEVELS
     )
+
 @app.route("/perfil")
 def perfil_usuario():
     if not session.get("logged_in_user_emoji"): return redirect(url_for("entrar"))
@@ -107,6 +109,7 @@ def perfil_usuario():
     todos_los_pedidos = cargar_pedidos()
     pedidos_del_usuario = [p for p in todos_los_pedidos if p.get("user_emoji") == user_emoji]
     return render_template("perfil.html", user_emoji=user_emoji, pedidos=reversed(pedidos_del_usuario), PRODUCTOS=cargar_productos(), aura_data=aura_data, AURA_LEVELS=AURA_LEVELS)
+
 @app.route("/admin")
 def admin_view():
     if not session.get("logged_in"): return redirect(url_for("login"))
@@ -120,6 +123,7 @@ def admin_view():
             pedidos_agrupados[emoji_key] = []
         pedidos_agrupados[emoji_key].append(pedido)
     return render_template("admin.html", PEDIDOS_AGRUPADOS=pedidos_agrupados, PRODUCTOS_ORDENADOS=productos_ordenados_admin, PRODUCTOS=productos_dict)
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -129,6 +133,7 @@ def login():
         else:
             flash("Contraseña incorrecta.", "error")
     return render_template("login.html")
+
 @app.route("/logout")
 def logout():
     session.pop("logged_in", None)
@@ -175,19 +180,30 @@ def admin_completar_pedido(pedido_id):
             pedido_encontrado = pedido
             break
     if pedido_encontrado:
-        pedido_encontrado["completado"] = not pedido_encontrado.get("completado", False)
+        estado_anterior = pedido_encontrado.get("completado", False)
+        pedido_encontrado["completado"] = not estado_anterior
         user_emoji = pedido_encontrado.get("user_emoji")
+        puntos_del_pedido = pedido_encontrado.get("puntos_ganados", 0)
+
         if user_emoji and user_emoji in usuarios:
-            if pedido_encontrado["completado"]:
-                usuarios[user_emoji]["aura_points"] = usuarios[user_emoji].get("aura_points", 0) + 1
-                flash(f"Pedido completado. Se sumó 1 punto de Aura a {user_emoji}.", "success")
-            else:
-                usuarios[user_emoji]["aura_points"] = usuarios[user_emoji].get("aura_points", 0) - 1
-                if usuarios[user_emoji]["aura_points"] < 0:
-                    usuarios[user_emoji]["aura_points"] = 0
-                flash(f"Pedido desmarcado. Se restó 1 punto de Aura a {user_emoji}.", "success")
+            if pedido_encontrado["completado"] and not estado_anterior:
+                usuarios[user_emoji]["aura_points"] = usuarios[user_emoji].get("aura_points", 0) + puntos_del_pedido
+                flash(f"Pedido completado. Se sumaron {puntos_del_pedido} puntos de Aura a {user_emoji}.", "success")
+            elif not pedido_encontrado["completado"] and estado_anterior:
+                usuarios[user_emoji]["aura_points"] = usuarios[user_emoji].get("aura_points", 0) - puntos_del_pedido
+                flash(f"Pedido desmarcado. Se restaron {puntos_del_pedido} puntos de Aura a {user_emoji}.", "success")
             guardar_usuarios(usuarios)
     guardar_pedidos(pedidos)
+    return redirect(url_for("admin_view"))
+
+@app.route("/admin/toggle-promocion/<product_id>", methods=["POST"])
+def admin_toggle_promocion(product_id):
+    if not session.get("logged_in"): return redirect(url_for("login"))
+    productos = cargar_productos()
+    if product_id in productos:
+        productos[product_id]["promocion"] = not productos[product_id].get("promocion", False)
+    guardar_productos(productos)
+    flash("Estado de promoción actualizado.", "success")
     return redirect(url_for("admin_view"))
 
 @app.route("/admin/agregar-producto", methods=["GET", "POST"])
@@ -206,12 +222,14 @@ def admin_agregar_producto():
             file = request.files['imagen']
             if file and file.filename != '':
                 imagen_nombre = secure_filename(file.filename)
-                file_path = os.path.join('/home/Qonejo/coraksmart/', app.config['UPLOAD_FOLDER'], imagen_nombre)
+                file_path = os.path.join(app.config['UPLOAD_FOLDER'], imagen_nombre)
                 file.save(file_path)
         nuevo_producto = {
             "nombre": request.form.get("nombre"), "descripcion": request.form.get("descripcion"),
             "imagen": imagen_nombre, "stock": int(request.form.get("stock", 0)),
-            "precio": float(request.form.get("precio", 0.0))
+            "precio": float(request.form.get("precio", 0.0)),
+            "aura_multiplier": int(request.form.get("aura_multiplier", 1)),
+            "orden": int(request.form.get("orden", 999))
         }
         productos[product_id] = nuevo_producto
         guardar_productos(productos)
@@ -233,11 +251,12 @@ def admin_editar_producto(product_id):
         if "variaciones" not in producto_a_editar and "bundle_items" not in producto_a_editar:
             producto_a_editar["stock"] = int(request.form.get("stock", 0))
             producto_a_editar["precio"] = float(request.form.get("precio", 0.0))
+            producto_a_editar["aura_multiplier"] = int(request.form.get("aura_multiplier", 1))
         if 'imagen' in request.files:
             file = request.files['imagen']
             if file and file.filename != '':
                 imagen_nombre = secure_filename(file.filename)
-                file_path = os.path.join('/home/Qonejo/coraksmart/', app.config['UPLOAD_FOLDER'], imagen_nombre)
+                file_path = os.path.join(app.config['UPLOAD_FOLDER'], imagen_nombre)
                 file.save(file_path)
                 producto_a_editar["imagen"] = imagen_nombre
         productos[product_id] = producto_a_editar
@@ -254,7 +273,7 @@ def admin_eliminar_producto(product_id):
         producto_eliminado = productos.pop(product_id)
         try:
             if producto_eliminado.get('imagen') and producto_eliminado.get('imagen') != 'default.png':
-                file_path = os.path.join('/home/Qonejo/coraksmart/', app.config['UPLOAD_FOLDER'], producto_eliminado['imagen'])
+                file_path = os.path.join(app.config['UPLOAD_FOLDER'], producto_eliminado['imagen'])
                 os.remove(file_path)
         except (FileNotFoundError, KeyError): pass
         guardar_productos(productos)
@@ -279,7 +298,7 @@ def admin_crear_paquete():
             file = request.files['imagen']
             if file and file.filename != '':
                 imagen_nombre = secure_filename(file.filename)
-                file_path = os.path.join('/home/Qonejo/coraksmart/', app.config['UPLOAD_FOLDER'], imagen_nombre)
+                file_path = os.path.join(app.config['UPLOAD_FOLDER'], imagen_nombre)
                 file.save(file_path)
         bundle_items = {}
         for key, value in request.form.items():
@@ -294,7 +313,8 @@ def admin_crear_paquete():
             nuevo_paquete = {
                 "nombre": request.form.get("nombre"), "descripcion": request.form.get("descripcion"),
                 "imagen": imagen_nombre, "bundle_precio": float(request.form.get("bundle_precio", 0.0)),
-                "bundle_items": bundle_items, "promocion": True
+                "bundle_items": bundle_items, "promocion": True,
+                "orden": int(request.form.get("orden", 999))
             }
             productos[paquete_id] = nuevo_paquete
             guardar_productos(productos)
@@ -305,60 +325,41 @@ def admin_crear_paquete():
     productos_simples = {pid: pdata for pid, pdata in productos.items() if "precio" in pdata}
     return render_template("add_bundle.html", productos_simples=productos_simples)
 
-# --- ¡NUEVA LÓGICA DEL JUEGO EN TIEMPO REAL (SOCKETIO)! ---
-@app.route("/arena")
-def arena():
-    if not session.get("logged_in_user_emoji"):
-        return redirect(url_for("entrar"))
-    return render_template("arena.html")
-
-# Diccionario en memoria para guardar el estado de las partidas
+# --- LÓGICA DE LA ARENA Y SOCKETIO ---
+@app.route("/lobby")
+def lobby():
+    if not session.get("logged_in_user_emoji"): return redirect(url_for("entrar"))
+    return render_template("lobby.html")
 active_games = {}
-waiting_player = None # Para emparejar jugadores
-
+waiting_player = None
 @socketio.on('connect')
 def handle_connect():
     print(f"Cliente conectado: {request.sid}")
-
-@socketio.on('join_arena')
-def handle_join_arena(data):
+@socketio.on('join_lobby')
+def handle_join_lobby(data):
     global waiting_player
-    
     player_sid = request.sid
     player_emoji = data.get('emoji')
-
     if waiting_player:
-        # Si hay un jugador esperando, empezamos una partida
         player2_sid = waiting_player['sid']
         player2_emoji = waiting_player['emoji']
-        
         room_name = f"game-{player2_sid}-{player_sid}"
-        
         join_room(room_name, sid=player_sid)
         join_room(room_name, sid=player2_sid)
-        
-        # Creamos el estado inicial del juego
         active_games[room_name] = {
             "players": {
                 player_sid: {"emoji": player_emoji, "snake": [{"x": 50, "y": 100}], "direction": "right"},
                 player2_sid: {"emoji": player2_emoji, "snake": [{"x": 750, "y": 100}], "direction": "left"}
             }
         }
-        
-        # Avisamos a ambos jugadores que la partida ha empezado
         emit('game_started', {"room": room_name, "players": active_games[room_name]["players"]}, room=room_name)
-        
-        waiting_player = None # Limpiamos la sala de espera
+        waiting_player = None
     else:
-        # Si no hay nadie, este jugador se pone a esperar
         waiting_player = {"sid": player_sid, "emoji": player_emoji}
         emit('waiting_for_opponent')
-
 @socketio.on('player_input')
 def handle_player_input(data):
-    # Por ahora, no hace nada, pero es necesaria para que no dé error.
     pass
-
 @socketio.on('disconnect')
 def handle_disconnect():
     global waiting_player
@@ -366,27 +367,12 @@ def handle_disconnect():
         waiting_player = None
     print(f"Cliente desconectado: {request.sid}")
 
-@app.route("/admin/toggle-promocion/<product_id>", methods=["POST"])
-def admin_toggle_promocion(product_id):
-    if not session.get("logged_in"):
-        return redirect(url_for("login"))
-
-    productos = cargar_productos()
-    if product_id in productos:
-        # Si la clave 'promocion' existe y es True, la quita. Si no, la pone a True.
-        productos[product_id]["promocion"] = not productos[product_id].get("promocion", False)
-
-    guardar_productos(productos)
-    flash("Estado de promoción actualizado.", "success")
-    return redirect(url_for("admin_view"))
-
 # --- API PARA EMOJIS ---
 EMOJI_LIST = ["😀", "🚀", "🌟", "🍕", "🤖", "👻", "👽", "👾", "🦊", "🧙", "🌮", "💎", "🌙", "🔮", "🧬", "🌵", "🎉", "🔥", "💯", "👑", "💡", "🎮", "🛰️", "🛸", "🗿", "🌴", "🧪", "✨", "🔑", "🗺️", "🐙", "🦋", "🐲", "🍩", "⚡", "🎯", "⚓", "🌈", "🌌", "🌠", "🎱", "🎰", "🕹️", "🏆", "💊", "🎁", "💌", "📈", "🗿"]
 @app.route("/api/get-emojis")
 def get_emojis():
     usuarios = cargar_usuarios()
     return jsonify({ "all_emojis": EMOJI_LIST, "occupied_emojis": list(usuarios.keys()) })
-
 @app.route("/api/emoji-access", methods=["POST"])
 def emoji_access():
     data = request.get_json()
@@ -449,7 +435,7 @@ def api_agregar(product_cart_id):
     prod_data = productos.get(product_cart_id)
     if prod_data and "bundle_items" in prod_data:
         try:
-            stocks_posibles = [productos[item_id]["stock"] // cant_nec for item_id, cant_nec in prod_data["bundle_items"].items() if item_id in productos]
+            stocks_posibles = [productos.get(item_id, {}).get("stock", 0) // cant_nec for item_id, cant_nec in prod_data["bundle_items"].items()]
             stock_disponible = min(stocks_posibles) if stocks_posibles else 0
         except ZeroDivisionError:
             stock_disponible = 0
@@ -486,69 +472,55 @@ def api_limpiar():
     session.pop('carrito', None)
     return jsonify(_get_cart_data())
 
-# --- ACCIÓN DE COMPRA (VERSIÓN FINAL CON LÓGICA UNIFICADA) ---
+# --- ACCIÓN DE COMPRA ---
 @app.route("/comprar")
 def comprar():
     if not session.get("logged_in_user_emoji"): return redirect(url_for("entrar"))
-
     productos = cargar_productos()
     carrito = session.get('carrito', {})
     if not carrito: return redirect(url_for("index"))
-
+    
     puntos_aura_ganados = 0
-
-    # --- BUCLE DE VALIDACIÓN DE STOCK Y CÁLCULO DE PUNTOS ---
-    # En esta primera pasada, solo verificamos que todo esté en orden antes de modificar el stock.
+    
     for cart_id, cant in carrito.items():
         parts = cart_id.split('-', 1)
         base_id = parts[0]
         variation_id = parts[1] if len(parts) > 1 else None
-
-        prod_data = productos.get(base_id)
+        prod_data = productos.get(base_id if variation_id else cart_id)
         if not prod_data:
-            flash(f"El producto '{base_id}' ya no existe en la tienda.", "error")
+            flash(f"Producto '{base_id}' ya no existe.", "error")
             return redirect(url_for("index"))
-
+        
         precio_item = 0
         multiplier = prod_data.get("aura_multiplier", 1)
         
-        # Lógica para Paquetes (Bundles)
         if "bundle_items" in prod_data:
             precio_item = prod_data.get("bundle_precio", 0)
             for item_id, cant_nec in prod_data["bundle_items"].items():
                 if productos.get(item_id, {}).get("stock", 0) < (cant_nec * cant):
-                    flash(f"No hay suficiente stock para completar el paquete '{prod_data['nombre']}'.", "error")
+                    flash(f"No hay suficiente stock para el paquete '{prod_data['nombre']}'.", "error")
                     return redirect(url_for("index"))
-        
-        # Lógica para Productos con Variaciones
         elif variation_id and "variaciones" in prod_data:
             variation_data = prod_data["variaciones"].get(variation_id)
             if not variation_data or variation_data.get("stock", 0) < cant:
                 flash(f"No hay suficiente stock para {prod_data['nombre']} ({variation_id}).", "error")
                 return redirect(url_for("index"))
             precio_item = variation_data.get("precio", 0)
-        
-        # Lógica para Productos Simples
         elif "precio" in prod_data:
             if prod_data.get("stock", 0) < cant:
                 flash(f"No hay suficiente stock para {prod_data['nombre']}.", "error")
                 return redirect(url_for("index"))
             precio_item = prod_data.get("precio", 0)
-        
         else:
-            flash(f"Producto '{base_id}' no está configurado correctamente para la venta.", "error")
+            flash(f"Producto '{base_id}' mal configurado.", "error")
             return redirect(url_for("index"))
-        
         puntos_aura_ganados += (precio_item * multiplier) * cant
 
-    # --- BUCLE DE DEDUCCIÓN DE STOCK ---
-    # Si llegamos aquí, significa que hay stock suficiente para todo. Ahora sí modificamos.
     for cart_id, cant in carrito.items():
         parts = cart_id.split('-', 1)
         base_id = parts[0]
         variation_id = parts[1] if len(parts) > 1 else None
-        prod_data = productos.get(base_id) # Sabemos que existe por la validación anterior
-
+        prod_data = productos.get(base_id if variation_id else cart_id)
         if "bundle_items" in prod_data:
             for item_id, cant_nec in prod_data["bundle_items"].items():
                 productos[item_id]["stock"] -= (cant_nec * cant)
@@ -556,29 +528,19 @@ def comprar():
             productos[base_id]["variaciones"][variation_id]["stock"] -= cant
         elif "stock" in prod_data:
             productos[base_id]["stock"] -= cant
-
     guardar_productos(productos)
-    
-    # --- SUMAR PUNTOS Y GUARDAR PEDIDO ---
-    # (Esta lógica se movió a /admin/completar-pedido, así que ya no va aquí)
     
     cart_data = _get_cart_data()
     total_general = cart_data["total"]
     libro_de_pedidos = cargar_pedidos()
-    
     nuevo_id_pedido = generar_id_pedido()
     nuevo_pedido = {
-        "id": nuevo_id_pedido,
-        "timestamp": datetime.now().strftime("%d de %B, %Y a las %H:%M"),
-        "detalle": carrito.copy(),
-        "total": round(total_general, 2),
-        "completado": False,
-        "user_emoji": session.get("logged_in_user_emoji")
+        "id": nuevo_id_pedido, "timestamp": datetime.now().strftime("%d de %B, %Y a las %H:%M"),
+        "detalle": carrito.copy(), "total": round(total_general, 2), "completado": False,
+        "user_emoji": session.get("logged_in_user_emoji"), "puntos_ganados": puntos_aura_ganados
     }
     libro_de_pedidos.append(nuevo_pedido)
     guardar_pedidos(libro_de_pedidos)
-
-    # Crear mensaje de WhatsApp
     mensaje_partes = [f"*¡Que onda Corak! ocupo:* 🛍️\n\n*Pedido #{nuevo_id_pedido}*\nResumen:"]
     for cart_id, cant in carrito.items():
         nombre_item = cart_data["productos_detalle"].get(cart_id, {}).get("nombre", "Item")
@@ -591,6 +553,6 @@ def comprar():
     
     session.pop('carrito', None)
     return redirect(whatsapp_url)
-# Ya no usamos app.run(), usamos socketio.run()
+
 if __name__ == "__main__":
     socketio.run(app, host='0.0.0.0', port=5000, debug=True)

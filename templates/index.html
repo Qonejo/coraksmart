@@ -1,17 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Coraksmart</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    <!-- Usamos una nueva versión para forzar la recarga del CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=6.0">
-</head>
-<body>
-    <header>
+<header>
     <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo de la Tienda" id="logo">
     
     <div class="header-user-info">
@@ -19,24 +8,34 @@
         <div class="aura-display">
             <div class="aura-info">
                 <span class="aura-text">Aura</span>
-                <!-- Formato de puntos con signo +/- -->
                 <span class="aura-points">
                     {% if aura_data.points >= 0 %}+{% else %}-{% endif %}
                     {{ "{:,.0f}".format(aura_data.points|abs) }}
                 </span>
                 <img src="{{ url_for('static', filename='flame_' + aura_data.level_info.flame_color + '.png') }}">
             </div>
-            <!-- ¡NUEVA BARRA DE PROGRESO! -->
-            {% set next_level = AURA_LEVELS[aura_data.level_info.level] if aura_data.level_info.level < 7 else None %}
+            
+            <!-- ¡NUEVA LÓGICA DE LA BARRA DE PROGRESO! -->
+            {% set progress_percent = 0 %}
+            {% if aura_data.level_info.level < 7 %}
+                {% set next_level = AURA_LEVELS[aura_data.level_info.level + 1] %}
+                {% if next_level.points_needed > 0 %}
+                    {% set progress_percent = (aura_data.points / next_level.points_needed * 100) | int %}
+                    {% if progress_percent > 100 %}{% set progress_percent = 100 %}{% endif %}
+                {% endif %}
+            {% else %}
+                {% set progress_percent = 100 %}
+            {% endif %}
+            
             <div class="aura-progress-bar">
-                <div class="aura-progress-fill" style="width: {{ (aura_data.points / next_level.points_needed * 100) if next_level else 100 }}%;"></div>
+                <!-- Pasamos el porcentaje como un 'data-attribute' -->
+                <div class="aura-progress-fill" data-progress="{{ progress_percent }}"></div>
             </div>
         </div>
         {% endif %}
         
         <div class="header-actions">
-            <a href="{{ url_for('perfil_usuario') }}" class="perfil-link">... Mi Perfil</a>
-            <!-- ¡NUEVO ENLACE AL LOBBY! -->
+            <a href="{{ url_for('perfil_usuario') }}" class="perfil-link">Mi Perfil</a>
             <a href="{{ url_for('lobby') }}" class="lobby-link">⚔️ Arena PvP</a>
         </div>
     </div>
