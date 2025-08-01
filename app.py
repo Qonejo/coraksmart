@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
-from flask_socketio import SocketIO, emit, join_room, leave_room # ¡NUEVOS IMPORTS!
+from flask_socketio import SocketIO, emit, join_room, leave_room
 from datetime import datetime
 import urllib.parse
 import os
@@ -15,7 +15,6 @@ app.jinja_env.add_extension('jinja2.ext.do')
 app.secret_key = os.urandom(24)
 UPLOAD_FOLDER = 'static'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-# --- ¡NUEVO! INICIALIZACIÓN DE SOCKETIO ---
 socketio = SocketIO(app)
 
 # --- CONFIGURACIÓN DE ARCHIVOS ---
@@ -44,7 +43,7 @@ def cargar_usuarios():
 def guardar_usuarios(usuarios):
     with open(USUARIOS_FILE, 'w', encoding='utf-8') as f: json.dump(usuarios, f, indent=4)
 
-# --- ¡NUEVO SISTEMA DE AURA REVISADO! ---
+# --- SISTEMA DE AURA Y GENERADOR DE IDS ---
 AURA_LEVELS = [
     {"level": 0, "points_needed": -float('inf'), "flame_color": "black",  "prize": "Sin Rango"},
     {"level": 1, "points_needed": 0,         "flame_color": "white",  "prize": "Gomita + Pelón"},
@@ -311,20 +310,29 @@ def admin_crear_paquete():
 def lobby():
     if not session.get("logged_in_user_emoji"): return redirect(url_for("entrar"))
     return render_template("lobby.html")
+
 active_games = {}
 waiting_player = None
+
 @socketio.on('connect')
 def handle_connect():
     print(f"Cliente conectado: {request.sid}")
+
 @socketio.on('join_lobby')
 def handle_join_lobby(data):
-    # ... (código de SocketIO)
+    # (El código completo de esta función que ya tienes)
+    # ...
+
+@socketio.on('player_input') # <--- ¡Añade esta función si no la tienes!
+def handle_player_input(data):
+    pass # La dejaremos como placeholder por ahora
+
 @socketio.on('disconnect')
 def handle_disconnect():
     global waiting_player
     if waiting_player and waiting_player['sid'] == request.sid:
         waiting_player = None
-    print(f"Cliente desconectado: {request.sid}") 
+    print(f"Cliente desconectado: {request.sid}")
 
 @app.route("/admin/toggle-promocion/<product_id>", methods=["POST"])
 def admin_toggle_promocion(product_id):
