@@ -305,27 +305,59 @@ def admin_crear_paquete():
     productos_simples = {pid: pdata for pid, pdata in productos.items() if "precio" in pdata}
     return render_template("add_bundle.html", productos_simples=productos_simples)
 
-# --- LÓGICA DE LA ARENA Y SOCKETIO ---
-@app.route("/lobby")
-def lobby():
-    if not session.get("logged_in_user_emoji"): return redirect(url_for("entrar"))
-    return render_template("lobby.html")
+# --- ¡NUEVA LÓGICA DEL JUEGO EN TIEMPO REAL (SOCKETIO)! ---
+@app.route("/arena")
+def arena():
+    if not session.get("logged_in_user_emoji"):
+        return redirect(url_for("entrar"))
+    return render_template("arena.html")
 
+# Diccionario en memoria para guardar el estado de las partidas
 active_games = {}
-waiting_player = None
+waiting_player = None # Para emparejar jugadores
 
 @socketio.on('connect')
 def handle_connect():
     print(f"Cliente conectado: {request.sid}")
 
-@socketio.on('join_lobby')
-def handle_join_lobby(data):
-    # (El código completo de esta función que ya tienes)
-    # ...
+@socketio.on('join_arena')
+def handle_join_arena(data):
+    global waiting_player
+    
+    player_sid = request.sid
+    player_emoji = data.get('emoji')
 
-@socketio.on('player_input') # <--- ¡Añade esta función si no la tienes!
+    if waiting_player:
+        # Si hay un jugador esperando, empezamos una partida
+        player2_sid = waiting_player['sid']
+        player2_emoji = waiting_player['emoji']
+        
+        room_name = f"game-{player2_sid}-{player_sid}"
+        
+        join_room(room_name, sid=player_sid)
+        join_room(room_name, sid=player2_sid)
+        
+        # Creamos el estado inicial del juego
+        active_games[room_name] = {
+            "players": {
+                player_sid: {"emoji": player_emoji, "snake": [{"x": 50, "y": 100}], "direction": "right"},
+                player2_sid: {"emoji": player2_emoji, "snake": [{"x": 750, "y": 100}], "direction": "left"}
+            }
+        }
+        
+        # Avisamos a ambos jugadores que la partida ha empezado
+        emit('game_started', {"room": room_name, "players": active_games[room_name]["players"]}, room=room_name)
+        
+        waiting_player = None # Limpiamos la sala de espera
+    else:
+        # Si no hay nadie, este jugador se pone a esperar
+        waiting_player = {"sid": player_sid, "emoji": player_emoji}
+        emit('waiting_for_opponent')
+
+@socketio.on('player_input')
 def handle_player_input(data):
-    pass # La dejaremos como placeholder por ahora
+    # Por ahora, no hace nada, pero es necesaria para que no dé error.
+    pass
 
 @socketio.on('disconnect')
 def handle_disconnect():
