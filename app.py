@@ -321,6 +321,10 @@ def handle_join_lobby(data):
     # ... (código de SocketIO)
 @socketio.on('disconnect')
 def handle_disconnect():
+    global waiting_player
+    if waiting_player and waiting_player['sid'] == request.sid:
+        waiting_player = None
+    print(f"Cliente desconectado: {request.sid}") 
 
 @app.route("/admin/toggle-promocion/<product_id>", methods=["POST"])
 def admin_toggle_promocion(product_id):
