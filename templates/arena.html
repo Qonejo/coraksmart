@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <title>Snake Arena PvP - Coraksmart</title>
-    <style>
-        body { margin: 0; background: #000; display: flex; justify-content: center; align-items: center; height: 100vh; color: white; font-family: 'Press Start 2P', cursive; }
-        canvas { display: block; border: 2px solid #555; }
-        #message-box { position: absolute; font-size: 1.5em; text-shadow: 2px 2px #ff00ff; }
-    </style>
+    <!-- ¡IMPORTANTE! Enlazamos a la fuente y al nuevo CSS de la arena -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='arena.css') }}">
 </head>
 <body>
     <div id="message-box">Buscando oponente...</div>
@@ -15,7 +15,7 @@
 
     <!-- Librería de Socket.IO para el cliente -->
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
-    <!-- Nuestro script del juego -->
+    <!-- ¡IMPORTANTE! Enlazamos al nuevo script del juego -->
     <script src="{{ url_for('static', filename='game.js') }}"></script>
 </body>
 </html>

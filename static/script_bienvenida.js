@@ -6,61 +6,40 @@ document.addEventListener('DOMContentLoaded', () => {
         const ctx = canvas.getContext('2d');
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
-
-        // Conjunto de caracteres extendido, como en tu ESP32
         const matrixChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+[]{}|;:',.<>/?~";
         const fontSize = 16;
         const columns = Math.floor(canvas.width / fontSize);
         const drops = [];
-
         for (let i = 0; i < columns; i++) {
             drops[i] = 1;
         }
-
         function draw() {
-            // Fondo negro semi-transparente para el efecto de estela
             ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            ctx.fillStyle = '#0F0'; // Color verde Matrix
+            ctx.fillStyle = '#0F0';
             ctx.font = `${fontSize}px monospace`;
-
             for (let i = 0; i < drops.length; i++) {
-                // Elige un carácter aleatorio del set
                 const text = matrixChars.charAt(Math.floor(Math.random() * matrixChars.length));
                 ctx.fillText(text, i * fontSize, drops[i] * fontSize);
-
-                // Si la gota llega al final, la resetea aleatoriamente
                 if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
                     drops[i] = 0;
                 }
-
-                // Mueve la gota
                 drops[i]++;
             }
         }
-
-        // Inicia la animación
         const intervalId = setInterval(draw, 33);
-
         window.addEventListener('resize', () => {
-            // Detiene la animación anterior
             clearInterval(intervalId);
-
-            // Reajusta y reinicia la animación
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
             const newColumns = Math.floor(canvas.width / fontSize);
-            drops.length = 0; // Vacía el array
+            drops.length = 0;
             for (let i = 0; i < newColumns; i++) {
                 drops[i] = 1;
             }
             setInterval(draw, 33);
         });
     }
-    // =======================================================
-
-    // =================================================================
 
     // ========= CÓDIGO DEL LOGIN CON EMOJIS =========
     const grid = document.getElementById('emoji-grid');
@@ -84,7 +63,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         const slot = document.createElement('div');
                         slot.classList.add('emoji-slot');
                         slot.textContent = emoji;
-
                         if (data.occupied_emojis.includes(emoji)) {
                             const icon = document.createElement('span');
                             icon.classList.add('occupied-icon');
@@ -130,6 +108,8 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
+                    // ¡LÍNEA AÑADIDA AQUÍ!
+                    sessionStorage.setItem('user_emoji', emoji);
                     window.location.href = '/';
                 } else {
                     errorMessage.textContent = data.message;
@@ -138,6 +118,5 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Carga inicial de los emojis
     loadEmojis();
 });
