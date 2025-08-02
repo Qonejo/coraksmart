@@ -90,15 +90,20 @@ def entrar():
 @app.route("/")
 def index():
     if not session.get("logged_in_user_emoji"): return redirect(url_for("entrar"))
+    
     user_emoji = session["logged_in_user_emoji"]
     aura_data = get_user_aura_info(user_emoji)
+    
     productos_dict = cargar_productos()
+    
+    # --- LÓGICA DE ORDENAMIENTO SIMPLIFICADA ---
+    # Creamos una lista de tuplas (id, datos) ordenada
     productos_ordenados = sorted(productos_dict.items(), key=lambda item: item[1].get('orden', 999))
-    productos = OrderedDict(productos_ordenados)
+    
     return render_template(
         "index.html",
-        PRODUCTOS_ORDENADOS=productos_ordenados,
-        PRODUCTOS_DICT=productos_dict,
+        PRODUCTOS_ORDENADOS=productos_ordenados, # Enviamos la lista
+        PRODUCTOS_DICT=productos_dict,       # Y el diccionario original
         aura_data=aura_data,
         AURA_LEVELS=AURA_LEVELS
     )
