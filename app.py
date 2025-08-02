@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
+from whitenoise import WhiteNoise
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from datetime import datetime
 import urllib.parse
@@ -11,6 +12,7 @@ from werkzeug.utils import secure_filename
 from collections import OrderedDict
 
 app = Flask(__name__)
+app.wsgi_app = WhiteNoise(app.wsgi_app, root="static/")
 app.jinja_env.add_extension('jinja2.ext.do')
 app.secret_key = os.urandom(24)
 UPLOAD_FOLDER = 'static'
