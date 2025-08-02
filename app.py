@@ -9,12 +9,12 @@ import string
 import random
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
-from collections import OrderedDict
+from whitenoise import WhiteNoise 
 
 app = Flask(__name__)
-app.wsgi_app = WhiteNoise(app.wsgi_app, root="static/")
 app.jinja_env.add_extension('jinja2.ext.do')
 app.secret_key = os.urandom(24)
+app.wsgi_app = WhiteNoise(app.wsgi_app, root="static/")
 UPLOAD_FOLDER = 'static'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 socketio = SocketIO(app)

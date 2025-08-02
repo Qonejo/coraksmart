@@ -1,59 +1,64 @@
 {# Este es el archivo templates/product_card.html #}
 
-{# --- Lógica para determinar el estado del producto --- #}
+{# --- Lógica para determinar si el producto está completamente agotado --- #}
 {% set completamente_agotado = false %}
 {% if prod.bundle_items %}
+    {# Para bundles, comprobamos el stock de cada componente #}
     {% set max_bundles_posibles = [] %}
     {% for item_id, cant_nec in prod.bundle_items.items() %}
+        {# --- ¡CORRECCIÓN AQUÍ! Usamos PRODUCTOS_DICT para la búsqueda --- #}
         {% set item_stock = PRODUCTOS_DICT.get(item_id, {}).get('stock', 0) %}
-        {% if cant_nec > 0 %}{% do max_bundles_posibles.append(item_stock // cant_nec) %}{% endif %}
+        {% if cant_nec > 0 %}
+            {% do max_bundles_posibles.append(item_stock // cant_nec) %}
+        {% else %}
+            {% do max_bundles_posibles.append(999) %} {# Si necesita 0 de algo, no limita el stock #}
+        {% endif %}
     {% endfor %}
-    {% if not max_bundles_posibles or max_bundles_posibles | min <= 0 %}{% set completamente_agotado = true %}{% endif %}
+    {% if not max_bundles_posibles or max_bundles_posibles | min <= 0 %}
+        {% set completamente_agotado = true %}
+    {% endif %}
 {% elif prod.variaciones %}
+    {# Para productos con variaciones, comprobamos si TODAS las variaciones tienen stock 0 #}
     {% set total_stock_variaciones = prod.variaciones.values() | map(attribute='stock') | sum %}
-    {% if total_stock_variaciones == 0 %}{% set completamente_agotado = true %}{% endif %}
+    {% if total_stock_variaciones == 0 %}
+        {% set completamente_agotado = true %}
+    {% endif %}
 {% elif prod.stock is defined and prod.stock == 0 %}
+    {# Para productos simples, solo comprobamos su stock #}
     {% set completamente_agotado = true %}
 {% endif %}
 {# ------------------------------------------------------------------ #}
 
 <div class="producto-item {% if completamente_agotado %}agotado{% endif %} {% if prod.get('promocion') %}promo-item{% endif %}">
-
+    
     <img src="{{ url_for('static', filename=prod.imagen) }}" alt="{{ prod.nombre }}">
-    <div class="producto-nombre">{{ prod.nombre }}</div>
-
+    <div class.producto-nombre">{{ prod.nombre }}</div>
+    
     {% if prod.bundle_items %}
-        <!-- Es un Paquete Promocional (siempre es promoción) -->
+        <!-- Es un Paquete Promocional -->
         <div class="producto-precio promo-precio">${{ "%.2f"|format(prod.bundle_precio) }}</div>
         {% if not completamente_agotado %}
             <button class="boton-agregar" onclick="agregarAlCarrito('{{ id }}')">Añadir Pack</button>
         {% else %}
             <div class="producto-stock stock-agotado">AGOTADO</div>
         {% endif %}
-
+        
     {% elif prod.variaciones %}
         <!-- Es un producto con variaciones -->
         <div class="variaciones-container">
             {% for var_id, var_data in prod.variaciones.items() %}
-                <button class="boton-variacion"
+                <button class="boton-variacion" 
                         onclick="agregarAlCarrito('{{ id }}-{{ var_id }}')"
                         {% if var_data.stock == 0 %}disabled{% endif %}>
-                    {{ var_id }} -
-                    <!-- Añadimos la clase promo-precio si el producto base es una promoción -->
-                    <span class="{% if prod.get('promocion') %}promo-precio{% else %}verde{% endif %}">
-                        ${{ "%.2f"|format(var_data.precio) }}
-                    </span>
+                    {{ var_id }} - <span class="{% if prod.get('promocion') %}promo-precio{% else %}verde{% endif %}">${{ "%.2f"|format(var_data.precio) }}</span>
                     <span>(Stock: {{ var_data.stock }})</span>
                 </button>
             {% endfor %}
         </div>
-
+        
     {% else %}
         <!-- Es un producto simple -->
-        <!-- Añadimos la clase promo-precio si es una promoción -->
-        <div class="producto-precio {% if prod.get('promocion') %}promo-precio{% endif %}">
-            ${{ "%.2f"|format(prod.precio) }}
-        </div>
+        <div class="producto-precio {% if prod.get('promocion') %}promo-precio{% endif %}">${{ "%.2f"|format(prod.precio) }}</div>
         {% if prod.stock > 0 %}
             <div class="producto-stock">Disponibles: {{ prod.stock }}</div>
             <button class="boton-agregar" onclick="agregarAlCarrito('{{ id }}')">Añadir</button>
