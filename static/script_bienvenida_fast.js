@@ -56,18 +56,19 @@ function renderEmojiGrid() {
     const container = document.getElementById('emoji-grid');
     container.innerHTML = '';
     
-    // Mostrar solo primeros 24 emojis para carga rápida
-    const visibleEmojis = allEmojis.slice(0, 24);
+    // Mostrar todos los emojis para mejor UX
+    const visibleEmojis = allEmojis;
     
     visibleEmojis.forEach(emoji => {
         const div = document.createElement('div');
         div.className = 'emoji-option';
-        div.textContent = emoji;
         
         if (occupiedEmojis.includes(emoji)) {
             div.classList.add('occupied');
+            div.innerHTML = `${emoji}<span class="occupied-icon">🔒</span>`;
             div.title = 'Iniciar sesión con este avatar';
         } else {
+            div.textContent = emoji;
             div.title = 'Registrarse con este avatar';
         }
         
@@ -190,12 +191,17 @@ document.addEventListener('DOMContentLoaded', () => {
 const style = document.createElement('style');
 style.textContent = `
     .emoji-option.selected { 
-        background: rgba(0,255,0,0.5) !important; 
-        box-shadow: 0 0 10px #0f0; 
+        border-color: #ffcc00 !important; 
+        transform: scale(1.2) !important; 
+        box-shadow: 0 0 15px #ffcc00; 
     }
-    .emoji-option.occupied:before {
-        content: "🔒 ";
-        font-size: 0.8em;
+    .occupied-icon {
+        position: absolute;
+        bottom: 2px;
+        right: 2px;
+        font-size: 0.4em;
+        color: #ff3333;
+        font-family: 'Segoe UI Emoji', 'Apple Color Emoji', sans-serif;
     }
     .modal-hidden { display: none !important; }
     #access-modal {
@@ -204,26 +210,51 @@ style.textContent = `
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(0,0,0,0.8);
+        background: rgba(0, 0, 0, 0.8);
         display: flex;
         justify-content: center;
         align-items: center;
-        z-index: 1000;
+        z-index: 100;
     }
     .modal-content {
         background: #111;
-        border: 2px solid #0f0;
         padding: 30px;
-        border-radius: 10px;
+        border: 4px solid #fff;
         text-align: center;
-        max-width: 400px;
-        width: 90%;
+        font-family: 'Press Start 2P', cursive;
     }
     .modal-emoji {
-        font-size: 3rem;
-        margin: 10px 0;
+        font-size: 4em;
+        margin-bottom: 15px;
+    }
+    #access-form input {
+        font-family: inherit;
+        font-size: 1em;
+        padding: 10px;
+        border: 2px solid #888;
+        background-color: #333;
+        color: #fff;
+        text-align: center;
+        width: 80%;
+    }
+    #access-form button, #close-modal-btn {
+        font-family: inherit;
+        font-size: 0.9em;
+        padding: 10px 20px;
+        margin-top: 20px;
+        border: none;
+        cursor: pointer;
+    }
+    #access-form button {
+        background-color: #ffcc00;
+        color: #000;
+    }
+    #close-modal-btn {
+        background-color: #555;
+        color: #fff;
+        margin-left: 10px;
     }
     .success { color: #0f0; }
-    .error { color: #f00; }
+    .error { color: #ff3333; }
 `;
 document.head.appendChild(style);
