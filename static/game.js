@@ -162,7 +162,7 @@ let currentFPS = 0;
 
 function drawUI() {
     ctx.fillStyle = COLORS.TEXT;
-    ctx.font = '12px monospace'; // Font más rápido que Press Start 2P
+    ctx.font = '12px "Press Start 2P", monospace';
     
     let y = 20;
     Object.entries(gameState.players).forEach(([playerId, player], index) => {
@@ -176,7 +176,7 @@ function drawUI() {
     
     // Mostrar FPS en desarrollo
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        ctx.font = '10px monospace';
+        ctx.font = '8px "Press Start 2P", monospace';
         ctx.fillText(`FPS: ${currentFPS}`, CANVAS_WIDTH - 60, 15);
     }
 }

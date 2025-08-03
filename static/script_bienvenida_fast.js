@@ -66,19 +66,19 @@ function renderEmojiGrid() {
         
         if (occupiedEmojis.includes(emoji)) {
             div.classList.add('occupied');
-            div.title = 'Ya está en uso';
+            div.title = 'Iniciar sesión con este avatar';
         } else {
-            div.addEventListener('click', () => selectEmoji(emoji, div));
+            div.title = 'Registrarse con este avatar';
         }
+        
+        div.addEventListener('click', () => selectEmoji(emoji, div));
         
         container.appendChild(div);
     });
 }
 
-// Seleccionar emoji
+// Seleccionar emoji (permitir tanto ocupados como libres)
 function selectEmoji(emoji, element) {
-    if (occupiedEmojis.includes(emoji)) return;
-    
     // Remover selección anterior
     document.querySelectorAll('.emoji-option.selected').forEach(el => {
         el.classList.remove('selected');
@@ -87,9 +87,37 @@ function selectEmoji(emoji, element) {
     selectedEmoji = emoji;
     element.classList.add('selected');
     
-    // Mostrar contenedor de contraseña
-    document.getElementById('password-container').style.display = 'block';
-    document.getElementById('password-input').focus();
+    // Mostrar modal
+    showAccessModal(emoji);
+}
+
+// Mostrar modal de acceso
+function showAccessModal(emoji) {
+    const modal = document.getElementById('access-modal');
+    const selectedEmojiEl = document.getElementById('selected-emoji');
+    const modalTitle = document.getElementById('modal-title');
+    const passwordInput = document.getElementById('password-input');
+    
+    selectedEmojiEl.textContent = emoji;
+    
+    if (occupiedEmojis.includes(emoji)) {
+        modalTitle.textContent = 'Iniciar Sesión';
+        passwordInput.placeholder = 'Introduce tu contraseña';
+    } else {
+        modalTitle.textContent = 'Crear Nueva Cuenta';
+        passwordInput.placeholder = 'Crea una contraseña nueva';
+    }
+    
+    modal.classList.remove('modal-hidden');
+    passwordInput.value = '';
+    passwordInput.focus();
+}
+
+// Cerrar modal
+function closeModal() {
+    document.getElementById('access-modal').classList.add('modal-hidden');
+    document.getElementById('error-message').textContent = '';
+    selectedEmoji = null;
 }
 
 // Login optimizado
@@ -151,10 +179,11 @@ document.addEventListener('DOMContentLoaded', () => {
     loadEmojis();
     
     // Event listeners
-    document.getElementById('login-button').addEventListener('click', attemptLogin);
-    document.getElementById('password-input').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') attemptLogin();
+    document.getElementById('access-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        attemptLogin();
     });
+    document.getElementById('close-modal-btn').addEventListener('click', closeModal);
 });
 
 // CSS adicional para elementos seleccionados
@@ -164,8 +193,37 @@ style.textContent = `
         background: rgba(0,255,0,0.5) !important; 
         box-shadow: 0 0 10px #0f0; 
     }
+    .emoji-option.occupied:before {
+        content: "🔒 ";
+        font-size: 0.8em;
+    }
+    .modal-hidden { display: none !important; }
+    #access-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.8);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+    .modal-content {
+        background: #111;
+        border: 2px solid #0f0;
+        padding: 30px;
+        border-radius: 10px;
+        text-align: center;
+        max-width: 400px;
+        width: 90%;
+    }
+    .modal-emoji {
+        font-size: 3rem;
+        margin: 10px 0;
+    }
     .success { color: #0f0; }
     .error { color: #f00; }
-    #password-container { display: none; }
 `;
 document.head.appendChild(style);

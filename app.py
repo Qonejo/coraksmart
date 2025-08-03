@@ -619,18 +619,22 @@ def update_game(room_name):
             "food": game["food"]
         }, room=room_name)
 
-import gevent
+# Game loop simplificado sin gevent
+import threading
+import time
+
 def game_loop():
     while True:
         if active_games:  # Solo procesar si hay juegos activos
             for room_name in list(active_games.keys()):
                 update_game(room_name)
-            gevent.sleep(0.12)  # ~8 FPS más estable
+            time.sleep(0.15)  # ~6.7 FPS estable
         else:
-            gevent.sleep(1.0)   # Esperar más tiempo si no hay juegos
+            time.sleep(2.0)   # Esperar más tiempo si no hay juegos
 
-# Iniciar el game loop con gevent
-gevent.spawn(game_loop)
+# Iniciar el game loop en hilo separado
+game_thread = threading.Thread(target=game_loop, daemon=True)
+game_thread.start()
 
 @socketio.on('disconnect')
 def handle_disconnect():
