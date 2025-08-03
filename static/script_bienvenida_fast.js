@@ -6,16 +6,20 @@ let selectedEmoji = null;
 // Función optimizada de Matrix (más simple)
 function initMatrix() {
     const canvas = document.getElementById('matrix-canvas');
-    if (!canvas) return;
+    if (!canvas) {
+        console.error('No se encontró el canvas matrix-canvas');
+        return;
+    }
     
+    console.log('Iniciando animación Matrix...');
     const ctx = canvas.getContext('2d');
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
     
-    const chars = "01";
+    const chars = "01アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン";
     const fontSize = 14;
-    const columns = canvas.width / fontSize;
-    const drops = Array(Math.floor(columns)).fill(1);
+    const columns = Math.floor(canvas.width / fontSize);
+    const drops = Array(columns).fill(1);
     
     function draw() {
         ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
@@ -36,15 +40,18 @@ function initMatrix() {
     }
     
     setInterval(draw, 33); // ~30 FPS
+    console.log('Matrix animación iniciada');
 }
 
 // Cargar emojis de forma optimizada
 async function loadEmojis() {
     try {
+        console.log('Cargando emojis...');
         const response = await fetch('/api/get-emojis');
         const data = await response.json();
         allEmojis = data.all_emojis;
         occupiedEmojis = data.occupied_emojis;
+        console.log('Emojis cargados:', allEmojis.length, 'total,', occupiedEmojis.length, 'ocupados');
         renderEmojiGrid();
     } catch (error) {
         console.error('Error cargando emojis:', error);
@@ -54,10 +61,16 @@ async function loadEmojis() {
 // Renderizar grid de emojis
 function renderEmojiGrid() {
     const container = document.getElementById('emoji-grid');
+    if (!container) {
+        console.error('No se encontró el contenedor emoji-grid');
+        return;
+    }
+    
     container.innerHTML = '';
     
     // Mostrar todos los emojis para mejor UX
     const visibleEmojis = allEmojis;
+    console.log('Renderizando', visibleEmojis.length, 'emojis');
     
     visibleEmojis.forEach(emoji => {
         const div = document.createElement('div');
@@ -76,6 +89,8 @@ function renderEmojiGrid() {
         
         container.appendChild(div);
     });
+    
+    console.log('Grid renderizado con', container.children.length, 'elementos');
 }
 
 // Seleccionar emoji (permitir tanto ocupados como libres)
@@ -176,15 +191,31 @@ function showStatus(message, type) {
 
 // Inicialización rápida
 document.addEventListener('DOMContentLoaded', () => {
-    initMatrix();
+    console.log('DOM cargado, iniciando...');
+    
+    // Inicializar Matrix después de un pequeño delay
+    setTimeout(() => {
+        initMatrix();
+        console.log('Matrix iniciado');
+    }, 100);
+    
+    // Cargar emojis
     loadEmojis();
     
     // Event listeners
-    document.getElementById('access-form').addEventListener('submit', (e) => {
-        e.preventDefault();
-        attemptLogin();
-    });
-    document.getElementById('close-modal-btn').addEventListener('click', closeModal);
+    const form = document.getElementById('access-form');
+    const closeBtn = document.getElementById('close-modal-btn');
+    
+    if (form) {
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            attemptLogin();
+        });
+    }
+    
+    if (closeBtn) {
+        closeBtn.addEventListener('click', closeModal);
+    }
 });
 
 // CSS adicional para elementos seleccionados

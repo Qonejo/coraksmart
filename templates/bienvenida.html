@@ -26,9 +26,8 @@
         .emoji-option.occupied{opacity:0.7}
     </style>
     
-    <!-- CSS no crítico cargado de forma asíncrona -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='style_bienvenida.css') }}" media="print" onload="this.media='all'"
-    <noscript><link rel="stylesheet" href="{{ url_for('static', filename='style_bienvenida.css') }}"></noscript>
+    <!-- CSS principal -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style_bienvenida.css') }}">
 </head>
 <body>
     <!-- El lienzo para la animación de Matrix -->
@@ -62,7 +61,7 @@
     </div>
     
     <!-- ¡LA LÍNEA MÁS IMPORTANTE! Enlaza el archivo JavaScript -->
-    <!-- Script optimizado cargado de forma asíncrona -->
-    <script src="{{ url_for('static', filename='script_bienvenida_fast.js') }}" async></script>
+    <!-- Script optimizado -->
+    <script src="{{ url_for('static', filename='script_bienvenida_fast.js') }}"></script>
 </body>
 </html>
