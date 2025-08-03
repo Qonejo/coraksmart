@@ -18,12 +18,9 @@ app.jinja_env.add_extension('jinja2.ext.do')
 app.secret_key = os.urandom(24)
 
 # --- CONFIGURACIÓN INTELIGENTE DE WHITENOISE ---
-# Comprueba si la variable de entorno FLASK_DEBUG no está activa
-if not app.debug:
-    app.wsgi_app = WhiteNoise(app.wsgi_app, root="static/")
-    print("WhiteNoise está activado para producción.")
-else:
-    print("WhiteNoise está desactivado para desarrollo (debug=True).")
+# Configuramos WhiteNoise para servir archivos estáticos correctamente
+app.wsgi_app = WhiteNoise(app.wsgi_app, root="static/")
+print("WhiteNoise configurado para servir archivos estáticos.")
 
 UPLOAD_FOLDER = 'static'
 socketio = SocketIO(app)
@@ -491,13 +488,14 @@ def api_limpiar():
 @app.route('/api/carrito')
 def api_carrito():
     carrito = session.get('carrito', {})
+    productos = cargar_productos()
     
     # Este bloque busca información detallada de los productos
     productos_detalle = {}
     total = 0.0
     for prod_id, cantidad in carrito.items():
         base_id = prod_id.split('-')[0]  # En caso de variaciones
-        producto = PRODUCTOS.get(base_id, {})
+        producto = productos.get(base_id, {})
         
         nombre = producto.get('nombre', 'Desconocido')
         precio = 0.0

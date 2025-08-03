@@ -1,5 +1,15 @@
 <!DOCTYPE html>
 <html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CorakSmart</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
 <header>
     <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo de la Tienda" id="logo">
     
@@ -80,12 +90,12 @@
         </div>
     </main>
 
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
-
-    <!-- Estructura del Modal de Imagen (sin cambios) -->
+    <!-- Estructura del Modal de Imagen -->
     <div id="image-modal" class="modal-hidden">
         <span id="close-modal" class="close-button" onclick="closeImageModal()">×</span>
         <img id="modal-image" class="modal-content-image">
     </div>
+    
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
