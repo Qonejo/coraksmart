@@ -20,30 +20,15 @@ app.wsgi_app = WhiteNoise(app.wsgi_app, root="static/", max_age=31536000)
 print("WhiteNoise configurado.")
 
 UPLOAD_FOLDER = 'static'
-# Configuración de SocketIO optimizada para producción
-import os
-if os.environ.get('RENDER'):
-    # Configuración para Render (producción)
-    socketio = SocketIO(
-        app,
-        cors_allowed_origins="*",
-        logger=False,
-        engineio_logger=False,
-        ping_timeout=60,
-        ping_interval=25,
-        transports=['polling']  # Solo polling en producción
-    )
-else:
-    # Configuración para desarrollo local
-    socketio = SocketIO(
-        app, 
-        async_mode='gevent',
-        cors_allowed_origins="*",
-        logger=False,
-        engineio_logger=False,
-        ping_timeout=60,
-        ping_interval=25
-    )
+# Configuración de SocketIO unificada
+socketio = SocketIO(
+    app,
+    cors_allowed_origins="*",
+    logger=False,
+    engineio_logger=False,
+    ping_timeout=60,
+    ping_interval=25
+)
 
 # --- CONFIGURACIÓN DE ARCHIVOS ---
 ADMIN_PASSWORD = "coraker"
@@ -926,11 +911,6 @@ def comprar():
 
 if __name__ == "__main__":
     print("Iniciando servidor...")
-    if os.environ.get('RENDER'):
-        # En producción, Gunicorn maneja el servidor
-        pass
-    else:
-        # Solo en desarrollo local
-        socketio.run(app, host='0.0.0.0', port=5000, debug=True, use_reloader=False)
+    socketio.run(app, host='0.0.0.0', port=5000, debug=True, use_reloader=False)
     
     

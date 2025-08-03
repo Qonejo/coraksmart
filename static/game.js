@@ -39,9 +39,10 @@ const COLORS = {
 
 // Eventos de Socket.IO
 socket.on('connect', () => {
-    console.log('Conectado al servidor');
-    const userEmoji = document.body.dataset.userEmoji || '🎮';
-    socket.emit('join_lobby', { emoji: userEmoji });
+    console.log('Conectado a la arena');
+    // En la arena no necesitamos unirse al lobby
+    messageBox.textContent = 'Conectado. Esperando oponente...';
+    messageBox.style.display = 'block';
 });
 
 socket.on('waiting_for_opponent', () => {
