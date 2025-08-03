@@ -18,12 +18,30 @@ app.jinja_env.add_extension('jinja2.ext.do')
 app.secret_key = os.urandom(24)
 
 # --- CONFIGURACIÓN INTELIGENTE DE WHITENOISE ---
-# Configuramos WhiteNoise para servir archivos estáticos correctamente
-app.wsgi_app = WhiteNoise(app.wsgi_app, root="static/")
-print("WhiteNoise configurado para servir archivos estáticos.")
+# Configuramos WhiteNoise para servir archivos estáticos con compresión
+app.wsgi_app = WhiteNoise(
+    app.wsgi_app, 
+    root="static/",
+    use_finders=True,
+    autorefresh=True,
+    max_age=31536000,  # 1 año de cache
+    mimetypes={
+        '.js': 'application/javascript; charset=utf-8',
+        '.css': 'text/css; charset=utf-8',
+    }
+)
+print("WhiteNoise configurado con compresión y cache optimizado.")
 
 UPLOAD_FOLDER = 'static'
-socketio = SocketIO(app, async_mode='gevent', cors_allowed_origins="*")
+socketio = SocketIO(
+    app, 
+    async_mode='gevent',
+    cors_allowed_origins="*",
+    logger=False,
+    engineio_logger=False,
+    ping_timeout=60,
+    ping_interval=25
+)
 
 # --- CONFIGURACIÓN DE ARCHIVOS ---
 ADMIN_PASSWORD = "coraker"
@@ -520,7 +538,9 @@ EMOJI_LIST = ["😀", "🚀", "🌟", "🍕", "🤖", "👻", "👽", "👾", "�
 @app.route("/api/get-emojis")
 def get_emojis():
     usuarios = cargar_usuarios()
-    return jsonify({ "all_emojis": EMOJI_LIST, "occupied_emojis": list(usuarios.keys()) })
+    response = jsonify({ "all_emojis": EMOJI_LIST, "occupied_emojis": list(usuarios.keys()) })
+    response.headers['Cache-Control'] = 'max-age=60'  # Cache por 1 minuto
+    return response
 @app.route("/api/emoji-access", methods=["POST"])
 def emoji_access():
     data = request.get_json()

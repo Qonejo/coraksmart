@@ -4,10 +4,27 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CorakSmart</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    
+    <!-- Precargar recursos críticos -->
+    <link rel="preload" href="{{ url_for('static', filename='style.css') }}" as="style">
+    <link rel="preload" href="{{ url_for('static', filename='script_fast.js') }}" as="script">
+    
+    <!-- CSS inline crítico para carga inmediata -->
+    <style>
+        body{background:#222;color:#fff;font-family:monospace,sans-serif;margin:0;padding:0}
+        header{display:flex;justify-content:space-between;align-items:center;padding:10px 20px;border-bottom:2px solid #fff}
+        #logo{max-width:200px;height:auto}
+        .rpg-container{display:flex;max-width:1200px;margin:0 auto;padding:20px;gap:20px}
+        #productos-panel{flex:2;background:rgba(40,40,40,0.9);border:2px solid #fff;padding:20px}
+        #carrito-panel{flex:1;background:rgba(40,40,40,0.9);border:2px solid #fff;padding:20px;position:sticky;top:20px;height:fit-content}
+        .productos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:15px}
+        .producto-card{background:rgba(60,60,60,0.9);border:1px solid #888;padding:15px;text-align:center}
+        .loading{text-align:center;padding:50px;font-size:1.2rem}
+    </style>
+    
+    <!-- CSS no crítico cargado de forma asíncrona -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"></noscript>
 </head>
 <body>
 <header>
@@ -96,6 +113,7 @@
         <img id="modal-image" class="modal-content-image">
     </div>
     
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <!-- Script optimizado cargado de forma asíncrona -->
+    <script src="{{ url_for('static', filename='script_fast.js') }}" async></script>
 </body>
 </html>

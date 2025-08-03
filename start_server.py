@@ -16,13 +16,20 @@ def start_server():
     try:
         from app import app, socketio
         print("[OK] Aplicacion cargada correctamente")
-        print("[CONFIG] Configuracion del servidor:")
+        print("[CONFIG] Configuracion optimizada del servidor:")
         print("   - Motor: Gevent (async)")
         print("   - Puerto: 5000")
         print("   - Host: 0.0.0.0")
         print("   - Debug: True")
-        print("   - SocketIO: Habilitado")
-        print("\n[START] Iniciando servidor...")
+        print("   - SocketIO: Habilitado con timeouts optimizados")
+        print("   - WhiteNoise: Compresion y cache habilitados")
+        print("   - Archivos estaticos: Cache de 1 año")
+        print("\n[PERFORMANCE] Optimizaciones activas:")
+        print("   - CSS critico inline")
+        print("   - Scripts asincronos")
+        print("   - Lazy loading de imagenes")
+        print("   - Cache de APIs")
+        print("\n[START] Iniciando servidor optimizado...")
         
         # Iniciar servidor con Gevent
         socketio.run(
