@@ -9,9 +9,7 @@ import string
 import random
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
-from whitenoise import WhiteNoise 
-
-from whitenoise import WhiteNoise 
+ 
 
 app = Flask(__name__)
 app.jinja_env.add_extension('jinja2.ext.do')
@@ -398,8 +396,12 @@ def broadcast_lobby_state():
         "in_combat": list(lobby_state["in_combat"].values())
     }
     
-    emit('update_lobby_state', frontend_state, broadcast=True, namespace='/')
-    print(f"[LOBBY] Estado enviado: {len(frontend_state['spectators'])} espectadores, "
+    # Solo broadcast a usuarios en el lobby (no en juego)
+    lobby_sids = list(lobby_state["spectators"].keys()) + list(lobby_state["searching"].keys())
+    for sid in lobby_sids:
+        emit('update_lobby_state', frontend_state, room=sid)
+    
+    print(f"[LOBBY] Estado enviado a {len(lobby_sids)} usuarios: {len(frontend_state['spectators'])} espectadores, "
           f"{len(frontend_state['searching'])} buscando, {len(frontend_state['in_combat'])} en combate")
 
 def try_match_players():
@@ -634,9 +636,9 @@ def game_loop():
         if active_games:  # Solo procesar si hay juegos activos
             for room_name in list(active_games.keys()):
                 update_game(room_name)
-            gevent.sleep(0.08)  # ~12.5 FPS más responsivo
+            gevent.sleep(0.12)  # ~8 FPS más estable
         else:
-            gevent.sleep(0.5)   # Esperar más tiempo si no hay juegos
+            gevent.sleep(1.0)   # Esperar más tiempo si no hay juegos
 
 # Iniciar el game loop con gevent
 gevent.spawn(game_loop)

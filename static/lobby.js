@@ -283,4 +283,4 @@ setInterval(() => {
     if (clientState.connected) {
         socket.emit('ping');
     }
-}, 30000); // Cada 30 segundos
+}, 45000); // Cada 45 segundos
