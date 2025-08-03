@@ -479,6 +479,41 @@ def api_limpiar():
     session.pop('carrito', None)
     return jsonify(_get_cart_data())
 
+@app.route('/api/carrito')
+def api_carrito():
+    carrito = session.get('carrito', {})
+    
+    # Este bloque busca información detallada de los productos
+    productos_detalle = {}
+    total = 0.0
+    for prod_id, cantidad in carrito.items():
+        base_id = prod_id.split('-')[0]  # En caso de variaciones
+        producto = PRODUCTOS.get(base_id, {})
+        
+        nombre = producto.get('nombre', 'Desconocido')
+        precio = 0.0
+        
+        if producto.get('variaciones') and '-' in prod_id:
+            var_id = prod_id.split('-', 1)[1]
+            precio = producto['variaciones'].get(var_id, {}).get('precio', 0.0)
+        elif producto.get('bundle_precio'):
+            precio = producto.get('bundle_precio', 0.0)
+        else:
+            precio = producto.get('precio', 0.0)
+
+        productos_detalle[prod_id] = {
+            'nombre': nombre,
+            'precio': precio,
+        }
+        total += precio * cantidad
+
+    return jsonify({
+        'carrito': carrito,
+        'productos_detalle': productos_detalle,
+        'total': total
+    })
+
+
 # --- ACCIÓN DE COMPRA ---
 @app.route("/comprar")
 def comprar():
@@ -563,3 +598,5 @@ def comprar():
 
 if __name__ == "__main__":
     socketio.run(app, host='0.0.0.0', port=5000, debug=True)
+    
+    
