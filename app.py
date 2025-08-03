@@ -23,7 +23,7 @@ app.wsgi_app = WhiteNoise(app.wsgi_app, root="static/")
 print("WhiteNoise configurado para servir archivos estáticos.")
 
 UPLOAD_FOLDER = 'static'
-socketio = SocketIO(app)
+socketio = SocketIO(app, async_mode='gevent', cors_allowed_origins="*")
 
 # --- CONFIGURACIÓN DE ARCHIVOS ---
 ADMIN_PASSWORD = "coraker"
@@ -486,16 +486,15 @@ def update_game(room_name):
             "food": game["food"]
         }, room=room_name)
 
-import threading
+import gevent
 def game_loop():
     while True:
         for room_name in list(active_games.keys()):
             update_game(room_name)
-        time.sleep(0.1)
+        gevent.sleep(0.1)
 
-import time
-game_thread = threading.Thread(target=game_loop, daemon=True)
-game_thread.start()
+# Iniciar el game loop con gevent
+gevent.spawn(game_loop)
 
 @socketio.on('disconnect')
 def handle_disconnect():
@@ -737,6 +736,7 @@ def comprar():
     return redirect(whatsapp_url)
 
 if __name__ == "__main__":
-    socketio.run(app, host='0.0.0.0', port=5000, debug=True)
+    print("Iniciando servidor con Gevent...")
+    socketio.run(app, host='0.0.0.0', port=5000, debug=True, use_reloader=False)
     
     
