@@ -11,12 +11,21 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from whitenoise import WhiteNoise 
 
+from whitenoise import WhiteNoise 
+
 app = Flask(__name__)
 app.jinja_env.add_extension('jinja2.ext.do')
 app.secret_key = os.urandom(24)
-app.wsgi_app = WhiteNoise(app.wsgi_app, root="static/")
+
+# --- CONFIGURACIÓN INTELIGENTE DE WHITENOISE ---
+# Comprueba si la variable de entorno FLASK_DEBUG no está activa
+if not app.debug:
+    app.wsgi_app = WhiteNoise(app.wsgi_app, root="static/")
+    print("WhiteNoise está activado para producción.")
+else:
+    print("WhiteNoise está desactivado para desarrollo (debug=True).")
+
 UPLOAD_FOLDER = 'static'
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 socketio = SocketIO(app)
 
 # --- CONFIGURACIÓN DE ARCHIVOS ---
