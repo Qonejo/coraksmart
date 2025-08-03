@@ -343,42 +343,175 @@ def admin_crear_paquete():
 def lobby():
     if not session.get("logged_in_user_emoji"): return redirect(url_for("entrar"))
     return render_template("lobby.html")
+
+@app.route("/arena")
+def arena():
+    if not session.get("logged_in_user_emoji"): return redirect(url_for("entrar"))
+    return render_template("arena.html")
+
 active_games = {}
 waiting_player = None
+
+def generate_food(width=800, height=600, cell_size=20):
+    return {
+        "x": random.randint(0, (width - cell_size) // cell_size) * cell_size,
+        "y": random.randint(0, (height - cell_size) // cell_size) * cell_size
+    }
+
 @socketio.on('connect')
 def handle_connect():
     print(f"Cliente conectado: {request.sid}")
+
 @socketio.on('join_lobby')
 def handle_join_lobby(data):
     global waiting_player
     player_sid = request.sid
     player_emoji = data.get('emoji')
+    
     if waiting_player:
         player2_sid = waiting_player['sid']
         player2_emoji = waiting_player['emoji']
         room_name = f"game-{player2_sid}-{player_sid}"
+        
         join_room(room_name, sid=player_sid)
         join_room(room_name, sid=player2_sid)
+        
         active_games[room_name] = {
             "players": {
-                player_sid: {"emoji": player_emoji, "snake": [{"x": 50, "y": 100}], "direction": "right"},
-                player2_sid: {"emoji": player2_emoji, "snake": [{"x": 750, "y": 100}], "direction": "left"}
-            }
+                player_sid: {
+                    "emoji": player_emoji, 
+                    "snake": [{"x": 100, "y": 100}], 
+                    "direction": {"x": 20, "y": 0},
+                    "score": 0,
+                    "alive": True
+                },
+                player2_sid: {
+                    "emoji": player2_emoji, 
+                    "snake": [{"x": 600, "y": 100}], 
+                    "direction": {"x": -20, "y": 0},
+                    "score": 0,
+                    "alive": True
+                }
+            },
+            "food": generate_food(),
+            "game_over": False,
+            "winner": None
         }
-        emit('game_started', {"room": room_name, "players": active_games[room_name]["players"]}, room=room_name)
+        
+        emit('game_started', {
+            "room": room_name, 
+            "players": active_games[room_name]["players"],
+            "food": active_games[room_name]["food"]
+        }, room=room_name)
+        
         waiting_player = None
     else:
         waiting_player = {"sid": player_sid, "emoji": player_emoji}
         emit('waiting_for_opponent')
+
 @socketio.on('player_input')
 def handle_player_input(data):
-    pass
+    player_sid = request.sid
+    direction = data.get('direction')
+    
+    current_room = None
+    for room, game_data in active_games.items():
+        if player_sid in game_data["players"]:
+            current_room = room
+            break
+    
+    if not current_room or active_games[current_room]["game_over"]:
+        return
+    
+    player = active_games[current_room]["players"][player_sid]
+    current_dir = player["direction"]
+    
+    if direction == "up" and current_dir["y"] == 0:
+        player["direction"] = {"x": 0, "y": -20}
+    elif direction == "down" and current_dir["y"] == 0:
+        player["direction"] = {"x": 0, "y": 20}
+    elif direction == "left" and current_dir["x"] == 0:
+        player["direction"] = {"x": -20, "y": 0}
+    elif direction == "right" and current_dir["x"] == 0:
+        player["direction"] = {"x": 20, "y": 0}
+
+def update_game(room_name):
+    if room_name not in active_games:
+        return
+    
+    game = active_games[room_name]
+    if game["game_over"]:
+        return
+    
+    for player_id, player in game["players"].items():
+        if not player["alive"]:
+            continue
+        
+        head = player["snake"][0]
+        new_head = {
+            "x": head["x"] + player["direction"]["x"],
+            "y": head["y"] + player["direction"]["y"]
+        }
+        player["snake"].insert(0, new_head)
+        
+        if new_head["x"] == game["food"]["x"] and new_head["y"] == game["food"]["y"]:
+            player["score"] += 1
+            game["food"] = generate_food()
+        else:
+            player["snake"].pop()
+        
+        if (new_head["x"] < 0 or new_head["x"] >= 800 or 
+            new_head["y"] < 0 or new_head["y"] >= 600):
+            player["alive"] = False
+        
+        if new_head in player["snake"][1:]:
+            player["alive"] = False
+        
+        for other_id, other_player in game["players"].items():
+            if other_id != player_id and new_head in other_player["snake"]:
+                player["alive"] = False
+    
+    alive_players = [pid for pid, p in game["players"].items() if p["alive"]]
+    if len(alive_players) <= 1:
+        game["game_over"] = True
+        if len(alive_players) == 1:
+            game["winner"] = alive_players[0]
+        emit('game_over', {
+            "winner": game["winner"],
+            "players": game["players"]
+        }, room=room_name)
+    else:
+        emit('game_update', {
+            "players": game["players"],
+            "food": game["food"]
+        }, room=room_name)
+
+import threading
+def game_loop():
+    while True:
+        for room_name in list(active_games.keys()):
+            update_game(room_name)
+        time.sleep(0.1)
+
+import time
+game_thread = threading.Thread(target=game_loop, daemon=True)
+game_thread.start()
+
 @socketio.on('disconnect')
 def handle_disconnect():
     global waiting_player
-    if waiting_player and waiting_player['sid'] == request.sid:
+    player_sid = request.sid
+    
+    if waiting_player and waiting_player['sid'] == player_sid:
         waiting_player = None
-    print(f"Cliente desconectado: {request.sid}")
+    
+    for room_name, game in list(active_games.items()):
+        if player_sid in game["players"]:
+            emit('player_disconnected', room=room_name)
+            del active_games[room_name]
+            break
+    
+    print(f"Cliente desconectado: {player_sid}")
 
 # --- API PARA EMOJIS ---
 EMOJI_LIST = ["😀", "🚀", "🌟", "🍕", "🤖", "👻", "👽", "👾", "🦊", "🧙", "🌮", "💎", "🌙", "🔮", "🧬", "🌵", "🎉", "🔥", "💯", "👑", "💡", "🎮", "🛰️", "🛸", "🗿", "🌴", "🧪", "✨", "🔑", "🗺️", "🐙", "🦋", "🐲", "🍩", "⚡", "🎯", "⚓", "🌈", "🌌", "🌠", "🎱", "🎰", "🕹️", "🏆", "💊", "🎁", "💌", "📈", "🗿"]

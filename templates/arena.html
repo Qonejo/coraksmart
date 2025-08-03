@@ -9,9 +9,13 @@
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='arena.css') }}">
 </head>
-<body>
+<body data-user-emoji="{{ session.get('logged_in_user_emoji', '🎮') }}">
     <div id="message-box">Buscando oponente...</div>
     <canvas id="game-canvas"></canvas>
+    
+    <div id="controls-info">
+        <p>Controles: ↑↓←→ o WASD</p>
+    </div>
 
     <!-- Librería de Socket.IO para el cliente -->
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
