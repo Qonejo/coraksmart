@@ -1,30 +1,40 @@
-// Game.js - Snake PvP Arena
+// Game.js - Snake PvP Arena - Optimizado para carga rápida
 const socket = io();
 const canvas = document.getElementById('game-canvas');
 const ctx = canvas.getContext('2d');
 const messageBox = document.getElementById('message-box');
 
-// Configuración del juego
-const CANVAS_WIDTH = 800;
-const CANVAS_HEIGHT = 600;
-const CELL_SIZE = 20;
+// Configuración optimizada del juego
+const CANVAS_WIDTH = 600;  // Reducido para mejor rendimiento
+const CANVAS_HEIGHT = 400; // Reducido para mejor rendimiento
+const CELL_SIZE = 15;      // Reducido para menos cálculos
 
 canvas.width = CANVAS_WIDTH;
 canvas.height = CANVAS_HEIGHT;
 
-// Estado del juego
+// Optimizar contexto para mejor rendimiento
+ctx.imageSmoothingEnabled = false;
+ctx.textBaseline = 'middle';
+ctx.textAlign = 'center';
+
+// Estado del juego simplificado
 let gameState = {
     players: {},
     food: null,
     myPlayerId: null,
     gameStarted: false,
-    gameOver: false
+    gameOver: false,
+    lastUpdate: 0
 };
 
-// Colores para jugadores
-const playerColors = {
-    0: '#00ff00', // Verde
-    1: '#ff0000'  // Rojo
+// Colores optimizados (sin transparencias)
+const COLORS = {
+    BACKGROUND: '#000',
+    GRID: '#111',
+    PLAYER1: '#0f0',
+    PLAYER2: '#f00',
+    FOOD: '#ff0',
+    TEXT: '#fff'
 };
 
 // Eventos de Socket.IO
@@ -51,8 +61,9 @@ socket.on('game_started', (data) => {
 });
 
 socket.on('game_update', (data) => {
-    gameState.players = data.players;
-    gameState.food = data.food;
+    // Actualizar solo lo que cambió para mejor rendimiento
+    if (data.players) gameState.players = data.players;
+    if (data.food) gameState.food = data.food;
 });
 
 socket.on('game_over', (data) => {
@@ -87,145 +98,150 @@ socket.on('player_disconnected', () => {
     }, 2000);
 });
 
-// Control del juego
+// Control optimizado del juego con limitación de input
+let lastInputTime = 0;
+const INPUT_DELAY = 100; // 100ms entre inputs para evitar spam
+
 document.addEventListener('keydown', (event) => {
     if (!gameState.gameStarted || gameState.gameOver) return;
     
-    let direction = null;
+    const now = performance.now();
+    if (now - lastInputTime < INPUT_DELAY) return; // Limitar frecuencia de input
     
-    switch(event.key) {
-        case 'ArrowUp':
-        case 'w':
-        case 'W':
-            direction = 'up';
-            break;
-        case 'ArrowDown':
-        case 's':
-        case 'S':
-            direction = 'down';
-            break;
-        case 'ArrowLeft':
-        case 'a':
-        case 'A':
-            direction = 'left';
-            break;
-        case 'ArrowRight':
-        case 'd':
-        case 'D':
-            direction = 'right';
-            break;
-    }
+    let direction = null;
+    const key = event.key.toLowerCase();
+    
+    // Optimizar detección de teclas
+    if (key === 'arrowup' || key === 'w') direction = 'up';
+    else if (key === 'arrowdown' || key === 's') direction = 'down';
+    else if (key === 'arrowleft' || key === 'a') direction = 'left';
+    else if (key === 'arrowright' || key === 'd') direction = 'right';
     
     if (direction) {
         event.preventDefault();
         socket.emit('player_input', { direction: direction });
+        lastInputTime = now;
     }
 });
 
-// Renderizado
+// Renderizado optimizado
 function drawSnake(snake, color, emoji) {
-    // Dibujar cuerpo de la serpiente
     ctx.fillStyle = color;
+    // Dibujar todo el cuerpo de una vez
     snake.forEach((segment, index) => {
         if (index === 0) {
-            // Cabeza con emoji
+            // Cabeza más grande
             ctx.fillRect(segment.x, segment.y, CELL_SIZE, CELL_SIZE);
-            ctx.fillStyle = 'white';
-            ctx.font = `${CELL_SIZE - 4}px Arial`;
-            ctx.textAlign = 'center';
-            ctx.fillText(emoji, segment.x + CELL_SIZE/2, segment.y + CELL_SIZE - 4);
+            // Emoji simplificado en la cabeza
+            ctx.fillStyle = COLORS.TEXT;
+            ctx.fillText(emoji, segment.x + CELL_SIZE/2, segment.y + CELL_SIZE/2);
             ctx.fillStyle = color;
         } else {
-            // Cuerpo
-            ctx.fillRect(segment.x + 2, segment.y + 2, CELL_SIZE - 4, CELL_SIZE - 4);
+            // Cuerpo más pequeño para diferencia visual
+            ctx.fillRect(segment.x + 1, segment.y + 1, CELL_SIZE - 2, CELL_SIZE - 2);
         }
     });
 }
 
 function drawFood(food) {
-    ctx.fillStyle = '#ffff00';
+    ctx.fillStyle = COLORS.FOOD;
     ctx.fillRect(food.x, food.y, CELL_SIZE, CELL_SIZE);
-    
-    // Dibujar símbolo de comida
-    ctx.fillStyle = 'red';
-    ctx.font = `${CELL_SIZE - 4}px Arial`;
-    ctx.textAlign = 'center';
-    ctx.fillText('🍎', food.x + CELL_SIZE/2, food.y + CELL_SIZE - 4);
+    // Punto en el centro para indicar comida
+    ctx.fillStyle = COLORS.BACKGROUND;
+    const center = CELL_SIZE / 3;
+    ctx.fillRect(food.x + center, food.y + center, center, center);
 }
 
-function drawScore() {
-    ctx.fillStyle = 'white';
-    ctx.font = '16px "Press Start 2P"';
-    ctx.textAlign = 'left';
+// Contador de FPS para optimización
+let frameCount = 0;
+let lastFpsUpdate = 0;
+let currentFPS = 0;
+
+function drawUI() {
+    ctx.fillStyle = COLORS.TEXT;
+    ctx.font = '12px monospace'; // Font más rápido que Press Start 2P
     
-    let y = 30;
+    let y = 20;
     Object.entries(gameState.players).forEach(([playerId, player], index) => {
         const isMe = playerId === socket.id;
-        const prefix = isMe ? 'TÚ' : 'RIVAL';
-        const status = player.alive ? '' : ' (MUERTO)';
+        const prefix = isMe ? 'TU' : 'VS';
+        const status = player.alive ? '' : ' X';
         
         ctx.fillText(`${prefix} ${player.emoji}: ${player.score}${status}`, 10, y);
-        y += 25;
+        y += 20;
     });
+    
+    // Mostrar FPS en desarrollo
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        ctx.font = '10px monospace';
+        ctx.fillText(`FPS: ${currentFPS}`, CANVAS_WIDTH - 60, 15);
+    }
 }
 
-function drawGrid() {
-    ctx.strokeStyle = '#333';
-    ctx.lineWidth = 1;
-    
-    // Líneas verticales
-    for (let x = 0; x <= CANVAS_WIDTH; x += CELL_SIZE) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, CANVAS_HEIGHT);
-        ctx.stroke();
-    }
-    
-    // Líneas horizontales
-    for (let y = 0; y <= CANVAS_HEIGHT; y += CELL_SIZE) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(CANVAS_WIDTH, y);
-        ctx.stroke();
-    }
+// Grid simplificado - solo bordes
+function drawBorders() {
+    ctx.strokeStyle = COLORS.GRID;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 }
 
 function render() {
-    // Limpiar canvas
-    ctx.fillStyle = '#000';
+    // Calcular FPS
+    frameCount++;
+    const now = performance.now();
+    if (now - lastFpsUpdate > 1000) {
+        currentFPS = Math.round(frameCount * 1000 / (now - lastFpsUpdate));
+        frameCount = 0;
+        lastFpsUpdate = now;
+    }
+    
+    // Solo renderizar si hay cambios
+    if (now - gameState.lastUpdate < 16) return; // ~60 FPS máximo
+    gameState.lastUpdate = now;
+    
+    // Limpiar canvas de manera eficiente
+    ctx.fillStyle = COLORS.BACKGROUND;
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
     
     if (!gameState.gameStarted) return;
     
-    // Dibujar grid
-    drawGrid();
+    // Dibujar bordes
+    drawBorders();
     
     // Dibujar comida
     if (gameState.food) {
         drawFood(gameState.food);
     }
     
-    // Dibujar serpientes
+    // Dibujar serpientes con colores alternos
+    const colors = [COLORS.PLAYER1, COLORS.PLAYER2];
     Object.entries(gameState.players).forEach(([playerId, player], index) => {
-        const color = playerColors[index] || '#ffffff';
+        const color = colors[index] || COLORS.TEXT;
         if (player.snake && player.snake.length > 0) {
             drawSnake(player.snake, color, player.emoji);
         }
     });
     
-    // Dibujar puntuación
-    drawScore();
+    // Dibujar UI
+    drawUI();
 }
 
-// Loop del juego
+// Loop optimizado del juego
 function startGameLoop() {
+    let animationId;
+    
     function gameLoop() {
         render();
         if (!gameState.gameOver) {
-            requestAnimationFrame(gameLoop);
+            animationId = requestAnimationFrame(gameLoop);
         }
     }
+    
+    // Iniciar loop
     gameLoop();
+    
+    // Función para detener el loop si es necesario
+    return () => cancelAnimationFrame(animationId);
 }
 
 // Obtener emoji del usuario del DOM

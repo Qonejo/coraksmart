@@ -352,7 +352,7 @@ def arena():
 active_games = {}
 waiting_player = None
 
-def generate_food(width=800, height=600, cell_size=20):
+def generate_food(width=600, height=400, cell_size=15):
     return {
         "x": random.randint(0, (width - cell_size) // cell_size) * cell_size,
         "y": random.randint(0, (height - cell_size) // cell_size) * cell_size
@@ -380,15 +380,15 @@ def handle_join_lobby(data):
             "players": {
                 player_sid: {
                     "emoji": player_emoji, 
-                    "snake": [{"x": 100, "y": 100}], 
-                    "direction": {"x": 20, "y": 0},
+                    "snake": [{"x": 75, "y": 75}], 
+                    "direction": {"x": 15, "y": 0},
                     "score": 0,
                     "alive": True
                 },
                 player2_sid: {
                     "emoji": player2_emoji, 
-                    "snake": [{"x": 600, "y": 100}], 
-                    "direction": {"x": -20, "y": 0},
+                    "snake": [{"x": 450, "y": 75}], 
+                    "direction": {"x": -15, "y": 0},
                     "score": 0,
                     "alive": True
                 }
@@ -427,13 +427,13 @@ def handle_player_input(data):
     current_dir = player["direction"]
     
     if direction == "up" and current_dir["y"] == 0:
-        player["direction"] = {"x": 0, "y": -20}
+        player["direction"] = {"x": 0, "y": -15}
     elif direction == "down" and current_dir["y"] == 0:
-        player["direction"] = {"x": 0, "y": 20}
+        player["direction"] = {"x": 0, "y": 15}
     elif direction == "left" and current_dir["x"] == 0:
-        player["direction"] = {"x": -20, "y": 0}
+        player["direction"] = {"x": -15, "y": 0}
     elif direction == "right" and current_dir["x"] == 0:
-        player["direction"] = {"x": 20, "y": 0}
+        player["direction"] = {"x": 15, "y": 0}
 
 def update_game(room_name):
     if room_name not in active_games:
@@ -460,8 +460,8 @@ def update_game(room_name):
         else:
             player["snake"].pop()
         
-        if (new_head["x"] < 0 or new_head["x"] >= 800 or 
-            new_head["y"] < 0 or new_head["y"] >= 600):
+        if (new_head["x"] < 0 or new_head["x"] >= 600 or 
+            new_head["y"] < 0 or new_head["y"] >= 400):
             player["alive"] = False
         
         if new_head in player["snake"][1:]:
@@ -489,9 +489,12 @@ def update_game(room_name):
 import gevent
 def game_loop():
     while True:
-        for room_name in list(active_games.keys()):
-            update_game(room_name)
-        gevent.sleep(0.1)
+        if active_games:  # Solo procesar si hay juegos activos
+            for room_name in list(active_games.keys()):
+                update_game(room_name)
+            gevent.sleep(0.08)  # ~12.5 FPS más responsivo
+        else:
+            gevent.sleep(0.5)   # Esperar más tiempo si no hay juegos
 
 # Iniciar el game loop con gevent
 gevent.spawn(game_loop)

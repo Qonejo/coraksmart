@@ -1,14 +1,14 @@
 body {
     margin: 0;
     padding: 0;
-    background: linear-gradient(45deg, #2c1810, #1a0f08);
+    background: #111; /* Color sólido más rápido que gradient */
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     min-height: 100vh;
     color: white;
-    font-family: 'Press Start 2P', cursive;
+    font-family: monospace; /* Font más rápida que Press Start 2P */
 }
 
 #game-canvas {
