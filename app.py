@@ -356,7 +356,7 @@ def admin_crear_paquete():
     productos_simples = {pid: pdata for pid, pdata in productos.items() if "precio" in pdata}
     return render_template("add_bundle.html", productos_simples=productos_simples)
 
-# --- LÓGICA DE LA ARENA Y SOCKETIO ---
+# --- LÓGICA DE LA ARENA Y SOCKETIO MEJORADA ---
 @app.route("/lobby")
 def lobby():
     if not session.get("logged_in_user_emoji"): return redirect(url_for("entrar"))
@@ -367,8 +367,14 @@ def arena():
     if not session.get("logged_in_user_emoji"): return redirect(url_for("entrar"))
     return render_template("arena.html")
 
+# Estado global del lobby
+lobby_state = {
+    "spectators": {},      # {session_id: {"emoji": "😀", "aura_points": 1500}}
+    "searching": {},       # {session_id: {"emoji": "🚀", "aura_points": 2500}}
+    "in_combat": {}        # {room_id: {"player1": {...}, "player2": {...}}}
+}
+
 active_games = {}
-waiting_player = None
 
 def generate_food(width=600, height=400, cell_size=15):
     return {
@@ -376,35 +382,63 @@ def generate_food(width=600, height=400, cell_size=15):
         "y": random.randint(0, (height - cell_size) // cell_size) * cell_size
     }
 
-@socketio.on('connect')
-def handle_connect():
-    print(f"Cliente conectado: {request.sid}")
+def get_user_data(user_emoji):
+    """Obtiene los datos del usuario incluyendo puntos de aura"""
+    usuarios = cargar_usuarios()
+    user_data = usuarios.get(user_emoji, {})
+    aura_points = user_data.get("aura_points", 0)
+    return {"emoji": user_emoji, "aura_points": aura_points}
 
-@socketio.on('join_lobby')
-def handle_join_lobby(data):
-    global waiting_player
-    player_sid = request.sid
-    player_emoji = data.get('emoji')
+def broadcast_lobby_state():
+    """Envía el estado actualizado del lobby a todos los clientes conectados"""
+    # Convertir el estado interno a formato para el frontend
+    frontend_state = {
+        "spectators": list(lobby_state["spectators"].values()),
+        "searching": list(lobby_state["searching"].values()),
+        "in_combat": list(lobby_state["in_combat"].values())
+    }
     
-    if waiting_player:
-        player2_sid = waiting_player['sid']
-        player2_emoji = waiting_player['emoji']
-        room_name = f"game-{player2_sid}-{player_sid}"
+    emit('update_lobby_state', frontend_state, broadcast=True, namespace='/')
+    print(f"[LOBBY] Estado enviado: {len(frontend_state['spectators'])} espectadores, "
+          f"{len(frontend_state['searching'])} buscando, {len(frontend_state['in_combat'])} en combate")
+
+def try_match_players():
+    """Intenta emparejar jugadores que están buscando duelo"""
+    if len(lobby_state["searching"]) >= 2:
+        # Tomar los dos primeros jugadores
+        players_list = list(lobby_state["searching"].items())
+        player1_sid, player1_data = players_list[0]
+        player2_sid, player2_data = players_list[1]
         
-        join_room(room_name, sid=player_sid)
+        # Crear sala de juego
+        room_name = f"game-{player1_sid[:8]}-{player2_sid[:8]}"
+        
+        # Remover de búsqueda y agregar a combate
+        del lobby_state["searching"][player1_sid]
+        del lobby_state["searching"][player2_sid]
+        
+        lobby_state["in_combat"][room_name] = {
+            "player1": player1_data,
+            "player2": player2_data,
+            "room_id": room_name
+        }
+        
+        # Unir a la sala de Socket.IO
+        join_room(room_name, sid=player1_sid)
         join_room(room_name, sid=player2_sid)
         
+        # Crear juego activo
         active_games[room_name] = {
             "players": {
-                player_sid: {
-                    "emoji": player_emoji, 
+                player1_sid: {
+                    "emoji": player1_data["emoji"], 
                     "snake": [{"x": 75, "y": 75}], 
                     "direction": {"x": 15, "y": 0},
                     "score": 0,
                     "alive": True
                 },
                 player2_sid: {
-                    "emoji": player2_emoji, 
+                    "emoji": player2_data["emoji"], 
                     "snake": [{"x": 450, "y": 75}], 
                     "direction": {"x": -15, "y": 0},
                     "score": 0,
@@ -416,16 +450,97 @@ def handle_join_lobby(data):
             "winner": None
         }
         
+        # Notificar inicio del juego a los jugadores
         emit('game_started', {
             "room": room_name, 
             "players": active_games[room_name]["players"],
             "food": active_games[room_name]["food"]
         }, room=room_name)
         
-        waiting_player = None
-    else:
-        waiting_player = {"sid": player_sid, "emoji": player_emoji}
-        emit('waiting_for_opponent')
+        # Actualizar lobby para todos
+        broadcast_lobby_state()
+        
+        print(f"[MATCH] Emparejados: {player1_data['emoji']} vs {player2_data['emoji']}")
+        return True
+    return False
+
+@socketio.on('connect')
+def handle_connect():
+    print(f"[CONNECT] Cliente conectado: {request.sid}")
+
+@socketio.on('join_lobby')
+def handle_join_lobby(data):
+    """Usuario se une al lobby como espectador"""
+    user_emoji = data.get('emoji')
+    if not user_emoji:
+        emit('error', {'message': 'Emoji requerido'})
+        return
+    
+    # Obtener datos del usuario
+    user_data = get_user_data(user_emoji)
+    
+    # Agregar como espectador
+    lobby_state["spectators"][request.sid] = user_data
+    
+    # Enviar estado actual del lobby al nuevo usuario
+    frontend_state = {
+        "spectators": list(lobby_state["spectators"].values()),
+        "searching": list(lobby_state["searching"].values()),
+        "in_combat": list(lobby_state["in_combat"].values())
+    }
+    emit('update_lobby_state', frontend_state)
+    
+    # Notificar a todos sobre el cambio
+    broadcast_lobby_state()
+    
+    print(f"[JOIN] {user_emoji} se unió al lobby como espectador")
+
+@socketio.on('search_for_game')
+def handle_search_for_game():
+    """Usuario busca un duelo"""
+    sid = request.sid
+    
+    # Verificar que el usuario esté en espectadores
+    if sid not in lobby_state["spectators"]:
+        emit('error', {'message': 'Debes estar en el lobby para buscar duelo'})
+        return
+    
+    # Mover de espectadores a buscando
+    user_data = lobby_state["spectators"].pop(sid)
+    lobby_state["searching"][sid] = user_data
+    
+    print(f"[SEARCH] {user_data['emoji']} está buscando duelo")
+    
+    # Intentar emparejar
+    if not try_match_players():
+        # No hay emparejamiento, actualizar lobby
+        broadcast_lobby_state()
+        emit('searching_started')
+
+@socketio.on('cancel_search')
+def handle_cancel_search():
+    """Usuario cancela la búsqueda de duelo"""
+    sid = request.sid
+    
+    # Verificar que el usuario esté buscando
+    if sid not in lobby_state["searching"]:
+        emit('error', {'message': 'No estás buscando duelo'})
+        return
+    
+    # Mover de buscando a espectadores
+    user_data = lobby_state["searching"].pop(sid)
+    lobby_state["spectators"][sid] = user_data
+    
+    print(f"[CANCEL] {user_data['emoji']} canceló la búsqueda")
+    
+    # Actualizar lobby
+    broadcast_lobby_state()
+    emit('search_cancelled')
+
+@socketio.on('ping')
+def handle_ping():
+    """Heartbeat para mantener conexión activa"""
+    emit('pong')
 
 @socketio.on('player_input')
 def handle_player_input(data):
@@ -494,10 +609,19 @@ def update_game(room_name):
         game["game_over"] = True
         if len(alive_players) == 1:
             game["winner"] = alive_players[0]
+        
+        # Emitir fin de juego
         emit('game_over', {
             "winner": game["winner"],
             "players": game["players"]
         }, room=room_name)
+        
+        # Manejar el fin del juego y devolver jugadores al lobby
+        handle_game_over(room_name, game.get("winner"))
+        
+        # Limpiar el juego activo
+        if room_name in active_games:
+            del active_games[room_name]
     else:
         emit('game_update', {
             "players": game["players"],
@@ -519,19 +643,55 @@ gevent.spawn(game_loop)
 
 @socketio.on('disconnect')
 def handle_disconnect():
-    global waiting_player
+    """Usuario se desconecta del lobby"""
     player_sid = request.sid
+    user_data = None
     
-    if waiting_player and waiting_player['sid'] == player_sid:
-        waiting_player = None
+    # Remover de cualquier estado del lobby
+    if player_sid in lobby_state["spectators"]:
+        user_data = lobby_state["spectators"].pop(player_sid)
+    elif player_sid in lobby_state["searching"]:
+        user_data = lobby_state["searching"].pop(player_sid)
     
-    for room_name, game in list(active_games.items()):
-        if player_sid in game["players"]:
+    # Verificar si estaba en combate y terminar el juego
+    for room_name, combat_data in list(lobby_state["in_combat"].items()):
+        if (player_sid in active_games.get(room_name, {}).get("players", {})):
+            # Terminar el juego por desconexión
             emit('player_disconnected', room=room_name)
-            del active_games[room_name]
+            del lobby_state["in_combat"][room_name]
+            if room_name in active_games:
+                del active_games[room_name]
             break
     
-    print(f"Cliente desconectado: {player_sid}")
+    # Actualizar lobby si el usuario estaba registrado
+    if user_data:
+        broadcast_lobby_state()
+        print(f"[DISCONNECT] {user_data['emoji']} se desconectó del lobby")
+    else:
+        print(f"[DISCONNECT] Cliente {player_sid} se desconectó")
+
+def handle_game_over(room_name, winner_data=None):
+    """Maneja el final de un juego y devuelve jugadores al lobby"""
+    if room_name in lobby_state["in_combat"]:
+        combat_data = lobby_state["in_combat"][room_name]
+        
+        # Agregar jugadores de vuelta como espectadores
+        for player_key in ["player1", "player2"]:
+            if player_key in combat_data:
+                player_data = combat_data[player_key]
+                # Buscar el session_id del jugador
+                for sid, game_players in active_games.get(room_name, {}).get("players", {}).items():
+                    if game_players.get("emoji") == player_data["emoji"]:
+                        lobby_state["spectators"][sid] = player_data
+                        break
+        
+        # Remover de combate
+        del lobby_state["in_combat"][room_name]
+        
+        # Actualizar lobby
+        broadcast_lobby_state()
+        
+        print(f"[GAME_END] Juego {room_name} terminado, jugadores devueltos al lobby")
 
 # --- API PARA EMOJIS ---
 EMOJI_LIST = ["😀", "🚀", "🌟", "🍕", "🤖", "👻", "👽", "👾", "🦊", "🧙", "🌮", "💎", "🌙", "🔮", "🧬", "🌵", "🎉", "🔥", "💯", "👑", "💡", "🎮", "🛰️", "🛸", "🗿", "🌴", "🧪", "✨", "🔑", "🗺️", "🐙", "🦋", "🐲", "🍩", "⚡", "🎯", "⚓", "🌈", "🌌", "🌠", "🎱", "🎰", "🕹️", "🏆", "💊", "🎁", "💌", "📈", "🗿"]

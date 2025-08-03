@@ -39,7 +39,7 @@
                     {% if aura_data.points >= 0 %}+{% else %}-{% endif %}
                     {{ "{:,.0f}".format(aura_data.points|abs) }}
                 </span>
-                <img src="{{ url_for('static', filename='flame_' + aura_data.level_info.flame_color + '.png') }}">
+                <img src="{{ url_for('static', filename='flame_' + aura_data.level_info.flame_color + '.gif') }}">
             </div>
             
             <!-- ¡NUEVA LÓGICA DE LA BARRA DE PROGRESO! -->

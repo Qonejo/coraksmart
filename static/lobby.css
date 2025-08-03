@@ -1,0 +1,264 @@
+/* Lobby.css - Estilos adicionales para el Palco de Espectadores */
+
+/* Fuentes */
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+/* Animaciones */
+@keyframes glow {
+    0%, 100% { text-shadow: 0 0 5px currentColor; }
+    50% { text-shadow: 0 0 20px currentColor, 0 0 30px currentColor; }
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+@keyframes slideIn {
+    from { 
+        opacity: 0; 
+        transform: translateY(20px); 
+    }
+    to { 
+        opacity: 1; 
+        transform: translateY(0); 
+    }
+}
+
+/* Efectos hover mejorados */
+.lobby-section:hover {
+    transform: translateY(-2px);
+    transition: transform 0.3s ease;
+}
+
+.section-title {
+    animation: glow 3s infinite ease-in-out;
+}
+
+/* Efectos para los items de jugadores */
+.player-item {
+    animation: slideIn 0.5s ease-out;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.combat-item {
+    animation: slideIn 0.5s ease-out;
+}
+
+.combat-item:hover {
+    animation: pulse 1s infinite ease-in-out;
+}
+
+/* Indicadores de estado */
+.player-item.current-user {
+    border-color: #0f0 !important;
+    box-shadow: 0 0 15px rgba(0, 255, 0, 0.6) !important;
+}
+
+.player-item.searching {
+    border-color: #ff0 !important;
+    box-shadow: 0 0 15px rgba(255, 255, 0, 0.6) !important;
+}
+
+/* Efectos de los botones */
+.action-button {
+    position: relative;
+    overflow: hidden;
+}
+
+.action-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s ease;
+}
+
+.action-button:hover::before {
+    left: 100%;
+}
+
+/* Loading spinner para botones */
+.action-button.loading {
+    pointer-events: none;
+}
+
+.action-button.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid transparent;
+    border-top: 2px solid currentColor;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Scrollbar personalizado */
+.player-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.player-list::-webkit-scrollbar-track {
+    background: rgba(40, 40, 40, 0.5);
+    border-radius: 4px;
+}
+
+.player-list::-webkit-scrollbar-thumb {
+    background: #0f0;
+    border-radius: 4px;
+}
+
+.player-list::-webkit-scrollbar-thumb:hover {
+    background: #090;
+}
+
+/* Efectos de conexión */
+.connection-indicator {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 10px 15px;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    z-index: 1000;
+    transition: all 0.3s ease;
+}
+
+.connection-indicator.connected {
+    background: rgba(0, 255, 0, 0.2);
+    color: #0f0;
+    border: 1px solid #0f0;
+}
+
+.connection-indicator.disconnected {
+    background: rgba(255, 0, 0, 0.2);
+    color: #f00;
+    border: 1px solid #f00;
+    animation: pulse 1s infinite;
+}
+
+/* Responsive mejoras */
+@media (max-width: 1024px) {
+    .lobby-container {
+        grid-template-columns: 1fr 1fr;
+    }
+    
+    .lobby-header {
+        grid-column: 1 / -1;
+    }
+    
+    .spectators {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 768px) {
+    .player-item {
+        flex-direction: column;
+        text-align: center;
+        gap: 5px;
+    }
+    
+    .combat-item {
+        padding: 8px;
+    }
+    
+    .player-emoji {
+        font-size: 2rem;
+    }
+    
+    .vs-text {
+        font-size: 0.7rem;
+    }
+}
+
+/* Dark mode alternativo */
+@media (prefers-color-scheme: dark) {
+    .lobby-section {
+        background: rgba(10, 10, 10, 0.95);
+        border-color: #444;
+    }
+    
+    .player-item, .combat-item {
+        background: rgba(20, 20, 20, 0.9);
+    }
+}
+
+/* Efectos para mensajes de estado */
+.status-message {
+    animation: slideIn 0.3s ease-out;
+    border-left: 4px solid currentColor;
+}
+
+/* Efectos hover para mejor UX */
+.lobby-section .empty-list {
+    transition: color 0.3s ease;
+}
+
+.lobby-section:hover .empty-list {
+    color: #999;
+}
+
+/* Efectos de carga */
+.loading-skeleton {
+    background: linear-gradient(90deg, #333 25%, #555 50%, #333 75%);
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+/* Contador de jugadores */
+.section-counter {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #0f0;
+    color: #000;
+    border-radius: 50%;
+    width: 25px;
+    height: 25px;
+    font-size: 0.6rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+.lobby-section {
+    position: relative;
+}
+
+/* Efectos de notificación */
+.notification-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: #f00;
+    color: #fff;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 0.6rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: pulse 2s infinite;
+}

@@ -3,72 +3,259 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lobby de la Arena</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <title>Arena PvP - Palco de Espectadores</title>
+    
+    <!-- Precargar recursos críticos -->
+    <link rel="preload" href="{{ url_for('static', filename='lobby.css') }}" as="style">
+    <link rel="preload" href="{{ url_for('static', filename='lobby.js') }}" as="script">
+    
+    <!-- CSS inline crítico para el lobby -->
     <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            margin: 0;
-            padding: 0;
-            background: linear-gradient(45deg, #2c1810, #1a0f08);
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            background: #0a0a0a;
+            color: #fff;
+            font-family: 'Press Start 2P', monospace;
             min-height: 100vh;
-            font-family: 'Press Start 2P', cursive;
-            color: white;
+            overflow-x: hidden;
+            line-height: 1.6;
         }
         
-        #status-box {
+        .lobby-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-rows: auto 1fr auto;
+            gap: 20px;
+            min-height: 100vh;
+        }
+        
+        .lobby-header {
+            grid-column: 1 / -1;
             text-align: center;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 40px;
-            border: 3px solid #fff;
-            border-radius: 10px;
-        }
-        
-        h1 {
+            border-bottom: 3px solid #0f0;
+            padding-bottom: 20px;
             margin-bottom: 20px;
-            text-shadow: 2px 2px 0px #000;
         }
         
-        #countdown {
-            font-size: 14px;
-            margin-top: 10px;
+        .lobby-title {
+            font-size: 2rem;
+            color: #0f0;
+            text-shadow: 0 0 10px #0f0;
+            margin-bottom: 10px;
+        }
+        
+        .lobby-subtitle {
+            font-size: 0.8rem;
+            color: #888;
+        }
+        
+        .lobby-section {
+            background: rgba(20, 20, 20, 0.9);
+            border: 2px solid #333;
+            border-radius: 10px;
+            padding: 20px;
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .section-title {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        
+        .in-combat { border-color: #f00; }
+        .in-combat .section-title { color: #f00; text-shadow: 0 0 5px #f00; }
+        
+        .searching { border-color: #ff0; }
+        .searching .section-title { color: #ff0; text-shadow: 0 0 5px #ff0; }
+        
+        .spectators { border-color: #0f0; }
+        .spectators .section-title { color: #0f0; text-shadow: 0 0 5px #0f0; }
+        
+        .player-list {
+            flex: 1;
+            overflow-y: auto;
+            max-height: 300px;
+        }
+        
+        .player-item, .combat-item {
+            background: rgba(40, 40, 40, 0.8);
+            border: 1px solid #555;
+            border-radius: 5px;
+            margin: 8px 0;
+            padding: 12px;
+            transition: all 0.3s ease;
+        }
+        
+        .player-item:hover, .combat-item:hover {
+            border-color: #0f0;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+        }
+        
+        .player-emoji {
+            font-size: 1.5rem;
+            margin-right: 10px;
+        }
+        
+        .player-aura {
+            color: #0f0;
+            font-size: 0.7rem;
+            margin-left: auto;
+        }
+        
+        .combat-item {
+            text-align: center;
+            background: rgba(60, 20, 20, 0.8);
+            border-color: #800;
+        }
+        
+        .vs-text {
+            color: #f00;
+            font-size: 0.8rem;
+            margin: 5px 0;
+        }
+        
+        .empty-list {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            margin-top: 50px;
+            font-size: 0.8rem;
+        }
+        
+        .lobby-controls {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 20px;
+            border-top: 2px solid #333;
+        }
+        
+        .action-button {
+            background: linear-gradient(45deg, #0f0, #090);
+            color: #000;
+            border: none;
+            padding: 15px 30px;
+            font-family: inherit;
+            font-size: 1rem;
+            cursor: pointer;
+            border-radius: 5px;
+            margin: 0 10px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        .action-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 255, 0, 0.4);
+        }
+        
+        .action-button:disabled {
+            background: #555;
+            color: #999;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .cancel-button {
+            background: linear-gradient(45deg, #f00, #900);
+            color: #fff;
+        }
+        
+        .cancel-button:hover {
+            box-shadow: 0 6px 12px rgba(255, 0, 0, 0.4);
+        }
+        
+        .status-message {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 0.8rem;
+        }
+        
+        .status-success { background: rgba(0, 255, 0, 0.2); color: #0f0; }
+        .status-error { background: rgba(255, 0, 0, 0.2); color: #f00; }
+        .status-info { background: rgba(0, 0, 255, 0.2); color: #09f; }
+        
+        @media (max-width: 768px) {
+            .lobby-container {
+                grid-template-columns: 1fr;
+                padding: 10px;
+                gap: 15px;
+            }
+            
+            .lobby-title { font-size: 1.5rem; }
+            .section-title { font-size: 1rem; }
+            .action-button { font-size: 0.9rem; padding: 12px 25px; }
         }
     </style>
+    
+    <!-- CSS no crítico -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='lobby.css') }}" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="{{ url_for('static', filename='lobby.css') }}"></noscript>
 </head>
-<body>
-    <div id="status-box">
-        <h1>Buscando Duelo...</h1>
-        <p id="countdown"></p>
-    </div>
-    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
-    <script>
-        const socket = io();
-        const statusBox = document.getElementById('status-box');
-        const countdownEl = document.getElementById('countdown');
-
-        socket.on('connect', () => {
-            socket.emit('join_lobby', { emoji: '{{ session.get("logged_in_user_emoji") }}' });
-        });
-
-        socket.on('waiting_for_opponent', () => {
-            statusBox.querySelector('h1').textContent = 'Esperando Oponente...';
-        });
-
-        socket.on('match_found', (data) => {
-            statusBox.querySelector('h1').textContent = `¡Duelo contra ${data.opponent_emoji}!`;
-        });
+<body data-user-emoji="{{ session.get('logged_in_user_emoji', '🎮') }}">
+    <div class="lobby-container">
+        <!-- Header del Lobby -->
+        <div class="lobby-header">
+            <h1 class="lobby-title">⚔️ ARENA PVP ⚔️</h1>
+            <p class="lobby-subtitle">Palco de Espectadores Interactivo</p>
+            <div class="user-info">
+                Conectado como: <span class="current-user">{{ session.get('logged_in_user_emoji', '🎮') }}</span>
+            </div>
+        </div>
         
-        socket.on('countdown', (data) => {
-            countdownEl.textContent = `La batalla comienza en ${data.time}...`;
-        });
-
-        socket.on('game_started', () => {
-            window.location.href = '/arena'; // Redirige al tablero de juego
-        });
-    </script>
+        <!-- Sección: En Combate Ahora -->
+        <div class="lobby-section in-combat">
+            <h2 class="section-title">🔥 En Combate Ahora</h2>
+            <div class="player-list" id="in-combat-list">
+                <div class="empty-list">No hay combates activos</div>
+            </div>
+        </div>
+        
+        <!-- Sección: Buscando Duelo -->
+        <div class="lobby-section searching">
+            <h2 class="section-title">⚡ Buscando Duelo</h2>
+            <div class="player-list" id="searching-list">
+                <div class="empty-list">Nadie buscando duelo</div>
+            </div>
+        </div>
+        
+        <!-- Sección: Espectadores -->
+        <div class="lobby-section spectators">
+            <h2 class="section-title">👁️ Espectadores</h2>
+            <div class="player-list" id="spectators-list">
+                <div class="empty-list">Cargando espectadores...</div>
+            </div>
+        </div>
+        
+        <!-- Controles del Lobby -->
+        <div class="lobby-controls">
+            <button id="search-button" class="action-button">
+                🗡️ Buscar Duelo
+            </button>
+            <button id="cancel-button" class="action-button cancel-button" style="display: none;">
+                ❌ Cancelar Búsqueda
+            </button>
+            <button id="back-button" class="action-button" onclick="window.location.href='/';">
+                🏠 Volver al Menú
+            </button>
+            
+            <div id="status-message" class="status-message" style="display: none;"></div>
+        </div>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script src="{{ url_for('static', filename='lobby.js') }}" async></script>
 </body>
 </html>

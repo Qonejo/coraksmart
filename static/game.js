@@ -74,19 +74,21 @@ socket.on('game_over', (data) => {
     if (data.winner) {
         const winnerPlayer = gameState.players[data.winner];
         if (data.winner === socket.id) {
-            message = '¡Ganaste! 🎉';
+            message = '¡Ganaste! 🎉 Volviendo al lobby...';
         } else {
-            message = `Perdiste... Ganó ${winnerPlayer.emoji}`;
+            message = `Perdiste... Ganó ${winnerPlayer.emoji} 😢 Volviendo al lobby...`;
         }
+    } else {
+        message = 'Empate! Volviendo al lobby...';
     }
     
     messageBox.textContent = message;
     messageBox.style.display = 'block';
     
-    // Volver al lobby después de 3 segundos
+    // Volver al lobby después de 4 segundos
     setTimeout(() => {
         window.location.href = '/lobby';
-    }, 3000);
+    }, 4000);
 });
 
 socket.on('player_disconnected', () => {
