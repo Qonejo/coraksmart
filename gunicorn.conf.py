@@ -1,16 +1,15 @@
-# Configuración de Gunicorn para producción con Socket.IO
+# Configuración de Gunicorn para producción
 import multiprocessing
 import os
 
 # Configuración de workers
-workers = 1  # IMPORTANTE: Solo 1 worker para Socket.IO
-worker_class = "eventlet"  # Clase de worker para WebSockets
-worker_connections = 1000
+workers = multiprocessing.cpu_count() * 2 + 1
+worker_class = "sync"  # Worker estándar para Flask
 max_requests = 1000
 max_requests_jitter = 100
 
-# Timeouts aumentados para WebSockets
-timeout = 120  # Timeout general más alto
+# Timeouts estándar
+timeout = 30
 keepalive = 2
 graceful_timeout = 30
 
