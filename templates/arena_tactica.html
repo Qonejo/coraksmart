@@ -3,113 +3,78 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Arena Táctica PvP - CorakSmart</title>
-    
-    <!-- Fuente RPG -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <title>Arena Táctica PvP</title>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    
     <style>
-        body { 
-            text-align: center; 
-            background: #000; 
-            color: #fff; 
-            font-family: 'Press Start 2P', cursive, monospace;
+        body {
+            font-family: 'Press Start 2P', cursive;
+            text-align: center;
+            background: #000;
+            color: #fff;
             margin: 0;
             padding: 20px;
-            min-height: 100vh;
+            box-sizing: border-box;
         }
         
-        .arena-container {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        
-        h2 {
-            font-size: 1.2em;
+        h1 {
+            color: #00ff00;
+            text-shadow: 2px 2px 0 #005500;
             margin-bottom: 20px;
-            color: #ffcc00;
-            border-bottom: 2px solid #fff;
-            padding-bottom: 10px;
+            font-size: 1.5em;
         }
         
-        canvas { 
-            border: 4px solid #fff; 
-            background: #222; 
-            display: block; 
+        canvas {
+            border: 4px solid #00ff00;
+            background: #111;
+            display: block;
             margin: 20px auto;
-            box-shadow: 0 0 20px rgba(255, 204, 0, 0.5);
-            cursor: pointer;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
         }
         
-        #info { 
+        #info {
             margin: 20px 0;
-            font-size: 0.8em;
-            line-height: 1.6;
-            background: rgba(40,40,40,0.9);
-            border: 2px solid #ffcc00;
-            padding: 15px;
-            border-radius: 5px;
+            font-size: 0.9em;
+            color: #00ff00;
         }
         
-        .status-info {
+        #players {
             display: flex;
-            justify-content: space-between;
+            justify-content: space-around;
             margin: 20px 0;
             font-size: 0.7em;
         }
         
         .player-info {
-            background: rgba(0,100,0,0.3);
-            border: 2px solid #0f0;
+            border: 2px solid #00ff00;
             padding: 10px;
-            border-radius: 5px;
-            flex: 1;
-            margin: 0 5px;
+            background: #003300;
+            min-width: 150px;
         }
         
-        .enemy-info {
-            background: rgba(100,0,0,0.3);
-            border: 2px solid #f00;
-            padding: 10px;
-            border-radius: 5px;
-            flex: 1;
-            margin: 0 5px;
+        .player-info.active {
+            background: #005500;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
         }
         
-        .back-button {
+        #units-info {
+            margin: 20px 0;
+            font-size: 0.6em;
+        }
+        
+        .unit {
             display: inline-block;
-            margin-top: 20px;
-            padding: 10px 20px;
-            background: #666;
-            color: #fff;
-            text-decoration: none;
-            border: 2px solid #888;
-            font-family: inherit;
-            font-size: 0.7em;
+            margin: 5px;
+            padding: 5px;
+            border: 1px solid #555;
+            background: #222;
         }
         
-        .back-button:hover {
-            background: #888;
+        .unit.selected {
+            border-color: #ffff00;
+            background: #444;
         }
         
-        #message-box {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.9);
-            border: 4px solid #fff;
-            padding: 30px;
-            font-size: 0.9em;
-            z-index: 1000;
-            display: none;
-            text-align: center;
-        }
-        
-        @media (max-width: 600px) {
+        @media (max-width: 768px) {
             canvas {
                 width: 90vw;
                 height: 90vw;
@@ -117,263 +82,190 @@
                 max-height: 400px;
             }
             
-            .status-info {
-                flex-direction: column;
-                gap: 10px;
+            h1 {
+                font-size: 1.2em;
             }
             
-            .player-info, .enemy-info {
-                margin: 0;
+            #players {
+                flex-direction: column;
+                gap: 10px;
             }
         }
     </style>
 </head>
-<body data-user-emoji="{{ session.logged_in_user_emoji }}">
-    <div class="arena-container">
-        <h2>⚔️ Arena Táctica PvP ⚔️</h2>
-        
-        <canvas id="board" width="500" height="500"></canvas>
-        
-        <div class="status-info">
-            <div class="player-info">
-                <strong>TÚ</strong><br>
-                <span id="player-units">Unidades: --</span>
-            </div>
-            <div class="enemy-info">
-                <strong>ENEMIGO</strong><br>
-                <span id="enemy-units">Unidades: --</span>
-            </div>
+<body>
+    <h1>⚔️ Arena Táctica PvP ⚔️</h1>
+    <canvas id="board" width="500" height="500"></canvas>
+    <div id="info">Esperando conexión...</div>
+    <div id="players">
+        <div class="player-info">
+            <div>Jugador 1</div>
+            <div id="player1-units">Unidades: -</div>
         </div>
-        
-        <div id="info">Conectando al juego...</div>
-        
-        <a href="{{ url_for('lobby') }}" class="back-button">← Volver al Lobby</a>
+        <div class="player-info">
+            <div>Jugador 2</div>
+            <div id="player2-units">Unidades: -</div>
+        </div>
     </div>
-    
-    <div id="message-box"></div>
+    <div id="units-info"></div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
         const canvas = document.getElementById('board');
         const ctx = canvas.getContext('2d');
-        const messageBox = document.getElementById('message-box');
-        
-        const BOARD_SIZE = 5;
-        const cellSize = canvas.width / BOARD_SIZE;
+        const size = 5;
+        const cellSize = canvas.width / size;
 
         let playerId = null;
         let gameState = null;
         let selectedUnit = null;
 
-        // Colores y configuración
-        const COLORS = {
-            GRID: '#444',
-            PLAYER: '#0f0',
-            ENEMY: '#f00',
-            SELECTED: '#ff0',
-            MOVE_HINT: '#00f',
-            TEXT: '#fff',
-            BACKGROUND: '#222'
+        // Sprites
+        const tileset = new Image();
+        tileset.src = "/static/sprites/maptiles.png";
+
+        const unitsImg = new Image();
+        unitsImg.src = "/static/sprites/units.png";
+
+        const tileIndex = {
+            grass: [0, 0],
+            sand: [32, 0],
+            snow: [48, 0],
+            rock: [64, 0],
         };
 
-        function showMessage(text, duration = 3000) {
-            messageBox.textContent = text;
-            messageBox.style.display = 'block';
-            if (duration > 0) {
-                setTimeout(() => {
-                    messageBox.style.display = 'none';
-                }, duration);
-            }
-        }
+        const unitIndex = {
+            warrior_blue: [16, 0],
+            archer_blue: [0, 16],
+            warrior_red: [16, 16],
+            archer_red: [48, 16],
+        };
 
         function drawBoard() {
-            // Limpiar canvas
-            ctx.fillStyle = COLORS.BACKGROUND;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            // Dibujar grid
-            ctx.strokeStyle = COLORS.GRID;
-            ctx.lineWidth = 1;
-            for (let y = 0; y <= BOARD_SIZE; y++) {
-                for (let x = 0; x <= BOARD_SIZE; x++) {
+            // Dibujar terreno
+            for (let y = 0; y < size; y++) {
+                for (let x = 0; x < size; x++) {
+                    // Dibujar terreno (grass por defecto)
+                    if (tileset.complete) {
+                        const [sx, sy] = tileIndex.grass;
+                        ctx.drawImage(tileset, sx, sy, 16, 16, x * cellSize, y * cellSize, cellSize, cellSize);
+                    } else {
+                        // Fallback si no carga la imagen
+                        ctx.fillStyle = '#2a5a2a';
+                        ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+                    }
+
+                    // Dibujar grid
+                    ctx.strokeStyle = '#444';
+                    ctx.lineWidth = 1;
                     ctx.strokeRect(x * cellSize, y * cellSize, cellSize, cellSize);
                 }
             }
-            
+
             if (!gameState) return;
-            
+
             // Dibujar unidades
             for (let unit of gameState.units) {
-                const isPlayer = unit.owner === playerId;
-                const isSelected = selectedUnit && selectedUnit.x === unit.x && selectedUnit.y === unit.y;
+                const isOwnUnit = unit.owner === playerId;
+                const unitType = unit.type || 'warrior';
+                const spriteKey = `${unitType}_${isOwnUnit ? 'blue' : 'red'}`;
                 
-                // Color de la unidad
-                ctx.fillStyle = isSelected ? COLORS.SELECTED : (isPlayer ? COLORS.PLAYER : COLORS.ENEMY);
-                
-                // Dibujar unidad
-                const padding = 5;
-                ctx.fillRect(
-                    unit.x * cellSize + padding, 
-                    unit.y * cellSize + padding, 
-                    cellSize - padding * 2, 
-                    cellSize - padding * 2
-                );
-                
-                // Dibujar tipo de unidad
-                ctx.fillStyle = COLORS.TEXT;
-                ctx.font = '12px "Press Start 2P"';
-                ctx.textAlign = 'center';
-                ctx.fillText(
-                    unit.type[0].toUpperCase(), 
-                    unit.x * cellSize + cellSize/2, 
-                    unit.y * cellSize + cellSize/2 + 4
-                );
-                
-                // Dibujar HP si está dañado
-                if (unit.hp < unit.maxHp) {
-                    ctx.fillStyle = '#f00';
-                    ctx.font = '8px "Press Start 2P"';
-                    ctx.fillText(
-                        unit.hp + '/' + unit.maxHp,
-                        unit.x * cellSize + cellSize/2,
-                        unit.y * cellSize + cellSize - 5
-                    );
-                }
-            }
-            
-            // Dibujar movimientos posibles si hay unidad seleccionada
-            if (selectedUnit && gameState.turn === playerId) {
-                ctx.fillStyle = COLORS.MOVE_HINT;
-                const moves = getPossibleMoves(selectedUnit);
-                for (let move of moves) {
-                    ctx.fillRect(
-                        move.x * cellSize + cellSize/4,
-                        move.y * cellSize + cellSize/4,
-                        cellSize/2,
-                        cellSize/2
-                    );
-                }
-            }
-        }
-
-        function getPossibleMoves(unit) {
-            const moves = [];
-            const directions = [
-                {x: 0, y: -1}, {x: 1, y: 0}, {x: 0, y: 1}, {x: -1, y: 0}
-            ];
-            
-            for (let dir of directions) {
-                const newX = unit.x + dir.x;
-                const newY = unit.y + dir.y;
-                
-                if (newX >= 0 && newX < BOARD_SIZE && newY >= 0 && newY < BOARD_SIZE) {
-                    // Verificar si la celda está ocupada
-                    const occupied = gameState.units.some(u => u.x === newX && u.y === newY);
-                    if (!occupied) {
-                        moves.push({x: newX, y: newY});
-                    }
-                }
-            }
-            
-            return moves;
-        }
-
-        function updateUI() {
-            if (!gameState) return;
-            
-            const playerUnits = gameState.units.filter(u => u.owner === playerId);
-            const enemyUnits = gameState.units.filter(u => u.owner !== playerId);
-            
-            document.getElementById('player-units').textContent = `Unidades: ${playerUnits.length}`;
-            document.getElementById('enemy-units').textContent = `Unidades: ${enemyUnits.length}`;
-            
-            const infoEl = document.getElementById('info');
-            if (gameState.gameOver) {
-                if (gameState.winner === playerId) {
-                    infoEl.innerHTML = '🎉 <strong>¡VICTORIA!</strong> 🎉<br>Has derrotado a tu oponente';
-                    infoEl.style.borderColor = '#0f0';
+                if (unitsImg.complete && unitIndex[spriteKey]) {
+                    const [sx, sy] = unitIndex[spriteKey];
+                    ctx.drawImage(unitsImg, sx, sy, 16, 16, 
+                        unit.x * cellSize + 8, unit.y * cellSize + 8, 
+                        cellSize - 16, cellSize - 16);
                 } else {
-                    infoEl.innerHTML = '💀 <strong>DERROTA</strong> 💀<br>Tu oponente ha ganado';
-                    infoEl.style.borderColor = '#f00';
+                    // Fallback si no carga la imagen
+                    ctx.fillStyle = isOwnUnit ? '#4444ff' : '#ff4444';
+                    ctx.fillRect(unit.x * cellSize + 10, unit.y * cellSize + 10, 
+                        cellSize - 20, cellSize - 20);
                 }
-            } else {
-                if (gameState.turn === playerId) {
-                    infoEl.innerHTML = '🗡️ <strong>TU TURNO</strong><br>Selecciona una unidad y muévela';
-                    infoEl.style.borderColor = '#0f0';
-                } else {
-                    infoEl.innerHTML = '⏳ <strong>TURNO ENEMIGO</strong><br>Esperando movimiento del oponente';
-                    infoEl.style.borderColor = '#f00';
+
+                // Resaltar unidad seleccionada
+                if (selectedUnit && selectedUnit.x === unit.x && selectedUnit.y === unit.y) {
+                    ctx.strokeStyle = '#ffff00';
+                    ctx.lineWidth = 3;
+                    ctx.strokeRect(unit.x * cellSize, unit.y * cellSize, cellSize, cellSize);
+                }
+
+                // Mostrar HP
+                if (unit.hp !== undefined) {
+                    ctx.fillStyle = '#fff';
+                    ctx.font = '12px Arial';
+                    ctx.fillText(unit.hp, unit.x * cellSize + 5, unit.y * cellSize + 15);
                 }
             }
         }
 
-        // Event listeners
         canvas.addEventListener('click', e => {
-            if (!gameState || gameState.turn !== playerId || gameState.gameOver) return;
+            if (!gameState || gameState.turn !== playerId) return;
             
             const rect = canvas.getBoundingClientRect();
-            const x = Math.floor((e.clientX - rect.left) * (canvas.width / rect.width) / cellSize);
-            const y = Math.floor((e.clientY - rect.top) * (canvas.height / rect.height) / cellSize);
+            const x = Math.floor((e.clientX - rect.left) / (rect.width / size));
+            const y = Math.floor((e.clientY - rect.top) / (rect.height / size));
             
-            if (x < 0 || x >= BOARD_SIZE || y < 0 || y >= BOARD_SIZE) return;
-            
-            console.log('Click en:', x, y);
             socket.emit('select_cell', { x, y });
         });
 
         // Socket events
-        socket.on('connect', () => {
-            console.log('Conectado al servidor');
-            const userEmoji = document.body.dataset.userEmoji || '🎮';
-            showMessage('Conectado. Esperando oponente...', 0);
-        });
-
         socket.on('init', data => {
             playerId = data.playerId;
-            console.log('Player ID:', playerId);
-            showMessage('¡Oponente encontrado! Iniciando partida...', 2000);
+            document.getElementById('info').textContent = 'Esperando oponente...';
         });
 
         socket.on('game_state', data => {
             gameState = data;
-            selectedUnit = null; // Reset selección
-            console.log('Estado del juego:', gameState);
-            updateUI();
+            const isMyTurn = gameState.turn === playerId;
+            document.getElementById('info').textContent = isMyTurn ? 'Tu turno' : 'Turno del oponente';
+            
+            // Actualizar info de jugadores
+            const player1Info = document.querySelector('#players .player-info:first-child');
+            const player2Info = document.querySelector('#players .player-info:last-child');
+            
+            if (gameState.turn === playerId) {
+                if (playerId === gameState.player1) {
+                    player1Info.classList.add('active');
+                    player2Info.classList.remove('active');
+                } else {
+                    player2Info.classList.add('active');
+                    player1Info.classList.remove('active');
+                }
+            }
+            
             drawBoard();
         });
 
         socket.on('unit_selected', data => {
             selectedUnit = data.unit;
-            console.log('Unidad seleccionada:', selectedUnit);
             drawBoard();
         });
 
         socket.on('invalid_move', data => {
-            console.log('Movimiento inválido:', data.reason);
-            showMessage('Movimiento inválido: ' + data.reason, 2000);
+            document.getElementById('info').textContent = `Movimiento inválido: ${data.reason}`;
+            setTimeout(() => {
+                if (gameState) {
+                    const isMyTurn = gameState.turn === playerId;
+                    document.getElementById('info').textContent = isMyTurn ? 'Tu turno' : 'Turno del oponente';
+                }
+            }, 2000);
         });
 
         socket.on('game_over', data => {
-            gameState.gameOver = true;
-            gameState.winner = data.winner;
-            updateUI();
-            drawBoard();
-            
-            setTimeout(() => {
-                window.location.href = '/lobby';
-            }, 5000);
+            const winner = data.winner === playerId ? 'Ganaste!' : 'Perdiste!';
+            document.getElementById('info').textContent = `Juego terminado - ${winner}`;
         });
 
         socket.on('player_disconnected', () => {
-            showMessage('El oponente se desconectó', 0);
-            setTimeout(() => {
-                window.location.href = '/lobby';
-            }, 3000);
+            document.getElementById('info').textContent = 'Oponente desconectado';
         });
 
-        // Inicialización
-        drawBoard();
+        // Cargar sprites cuando estén listos
+        tileset.onload = () => drawBoard();
+        unitsImg.onload = () => drawBoard();
     </script>
 </body>
 </html>

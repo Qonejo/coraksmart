@@ -193,9 +193,17 @@ h2 {
 
 /* ========= ESTILOS PARA PANTALLAS PEQUEÑAS (MÓVILES) - MEJORADO ========= */
 @media (max-width: 850px) {
+    /* Asegurar que no haya espacios en los elementos raíz */
+    html {
+        margin-bottom: 0 !important;
+        padding-bottom: 0 !important;
+    }
+    
     /* Ajustes del body para móvil */
     body {
         padding: 0;
+        padding-bottom: 70px !important; /* Espacio para la barra fija */
+        margin-bottom: 0 !important;
         overflow-x: hidden; /* Evita scroll horizontal */
     }
     
@@ -258,6 +266,12 @@ h2 {
         padding: 0 !important;
         box-sizing: border-box;
         
+        /* Asegurar que esté completamente pegado al borde */
+        margin-bottom: 0 !important;
+        padding-bottom: 0 !important;
+        border-bottom-left-radius: 0 !important;
+        border-bottom-right-radius: 0 !important;
+        
         /* Forzar posicionamiento móvil */
         transform: translateZ(0); /* Activar aceleración hardware */
         -webkit-transform: translateZ(0);
@@ -315,6 +329,13 @@ h2 {
         box-sizing: border-box;
         border-top: 1px solid #444;
         margin: 0 !important;
+        
+        /* Asegurar que esté completamente en el borde inferior */
+        margin-bottom: 0 !important;
+        padding-bottom: 0 !important;
+        border-bottom: none !important;
+        border-bottom-left-radius: 0 !important;
+        border-bottom-right-radius: 0 !important;
         
         /* Forzar posicionamiento */
         transform: translateZ(0);
