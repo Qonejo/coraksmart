@@ -237,36 +237,46 @@ h2 {
         border-right: none;
     }
 
-    /* Carrito móvil fijo en la parte inferior */
+    /* Carrito móvil fijo en la parte inferior - MEJORADO */
     #carrito-panel {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        width: 100%;
-        height: 70px; /* Altura inicial más cómoda */
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        width: 100vw !important;
+        height: 70px !important;
         background-color: #222;
         border-top: 4px solid #fff;
         border-left: none;
         border-right: none;
         border-bottom: none;
-        z-index: 1000;
+        z-index: 9999 !important;
         box-shadow: 0 -3px 10px rgba(0,0,0,0.7);
         overflow: hidden;
         transition: height 0.3s ease-in-out;
-        margin: 0;
-        padding: 0;
+        margin: 0 !important;
+        padding: 0 !important;
         box-sizing: border-box;
+        
+        /* Forzar posicionamiento móvil */
+        transform: translateZ(0); /* Activar aceleración hardware */
+        -webkit-transform: translateZ(0);
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
         
         /* Reset de estilos desktop */
         flex-direction: column;
         max-height: unset;
+        flex: none !important;
         position: fixed !important;
     }
 
     /* Estado expandido del carrito móvil */
     #carrito-panel.expanded {
-        height: 280px; /* Altura máxima más cómoda */
+        height: 280px !important;
+        position: fixed !important;
+        bottom: 0 !important;
+        z-index: 9999 !important;
     }
 
     /* Ocultar título en móvil para ahorrar espacio */
@@ -288,22 +298,27 @@ h2 {
 
     /* Resumen del carrito - siempre visible */
     #carrito-resumen {
-        display: flex;
+        display: flex !important;
         align-items: center;
         justify-content: space-between;
-        width: 100%;
-        height: 70px; /* Altura fija ajustada */
+        width: 100% !important;
+        height: 70px !important;
         padding: 0 20px;
         border: none;
         background-color: #222;
         cursor: pointer;
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        z-index: 1001;
+        position: absolute !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        z-index: 10000 !important;
         box-sizing: border-box;
         border-top: 1px solid #444;
+        margin: 0 !important;
+        
+        /* Forzar posicionamiento */
+        transform: translateZ(0);
+        -webkit-transform: translateZ(0);
     }
     /* Ajustes del texto y botones en el resumen móvil */
     .total-line { 
@@ -346,6 +361,24 @@ h2 {
         font-size: 0.7em;
     }
 }
+
+/* ========= FIX ADICIONAL PARA DISPOSITIVOS MÓVILES ========= */
+@media (max-width: 850px) and (hover: none) and (pointer: coarse) {
+    /* Específico para dispositivos táctiles móviles */
+    #carrito-panel {
+        position: fixed !important;
+        bottom: env(safe-area-inset-bottom, 0) !important;
+        transform: translate3d(0, 0, 0) !important;
+        will-change: height;
+    }
+    
+    #carrito-resumen {
+        position: absolute !important;
+        bottom: 0 !important;
+        transform: translate3d(0, 0, 0) !important;
+    }
+}
+
 /* ========= MEJORAS VISUALES FINALES (MÓVIL Y ESCRITORIO) ========= */
 
 /* --- 1 & 2: Ajustes para la barra flotante en móvil --- */

@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arena Táctica PvP - CorakSmart</title>
+    
+    <!-- Fuente RPG -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    
+    <style>
+        body { 
+            text-align: center; 
+            background: #000; 
+            color: #fff; 
+            font-family: 'Press Start 2P', cursive, monospace;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .arena-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        h2 {
+            font-size: 1.2em;
+            margin-bottom: 20px;
+            color: #ffcc00;
+            border-bottom: 2px solid #fff;
+            padding-bottom: 10px;
+        }
+        
+        canvas { 
+            border: 4px solid #fff; 
+            background: #222; 
+            display: block; 
+            margin: 20px auto;
+            box-shadow: 0 0 20px rgba(255, 204, 0, 0.5);
+            cursor: pointer;
+        }
+        
+        #info { 
+            margin: 20px 0;
+            font-size: 0.8em;
+            line-height: 1.6;
+            background: rgba(40,40,40,0.9);
+            border: 2px solid #ffcc00;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        
+        .status-info {
+            display: flex;
+            justify-content: space-between;
+            margin: 20px 0;
+            font-size: 0.7em;
+        }
+        
+        .player-info {
+            background: rgba(0,100,0,0.3);
+            border: 2px solid #0f0;
+            padding: 10px;
+            border-radius: 5px;
+            flex: 1;
+            margin: 0 5px;
+        }
+        
+        .enemy-info {
+            background: rgba(100,0,0,0.3);
+            border: 2px solid #f00;
+            padding: 10px;
+            border-radius: 5px;
+            flex: 1;
+            margin: 0 5px;
+        }
+        
+        .back-button {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: #666;
+            color: #fff;
+            text-decoration: none;
+            border: 2px solid #888;
+            font-family: inherit;
+            font-size: 0.7em;
+        }
+        
+        .back-button:hover {
+            background: #888;
+        }
+        
+        #message-box {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9);
+            border: 4px solid #fff;
+            padding: 30px;
+            font-size: 0.9em;
+            z-index: 1000;
+            display: none;
+            text-align: center;
+        }
+        
+        @media (max-width: 600px) {
+            canvas {
+                width: 90vw;
+                height: 90vw;
+                max-width: 400px;
+                max-height: 400px;
+            }
+            
+            .status-info {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .player-info, .enemy-info {
+                margin: 0;
+            }
+        }
+    </style>
+</head>
+<body data-user-emoji="{{ session.logged_in_user_emoji }}">
+    <div class="arena-container">
+        <h2>⚔️ Arena Táctica PvP ⚔️</h2>
+        
+        <canvas id="board" width="500" height="500"></canvas>
+        
+        <div class="status-info">
+            <div class="player-info">
+                <strong>TÚ</strong><br>
+                <span id="player-units">Unidades: --</span>
+            </div>
+            <div class="enemy-info">
+                <strong>ENEMIGO</strong><br>
+                <span id="enemy-units">Unidades: --</span>
+            </div>
+        </div>
+        
+        <div id="info">Conectando al juego...</div>
+        
+        <a href="{{ url_for('lobby') }}" class="back-button">← Volver al Lobby</a>
+    </div>
+    
+    <div id="message-box"></div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const canvas = document.getElementById('board');
+        const ctx = canvas.getContext('2d');
+        const messageBox = document.getElementById('message-box');
+        
+        const BOARD_SIZE = 5;
+        const cellSize = canvas.width / BOARD_SIZE;
+
+        let playerId = null;
+        let gameState = null;
+        let selectedUnit = null;
+
+        // Colores y configuración
+        const COLORS = {
+            GRID: '#444',
+            PLAYER: '#0f0',
+            ENEMY: '#f00',
+            SELECTED: '#ff0',
+            MOVE_HINT: '#00f',
+            TEXT: '#fff',
+            BACKGROUND: '#222'
+        };
+
+        function showMessage(text, duration = 3000) {
+            messageBox.textContent = text;
+            messageBox.style.display = 'block';
+            if (duration > 0) {
+                setTimeout(() => {
+                    messageBox.style.display = 'none';
+                }, duration);
+            }
+        }
+
+        function drawBoard() {
+            // Limpiar canvas
+            ctx.fillStyle = COLORS.BACKGROUND;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Dibujar grid
+            ctx.strokeStyle = COLORS.GRID;
+            ctx.lineWidth = 1;
+            for (let y = 0; y <= BOARD_SIZE; y++) {
+                for (let x = 0; x <= BOARD_SIZE; x++) {
+                    ctx.strokeRect(x * cellSize, y * cellSize, cellSize, cellSize);
+                }
+            }
+            
+            if (!gameState) return;
+            
+            // Dibujar unidades
+            for (let unit of gameState.units) {
+                const isPlayer = unit.owner === playerId;
+                const isSelected = selectedUnit && selectedUnit.x === unit.x && selectedUnit.y === unit.y;
+                
+                // Color de la unidad
+                ctx.fillStyle = isSelected ? COLORS.SELECTED : (isPlayer ? COLORS.PLAYER : COLORS.ENEMY);
+                
+                // Dibujar unidad
+                const padding = 5;
+                ctx.fillRect(
+                    unit.x * cellSize + padding, 
+                    unit.y * cellSize + padding, 
+                    cellSize - padding * 2, 
+                    cellSize - padding * 2
+                );
+                
+                // Dibujar tipo de unidad
+                ctx.fillStyle = COLORS.TEXT;
+                ctx.font = '12px "Press Start 2P"';
+                ctx.textAlign = 'center';
+                ctx.fillText(
+                    unit.type[0].toUpperCase(), 
+                    unit.x * cellSize + cellSize/2, 
+                    unit.y * cellSize + cellSize/2 + 4
+                );
+                
+                // Dibujar HP si está dañado
+                if (unit.hp < unit.maxHp) {
+                    ctx.fillStyle = '#f00';
+                    ctx.font = '8px "Press Start 2P"';
+                    ctx.fillText(
+                        unit.hp + '/' + unit.maxHp,
+                        unit.x * cellSize + cellSize/2,
+                        unit.y * cellSize + cellSize - 5
+                    );
+                }
+            }
+            
+            // Dibujar movimientos posibles si hay unidad seleccionada
+            if (selectedUnit && gameState.turn === playerId) {
+                ctx.fillStyle = COLORS.MOVE_HINT;
+                const moves = getPossibleMoves(selectedUnit);
+                for (let move of moves) {
+                    ctx.fillRect(
+                        move.x * cellSize + cellSize/4,
+                        move.y * cellSize + cellSize/4,
+                        cellSize/2,
+                        cellSize/2
+                    );
+                }
+            }
+        }
+
+        function getPossibleMoves(unit) {
+            const moves = [];
+            const directions = [
+                {x: 0, y: -1}, {x: 1, y: 0}, {x: 0, y: 1}, {x: -1, y: 0}
+            ];
+            
+            for (let dir of directions) {
+                const newX = unit.x + dir.x;
+                const newY = unit.y + dir.y;
+                
+                if (newX >= 0 && newX < BOARD_SIZE && newY >= 0 && newY < BOARD_SIZE) {
+                    // Verificar si la celda está ocupada
+                    const occupied = gameState.units.some(u => u.x === newX && u.y === newY);
+                    if (!occupied) {
+                        moves.push({x: newX, y: newY});
+                    }
+                }
+            }
+            
+            return moves;
+        }
+
+        function updateUI() {
+            if (!gameState) return;
+            
+            const playerUnits = gameState.units.filter(u => u.owner === playerId);
+            const enemyUnits = gameState.units.filter(u => u.owner !== playerId);
+            
+            document.getElementById('player-units').textContent = `Unidades: ${playerUnits.length}`;
+            document.getElementById('enemy-units').textContent = `Unidades: ${enemyUnits.length}`;
+            
+            const infoEl = document.getElementById('info');
+            if (gameState.gameOver) {
+                if (gameState.winner === playerId) {
+                    infoEl.innerHTML = '🎉 <strong>¡VICTORIA!</strong> 🎉<br>Has derrotado a tu oponente';
+                    infoEl.style.borderColor = '#0f0';
+                } else {
+                    infoEl.innerHTML = '💀 <strong>DERROTA</strong> 💀<br>Tu oponente ha ganado';
+                    infoEl.style.borderColor = '#f00';
+                }
+            } else {
+                if (gameState.turn === playerId) {
+                    infoEl.innerHTML = '🗡️ <strong>TU TURNO</strong><br>Selecciona una unidad y muévela';
+                    infoEl.style.borderColor = '#0f0';
+                } else {
+                    infoEl.innerHTML = '⏳ <strong>TURNO ENEMIGO</strong><br>Esperando movimiento del oponente';
+                    infoEl.style.borderColor = '#f00';
+                }
+            }
+        }
+
+        // Event listeners
+        canvas.addEventListener('click', e => {
+            if (!gameState || gameState.turn !== playerId || gameState.gameOver) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const x = Math.floor((e.clientX - rect.left) * (canvas.width / rect.width) / cellSize);
+            const y = Math.floor((e.clientY - rect.top) * (canvas.height / rect.height) / cellSize);
+            
+            if (x < 0 || x >= BOARD_SIZE || y < 0 || y >= BOARD_SIZE) return;
+            
+            console.log('Click en:', x, y);
+            socket.emit('select_cell', { x, y });
+        });
+
+        // Socket events
+        socket.on('connect', () => {
+            console.log('Conectado al servidor');
+            const userEmoji = document.body.dataset.userEmoji || '🎮';
+            showMessage('Conectado. Esperando oponente...', 0);
+        });
+
+        socket.on('init', data => {
+            playerId = data.playerId;
+            console.log('Player ID:', playerId);
+            showMessage('¡Oponente encontrado! Iniciando partida...', 2000);
+        });
+
+        socket.on('game_state', data => {
+            gameState = data;
+            selectedUnit = null; // Reset selección
+            console.log('Estado del juego:', gameState);
+            updateUI();
+            drawBoard();
+        });
+
+        socket.on('unit_selected', data => {
+            selectedUnit = data.unit;
+            console.log('Unidad seleccionada:', selectedUnit);
+            drawBoard();
+        });
+
+        socket.on('invalid_move', data => {
+            console.log('Movimiento inválido:', data.reason);
+            showMessage('Movimiento inválido: ' + data.reason, 2000);
+        });
+
+        socket.on('game_over', data => {
+            gameState.gameOver = true;
+            gameState.winner = data.winner;
+            updateUI();
+            drawBoard();
+            
+            setTimeout(() => {
+                window.location.href = '/lobby';
+            }, 5000);
+        });
+
+        socket.on('player_disconnected', () => {
+            showMessage('El oponente se desconectó', 0);
+            setTimeout(() => {
+                window.location.href = '/lobby';
+            }, 3000);
+        });
+
+        // Inicialización
+        drawBoard();
+    </script>
+</body>
+</html>

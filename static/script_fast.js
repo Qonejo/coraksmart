@@ -196,6 +196,27 @@ function initMobileCartToggle() {
     const carritoResumen = document.getElementById('carrito-resumen');
     
     if (carritoPanel && carritoResumen) {
+        // Forzar posicionamiento en móvil
+        function enforceFixedPosition() {
+            if (window.innerWidth <= 850) {
+                carritoPanel.style.position = 'fixed';
+                carritoPanel.style.bottom = '0';
+                carritoPanel.style.left = '0';
+                carritoPanel.style.right = '0';
+                carritoPanel.style.zIndex = '9999';
+                carritoPanel.style.width = '100vw';
+                
+                carritoResumen.style.position = 'absolute';
+                carritoResumen.style.bottom = '0';
+                carritoResumen.style.left = '0';
+                carritoResumen.style.right = '0';
+                carritoResumen.style.zIndex = '10000';
+            }
+        }
+        
+        // Aplicar al cargar
+        enforceFixedPosition();
+        
         carritoResumen.addEventListener('click', (e) => {
             // Solo en móvil (ancho menor a 850px)
             if (window.innerWidth <= 850) {
@@ -203,6 +224,7 @@ function initMobileCartToggle() {
                 if (!e.target.matches('.boton-comprar') && !e.target.closest('.boton-comprar')) {
                     carritoPanel.classList.toggle('expanded');
                     console.log('Carrito móvil toggled');
+                    enforceFixedPosition(); // Re-aplicar posicionamiento
                 }
             }
         });
@@ -220,6 +242,22 @@ function initMobileCartToggle() {
         window.addEventListener('resize', () => {
             if (window.innerWidth > 850) {
                 carritoPanel.classList.remove('expanded');
+            } else {
+                enforceFixedPosition(); // Re-aplicar en móvil
+            }
+        });
+        
+        // Listener adicional para scroll (algunos navegadores móviles)
+        window.addEventListener('scroll', () => {
+            if (window.innerWidth <= 850) {
+                enforceFixedPosition();
+            }
+        });
+        
+        // Listener para cuando la página regana foco (cambio de tab)
+        window.addEventListener('focus', () => {
+            if (window.innerWidth <= 850) {
+                enforceFixedPosition();
             }
         });
     }

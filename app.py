@@ -357,6 +357,11 @@ def lobby_old():
 @app.route("/arena")
 def arena():
     if not session.get("logged_in_user_emoji"): return redirect(url_for("entrar"))
+    return render_template("arena_tactica.html")
+
+@app.route("/arena-snake")
+def arena_snake():
+    if not session.get("logged_in_user_emoji"): return redirect(url_for("entrar"))
     return render_template("arena.html")
 
 # Estado global del lobby - SIMPLIFICADO
@@ -368,11 +373,34 @@ lobby_state = {
 
 active_games = {}
 
-def generate_food(width=600, height=400, cell_size=15):
-    return {
-        "x": random.randint(0, (width - cell_size) // cell_size) * cell_size,
-        "y": random.randint(0, (height - cell_size) // cell_size) * cell_size
+# Lógica del juego de táctica
+def create_tactical_game(player1_id, player2_id):
+    """Crear una nueva partida de táctica"""
+    game = {
+        "players": [player1_id, player2_id],
+        "turn": player1_id,  # El primer jugador empieza
+        "gameOver": False,
+        "winner": None,
+        "units": [],
+        "selectedUnit": None
     }
+    
+    # Crear unidades iniciales para cada jugador
+    # Jugador 1 (abajo)
+    game["units"].extend([
+        {"x": 1, "y": 4, "type": "soldier", "owner": player1_id, "hp": 3, "maxHp": 3},
+        {"x": 2, "y": 4, "type": "archer", "owner": player1_id, "hp": 2, "maxHp": 2},
+        {"x": 3, "y": 4, "type": "soldier", "owner": player1_id, "hp": 3, "maxHp": 3}
+    ])
+    
+    # Jugador 2 (arriba)
+    game["units"].extend([
+        {"x": 1, "y": 0, "type": "soldier", "owner": player2_id, "hp": 3, "maxHp": 3},
+        {"x": 2, "y": 0, "type": "archer", "owner": player2_id, "hp": 2, "maxHp": 2},
+        {"x": 3, "y": 0, "type": "soldier", "owner": player2_id, "hp": 3, "maxHp": 3}
+    ])
+    
+    return game
 
 def get_user_data(user_emoji):
     """Obtiene los datos del usuario incluyendo puntos de aura"""
@@ -387,7 +415,7 @@ def broadcast_lobby_state():
     pass
 
 def try_match_players():
-    """Intenta emparejar jugadores que están buscando duelo"""
+    """Intenta emparejar jugadores que están buscando duelo - VERSIÓN TÁCTICA"""
     if len(lobby_state["searching"]) >= 2:
         # Tomar los dos primeros jugadores
         players_list = list(lobby_state["searching"].items())
@@ -395,7 +423,7 @@ def try_match_players():
         player2_sid, player2_data = players_list[1]
         
         # Crear sala de juego
-        room_name = f"game-{player1_sid[:8]}-{player2_sid[:8]}"
+        room_name = f"tactical-{player1_sid[:8]}-{player2_sid[:8]}"
         
         # Remover de búsqueda y agregar a combate
         del lobby_state["searching"][player1_sid]
@@ -411,40 +439,20 @@ def try_match_players():
         join_room(room_name, sid=player1_sid)
         join_room(room_name, sid=player2_sid)
         
-        # Crear juego activo
-        active_games[room_name] = {
-            "players": {
-                player1_sid: {
-                    "emoji": player1_data["emoji"], 
-                    "snake": [{"x": 75, "y": 75}], 
-                    "direction": {"x": 15, "y": 0},
-                    "score": 0,
-                    "alive": True
-                },
-                player2_sid: {
-                    "emoji": player2_data["emoji"], 
-                    "snake": [{"x": 450, "y": 75}], 
-                    "direction": {"x": -15, "y": 0},
-                    "score": 0,
-                    "alive": True
-                }
-            },
-            "food": generate_food(),
-            "game_over": False,
-            "winner": None
-        }
+        # Crear juego táctico activo
+        active_games[room_name] = create_tactical_game(player1_sid, player2_sid)
         
         # Notificar inicio del juego a los jugadores
-        emit('game_started', {
-            "room": room_name, 
-            "players": active_games[room_name]["players"],
-            "food": active_games[room_name]["food"]
-        }, room=room_name)
+        emit('init', {"playerId": player1_sid}, room=player1_sid)
+        emit('init', {"playerId": player2_sid}, room=player2_sid)
+        
+        # Enviar estado inicial del juego
+        emit('game_state', active_games[room_name], room=room_name)
         
         # Actualizar lobby para todos
         broadcast_lobby_state()
         
-        print(f"[MATCH] Emparejados: {player1_data['emoji']} vs {player2_data['emoji']}")
+        print(f"[TACTICAL] Nueva partida: {player1_data['emoji']} vs {player2_data['emoji']}")
         return True
     return False
 
@@ -473,91 +481,152 @@ def handle_ping():
     """Heartbeat para mantener conexión activa"""
     emit('pong')
 
-@socketio.on('player_input')
-def handle_player_input(data):
+@socketio.on('select_cell')
+def handle_select_cell(data):
+    """Manejar selección de celda en el juego de táctica"""
     player_sid = request.sid
-    direction = data.get('direction')
+    x = data.get('x')
+    y = data.get('y')
     
+    # Encontrar la partida del jugador
     current_room = None
     for room, game_data in active_games.items():
         if player_sid in game_data["players"]:
             current_room = room
             break
     
-    if not current_room or active_games[current_room]["game_over"]:
+    if not current_room:
+        emit('invalid_move', {'reason': 'No estás en una partida'})
+        return
+        
+    game = active_games[current_room]
+    
+    if game["gameOver"]:
+        emit('invalid_move', {'reason': 'El juego ha terminado'})
         return
     
-    player = active_games[current_room]["players"][player_sid]
-    current_dir = player["direction"]
+    if game["turn"] != player_sid:
+        emit('invalid_move', {'reason': 'No es tu turno'})
+        return
     
-    if direction == "up" and current_dir["y"] == 0:
-        player["direction"] = {"x": 0, "y": -15}
-    elif direction == "down" and current_dir["y"] == 0:
-        player["direction"] = {"x": 0, "y": 15}
-    elif direction == "left" and current_dir["x"] == 0:
-        player["direction"] = {"x": -15, "y": 0}
-    elif direction == "right" and current_dir["x"] == 0:
-        player["direction"] = {"x": 15, "y": 0}
+    # Verificar si hay una unidad seleccionada
+    if game["selectedUnit"] is None:
+        # Intentar seleccionar unidad
+        selected_unit = None
+        for unit in game["units"]:
+            if unit["x"] == x and unit["y"] == y and unit["owner"] == player_sid:
+                selected_unit = unit
+                break
+        
+        if selected_unit:
+            game["selectedUnit"] = selected_unit
+            emit('unit_selected', {'unit': selected_unit}, room=current_room)
+            print(f"[TACTICAL] Unidad seleccionada: {selected_unit}")
+        else:
+            emit('invalid_move', {'reason': 'No hay unidad tuya en esa posición'})
+    else:
+        # Intentar mover la unidad seleccionada
+        move_unit(current_room, game["selectedUnit"], x, y)
+
+def move_unit(room_name, unit, target_x, target_y):
+    """Mover una unidad en el juego de táctica"""
+    game = active_games[room_name]
+    
+    # Verificar si el movimiento es válido
+    if not is_valid_move(unit, target_x, target_y, game):
+        emit('invalid_move', {'reason': 'Movimiento inválido'})
+        return
+    
+    # Verificar si hay una unidad enemiga en la posición objetivo
+    target_unit = None
+    for u in game["units"]:
+        if u["x"] == target_x and u["y"] == target_y:
+            target_unit = u
+            break
+    
+    if target_unit and target_unit["owner"] != unit["owner"]:
+        # Combate!
+        damage = 1
+        if unit["type"] == "archer":
+            damage = 2
+        
+        target_unit["hp"] -= damage
+        print(f"[TACTICAL] {unit['type']} ataca a {target_unit['type']} por {damage} daño")
+        
+        if target_unit["hp"] <= 0:
+            # Eliminar unidad muerta
+            game["units"].remove(target_unit)
+            print(f"[TACTICAL] {target_unit['type']} eliminado")
+    
+    # Mover la unidad
+    unit["x"] = target_x
+    unit["y"] = target_y
+    
+    # Limpiar selección
+    game["selectedUnit"] = None
+    
+    # Cambiar turno
+    current_player_index = game["players"].index(game["turn"])
+    next_player_index = (current_player_index + 1) % len(game["players"])
+    game["turn"] = game["players"][next_player_index]
+    
+    # Verificar condición de victoria
+    check_victory(room_name)
+    
+    # Enviar estado actualizado
+    emit('game_state', game, room=room_name)
+    
+def is_valid_move(unit, target_x, target_y, game):
+    """Verificar si un movimiento es válido"""
+    # Verificar límites del tablero
+    if target_x < 0 or target_x >= 5 or target_y < 0 or target_y >= 5:
+        return False
+    
+    # Verificar que no se mueva a la misma posición
+    if unit["x"] == target_x and unit["y"] == target_y:
+        return False
+    
+    # Verificar que el movimiento sea adyacente (solo una casilla)
+    dx = abs(unit["x"] - target_x)
+    dy = abs(unit["y"] - target_y)
+    
+    if dx + dy != 1:  # Movimiento Manhattan de 1
+        return False
+    
+    # Verificar que no haya unidad aliada en la posición objetivo
+    for u in game["units"]:
+        if u["x"] == target_x and u["y"] == target_y and u["owner"] == unit["owner"]:
+            return False
+    
+    return True
+
+def check_victory(room_name):
+    """Verificar condiciones de victoria"""
+    game = active_games[room_name]
+    
+    # Contar unidades de cada jugador
+    player_units = {}
+    for unit in game["units"]:
+        if unit["owner"] not in player_units:
+            player_units[unit["owner"]] = 0
+        player_units[unit["owner"]] += 1
+    
+    # Verificar si algún jugador perdió todas sus unidades
+    for player in game["players"]:
+        if player not in player_units or player_units[player] == 0:
+            # Este jugador perdió
+            winner = game["players"][1] if game["players"][0] == player else game["players"][0]
+            game["gameOver"] = True
+            game["winner"] = winner
+            
+            emit('game_over', {'winner': winner}, room=room_name)
+            print(f"[TACTICAL] Juego terminado. Ganador: {winner}")
+            break
 
 def update_game(room_name):
-    if room_name not in active_games:
-        return
-    
-    game = active_games[room_name]
-    if game["game_over"]:
-        return
-    
-    for player_id, player in game["players"].items():
-        if not player["alive"]:
-            continue
-        
-        head = player["snake"][0]
-        new_head = {
-            "x": head["x"] + player["direction"]["x"],
-            "y": head["y"] + player["direction"]["y"]
-        }
-        player["snake"].insert(0, new_head)
-        
-        if new_head["x"] == game["food"]["x"] and new_head["y"] == game["food"]["y"]:
-            player["score"] += 1
-            game["food"] = generate_food()
-        else:
-            player["snake"].pop()
-        
-        if (new_head["x"] < 0 or new_head["x"] >= 600 or 
-            new_head["y"] < 0 or new_head["y"] >= 400):
-            player["alive"] = False
-        
-        if new_head in player["snake"][1:]:
-            player["alive"] = False
-        
-        for other_id, other_player in game["players"].items():
-            if other_id != player_id and new_head in other_player["snake"]:
-                player["alive"] = False
-    
-    alive_players = [pid for pid, p in game["players"].items() if p["alive"]]
-    if len(alive_players) <= 1:
-        game["game_over"] = True
-        if len(alive_players) == 1:
-            game["winner"] = alive_players[0]
-        
-        # Emitir fin de juego
-        emit('game_over', {
-            "winner": game["winner"],
-            "players": game["players"]
-        }, room=room_name)
-        
-        # Manejar el fin del juego y devolver jugadores al lobby
-        handle_game_over(room_name, game.get("winner"))
-        
-        # Limpiar el juego activo
-        if room_name in active_games:
-            del active_games[room_name]
-    else:
-        emit('game_update', {
-            "players": game["players"],
-            "food": game["food"]
-        }, room=room_name)
+    """Función heredada del Snake - Ya no se usa en juego de táctica"""
+    # El juego de táctica se maneja por eventos, no por updates constantes
+    pass
 
 # GAME LOOP DESHABILITADO - LOBBY SIMPLIFICADO
 # El juego se maneja por eventos, no por loop constante
