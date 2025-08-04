@@ -6,8 +6,8 @@ let productosDetalle = {};
 let carritoCache = null;
 let lastUpdate = 0;
 
-// Funciones de carrito optimizadas
-async function agregarAlCarrito(productId) {
+// Funciones de carrito optimizadas - GLOBALES
+window.agregarAlCarrito = async function(productId) {
     try {
         const response = await fetch(`/api/agregar/${productId}`, { method: 'POST' });
         const data = await response.json();
@@ -17,7 +17,7 @@ async function agregarAlCarrito(productId) {
     }
 }
 
-async function quitarDelCarrito(productId) {
+window.quitarDelCarrito = async function(productId) {
     try {
         const response = await fetch(`/api/quitar/${productId}`, { method: 'POST' });
         const data = await response.json();
@@ -27,7 +27,7 @@ async function quitarDelCarrito(productId) {
     }
 }
 
-async function limpiarCarrito() {
+window.limpiarCarrito = async function() {
     try {
         const response = await fetch('/api/limpiar', { method: 'POST' });
         const data = await response.json();
@@ -47,7 +47,7 @@ function actualizarCarrito(data) {
     if (now - lastUpdate < 50) return; // Throttle de 50ms
     lastUpdate = now;
     
-    const carritoElement = document.getElementById('carrito-items');
+    const carritoElement = document.getElementById('carrito-lista');
     const totalElement = document.getElementById('carrito-total');
     const btnComprar = document.getElementById('comprar-btn');
     
@@ -71,32 +71,37 @@ function actualizarCarrito(data) {
         itemCount += cantidad;
         
         itemsHTML.push(`
-            <div class="carrito-item">
+            <li class="carrito-item">
                 <div class="item-info">
                     <span class="item-nombre">${producto.nombre}</span>
                     <span class="item-precio">$${producto.precio.toFixed(2)}</span>
                 </div>
-                <div class="item-controls">
+                <div class="item-controles">
                     <button onclick="quitarDelCarrito('${productId}')" class="btn-cantidad">-</button>
                     <span class="cantidad">${cantidad}</span>
                     <button onclick="agregarAlCarrito('${productId}')" class="btn-cantidad">+</button>
                 </div>
                 <div class="item-subtotal">$${subtotal.toFixed(2)}</div>
-            </div>
+            </li>
         `);
     }
     
     // Actualizar DOM de una vez
-    carritoElement.innerHTML = itemsHTML.join('');
+    if (itemsHTML.length > 0) {
+        carritoElement.innerHTML = itemsHTML.join('');
+    } else {
+        carritoElement.innerHTML = '<li class="empty-cart-message">Tu inventario está vacío.</li>';
+    }
+    
     totalElement.textContent = `$${total.toFixed(2)}`;
     
     // Actualizar botón de compra
     if (itemCount > 0) {
         btnComprar.classList.remove('disabled');
-        btnComprar.textContent = `COMPRAR (${itemCount})`;
+        btnComprar.textContent = `FINALIZAR COMPRA`;
     } else {
         btnComprar.classList.add('disabled');
-        btnComprar.textContent = 'CARRITO VACÍO';
+        btnComprar.textContent = 'FINALIZAR COMPRA';
     }
 }
 
@@ -114,7 +119,7 @@ async function cargarCarrito() {
 // Modal de imagen optimizado
 let currentModal = null;
 
-function abrirImagenModal(imageSrc, title) {
+window.abrirImagenModal = function(imageSrc, title) {
     if (currentModal) return; // Evitar múltiples modales
     
     const modal = document.getElementById('image-modal');
@@ -132,7 +137,7 @@ function abrirImagenModal(imageSrc, title) {
     document.addEventListener('keydown', cerrarModalConESC);
 }
 
-function cerrarImagenModal() {
+window.cerrarImagenModal = function() {
     if (!currentModal) return;
     
     currentModal.classList.remove('modal-visible');
@@ -179,6 +184,37 @@ function initEventListeners() {
     const btnLimpiar = document.getElementById('limpiar-carrito');
     if (btnLimpiar) {
         btnLimpiar.addEventListener('click', limpiarCarrito);
+    }
+    
+    // Toggle del carrito móvil
+    initMobileCartToggle();
+}
+
+// Función para el carrito móvil desplegable
+function initMobileCartToggle() {
+    const carritoPanel = document.getElementById('carrito-panel');
+    const carritoResumen = document.getElementById('carrito-resumen');
+    
+    if (carritoPanel && carritoResumen) {
+        carritoResumen.addEventListener('click', (e) => {
+            // Solo en móvil (ancho menor a 850px)
+            if (window.innerWidth <= 850) {
+                // No hacer toggle si se clickeó el botón de comprar
+                if (!e.target.matches('.boton-comprar')) {
+                    carritoPanel.classList.toggle('expanded');
+                    console.log('Carrito móvil toggled');
+                }
+            }
+        });
+        
+        // Cerrar carrito si se toca fuera de él en móvil
+        document.addEventListener('click', (e) => {
+            if (window.innerWidth <= 850 && carritoPanel.classList.contains('expanded')) {
+                if (!carritoPanel.contains(e.target)) {
+                    carritoPanel.classList.remove('expanded');
+                }
+            }
+        });
     }
 }
 

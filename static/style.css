@@ -263,6 +263,9 @@ h2 {
         border: none;
         background-color: #222;
         cursor: pointer; /* Cambia el cursor para indicar que es clickeable */
+        position: sticky;
+        bottom: 0;
+        z-index: 1000;
     }
     .total-line { margin-bottom: 0; }
     .boton-comprar { width: auto; padding: 8px 12px; font-size: 0.8em; }

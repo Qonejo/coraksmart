@@ -32,7 +32,7 @@
 <div class="producto-item {% if completamente_agotado %}agotado{% endif %} {% if prod.get('promocion') %}promo-item{% endif %}">
     
     <img src="{{ url_for('static', filename=prod.imagen) }}" alt="{{ prod.nombre }}">
-    <div class.producto-nombre">{{ prod.nombre }}</div>
+    <div class="producto-nombre">{{ prod.nombre }}</div>
     
     {% if prod.bundle_items %}
         <!-- Es un Paquete Promocional -->
