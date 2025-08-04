@@ -32,8 +32,13 @@
     </style>
 </head>
 <body>
-    <a href="{{ url_for('logout') }}" class="logout">Cerrar Sesión</a>
-    <h1>Panel de Administración</h1>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h1>Panel de Administración</h1>
+        <div>
+            <a href="{{ url_for('admin_configuracion') }}" style="background: #007bff; color: white; padding: 8px 15px; text-decoration: none; border-radius: 5px; margin-right: 10px;">⚙️ Configuración</a>
+            <a href="{{ url_for('logout') }}" class="logout">Cerrar Sesión</a>
+        </div>
+    </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% for category, message in messages %}

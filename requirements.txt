@@ -1,6 +1,4 @@
 Flask
 gunicorn
-Flask-SocketIO
 werkzeug
 whitenoise
-eventlet

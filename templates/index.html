@@ -38,12 +38,12 @@
         {% if aura_data %}
         <div class="aura-display">
             <div class="aura-info">
-                <span class="aura-text">Aura</span>
-                <span class="aura-points">
-                    {% if aura_data.points >= 0 %}+{% else %}-{% endif %}
-                    {{ "{:,.0f}".format(aura_data.points|abs) }}
-                </span>
-                <img src="{{ url_for('static', filename='flame_' + aura_data.level_info.flame_color + '.gif') }}">
+                {% if aura_data.points > 0 %}
+                    <img src="{{ url_for('static', filename='flame_' + aura_data.level_info.flame_color + '.gif') }}" alt="Aura Flame">
+                    <span class="aura-text">Aura: +{{ "{:,.0f}".format(aura_data.points) }} pts</span>
+                {% else %}
+                    <span>🔥 Aura: +0 pts</span>
+                {% endif %}
             </div>
             
             <!-- ¡NUEVA LÓGICA DE LA BARRA DE PROGRESO! -->
@@ -67,7 +67,7 @@
         
         <div class="header-actions">
             <a href="{{ url_for('perfil_usuario') }}" class="perfil-link">Mi Perfil</a>
-            <a href="{{ url_for('lobby') }}" class="lobby-link">⚔️ Arena PvP</a>
+            <a href="{{ url_for('niveles_aura') }}" class="lobby-link">🏆 Niveles</a>
         </div>
     </div>
 </header>
@@ -105,7 +105,8 @@
                     <span id="carrito-total">$0.00</span>
                 </div>
                 <a id="comprar-btn" href="/comprar" class="boton-comprar disabled">
-                    FINALIZAR COMPRA
+                    FINALIZAR
+COMPRA
                 </a>
             </div>
         </div>

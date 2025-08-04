@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Niveles de Aura - CorakSmart</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .niveles-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+            border: 4px solid #00ff00;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        
+        .nivel-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            margin: 10px 0;
+            background: #2a2a2a;
+            border: 2px solid #444;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .nivel-item.current {
+            border-color: #00ff00;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
+            background: #003300;
+        }
+        
+        .nivel-item.completed {
+            border-color: #888;
+            background: #333;
+        }
+        
+        .flame-icon {
+            width: 40px;
+            height: 40px;
+            margin-right: 15px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+        
+        .flame-white { background: linear-gradient(45deg, #fff, #ddd); color: #333; }
+        .flame-blue { background: linear-gradient(45deg, #4444ff, #2222cc); color: #fff; }
+        .flame-green { background: linear-gradient(45deg, #44ff44, #22cc22); color: #000; }
+        .flame-yellow { background: linear-gradient(45deg, #ffff44, #cccc22); color: #000; }
+        .flame-orange { background: linear-gradient(45deg, #ff8844, #cc5522); color: #fff; }
+        .flame-red { background: linear-gradient(45deg, #ff4444, #cc2222); color: #fff; }
+        .flame-purple { background: linear-gradient(45deg, #8844ff, #5522cc); color: #fff; }
+        .flame-black { background: linear-gradient(45deg, #333, #111); color: #fff; }
+        
+        .nivel-info {
+            flex: 1;
+        }
+        
+        .nivel-titulo {
+            font-size: 14px;
+            color: #00ff00;
+            margin-bottom: 5px;
+        }
+        
+        .nivel-puntos {
+            font-size: 12px;
+            color: #ccc;
+            margin-bottom: 5px;
+        }
+        
+        .nivel-premio {
+            font-size: 11px;
+            color: #ffff44;
+        }
+        
+        .progreso-container {
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        .progreso-bar {
+            width: 100%;
+            height: 20px;
+            background: #333;
+            border: 2px solid #555;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progreso-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ff00, #44ff44);
+            transition: width 0.5s ease;
+        }
+        
+        .volver-btn {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 12px 20px;
+            background: #333;
+            color: #00ff00;
+            text-decoration: none;
+            border: 2px solid #00ff00;
+            border-radius: 5px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .volver-btn:hover {
+            background: #00ff00;
+            color: #000;
+        }
+        
+        @media (max-width: 768px) {
+            .niveles-container {
+                margin: 10px;
+                padding: 15px;
+            }
+            
+            .nivel-item {
+                padding: 10px;
+            }
+            
+            .flame-icon {
+                width: 30px;
+                height: 30px;
+                font-size: 16px;
+                margin-right: 10px;
+            }
+            
+            .nivel-titulo {
+                font-size: 12px;
+            }
+            
+            .nivel-puntos, .nivel-premio {
+                font-size: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo-container">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="CorakSmart" style="height: 60px;">
+        </div>
+        <div class="user-info">
+            <span class="user-emoji">{{ session.logged_in_user_emoji }}</span>
+            <div class="aura-display">
+                {% if aura_data.points > 0 %}
+                    <img src="{{ url_for('static', filename='flame_' + aura_data.level_info.flame_color + '.png') }}" 
+                         alt="Aura" class="flame-icon-small">
+                    <span>Aura: +{{ aura_data.points }} pts</span>
+                {% else %}
+                    🔥 <span>Aura: +0 pts</span>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    <div class="niveles-container">
+        <h1 style="text-align: center; color: #00ff00; margin-bottom: 30px;">🏆 Niveles de Aura 🏆</h1>
+        
+        <div class="progreso-container">
+            <h3 style="color: #00ff00;">Tu Progreso Actual</h3>
+            <p style="color: #ccc;">Puntos de Aura: <strong style="color: #ffff44;">{{ aura_data.points }}</strong></p>
+            
+            {% if aura_data.level_info.level < 7 %}
+                {% set next_level = AURA_LEVELS[aura_data.level_info.level + 1] %}
+                {% set progress = ((aura_data.points - aura_data.level_info.points_needed) / (next_level.points_needed - aura_data.level_info.points_needed)) * 100 %}
+                <p style="color: #ccc;">Progreso al siguiente nivel: 
+                    <strong style="color: #ffff44;">{{ aura_data.points - aura_data.level_info.points_needed }}</strong> / 
+                    <strong style="color: #ffff44;">{{ next_level.points_needed - aura_data.level_info.points_needed }}</strong>
+                </p>
+                <div class="progreso-bar">
+                    <div class="progreso-fill" style="width: {{ progress if progress > 0 else 0 }}%"></div>
+                </div>
+            {% else %}
+                <p style="color: #ffff44;">¡Nivel máximo alcanzado!</p>
+            {% endif %}
+        </div>
+        
+        <div class="niveles-lista">
+            {% for nivel in AURA_LEVELS[1:] %}
+                <div class="nivel-item 
+                    {% if aura_data.level_info.level == nivel.level %}current
+                    {% elif aura_data.points >= nivel.points_needed %}completed
+                    {% endif %}">
+                    
+                    <div class="flame-icon flame-{{ nivel.flame_color }}">
+                        🔥
+                    </div>
+                    
+                    <div class="nivel-info">
+                        <div class="nivel-titulo">
+                            Nivel {{ nivel.level }} - Llama {{ nivel.flame_color.title() }}
+                        </div>
+                        <div class="nivel-puntos">
+                            {% if nivel.points_needed == 0 %}
+                                Desde 0 puntos
+                            {% else %}
+                                Desde {{ "{:,}".format(nivel.points_needed) }} puntos
+                            {% endif %}
+                        </div>
+                        <div class="nivel-premio">
+                            🎁 Premio: {{ nivel.prize }}
+                        </div>
+                    </div>
+                    
+                    {% if aura_data.points >= nivel.points_needed %}
+                        <div style="color: #00ff00; font-size: 20px;">✓</div>
+                    {% elif aura_data.level_info.level + 1 == nivel.level %}
+                        <div style="color: #ffff44; font-size: 16px;">⭐</div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+        
+        <div style="text-align: center;">
+            <a href="{{ url_for('index') }}" class="volver-btn">← Volver a la Tienda</a>
+        </div>
+    </div>
+</body>
+</html>

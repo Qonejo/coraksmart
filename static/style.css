@@ -191,8 +191,11 @@ h2 {
 /* ... (El resto de tus estilos hasta el bloque @media se quedan igual) ... */
 
 
-/* ========= ESTILOS PARA PANTALLAS PEQUEÑAS (MÓVILES) - MEJORADO ========= */
-@media (max-width: 850px) {
+/* ============================================= */
+/* === ESTILOS PARA DISPOSITIVOS MÓVILES === */
+/* ============================================= */
+@media (max-width: 768px) {
+    
     /* Asegurar que no haya espacios en los elementos raíz */
     html {
         margin-bottom: 0 !important;
@@ -202,11 +205,11 @@ h2 {
     /* Ajustes del body para móvil */
     body {
         padding: 0;
-        padding-bottom: 70px !important; /* Espacio para la barra fija */
         margin-bottom: 0 !important;
         overflow-x: hidden; /* Evita scroll horizontal */
     }
     
+    /* Centrar el logo en header */
     header {
         flex-direction: column;
         gap: 15px;
@@ -214,23 +217,32 @@ h2 {
         padding: 15px;
         border-left: none;
         border-right: none;
+        text-align: center; /* Centrar contenido del header */
     }
     
+    header img {
+        margin: 0 auto; /* Centrar el logo específicamente */
+        display: block;
+    }
+    
+    /* 1. Hacemos que el contenedor principal apile los elementos verticalmente */
     .rpg-container {
         flex-direction: column;
-        padding: 10px;
+        padding: 10px; /* Reducimos un poco el padding en móviles */
+        gap: 10px;
         margin: 0;
-        gap: 0;
         width: 100%;
         box-sizing: border-box;
     }
 
-    /* Panel de productos ajustado */
+    /* 3. ¡MUY IMPORTANTE! Añadimos un espacio de seguridad en la parte inferior de los productos */
+    /* para que los últimos no queden ocultos detrás de la barra del carrito. */
     #productos-panel {
         border-right: none;
         border-left: none;
         padding: 15px 10px;
-        padding-bottom: 120px; /* Más espacio para la barra flotante */
+        /* La altura de este padding-bottom debe ser un poco mayor que la altura que podría tener el carrito */
+        padding-bottom: 250px; 
         margin: 0;
         width: 100%;
         box-sizing: border-box;
@@ -245,32 +257,33 @@ h2 {
         border-right: none;
     }
 
-    /* Carrito móvil fijo en la parte inferior - MEJORADO */
+    /* 2. Modificamos el panel del carrito para que sea una barra fija en la parte inferior */
     #carrito-panel {
-        position: fixed !important;
-        bottom: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        width: 100vw !important;
-        height: 70px !important;
+        position: fixed !important;   /* Lo fijamos a la ventana del navegador */
+        bottom: 0 !important;         /* Lo pegamos a la parte inferior */
+        left: 0 !important;           /* Hacemos que ocupe todo el ancho */
+        width: 100% !important;
+        
+        top: auto !important;         /* Anulamos la propiedad 'top' de la vista de escritorio */
+        z-index: 1000 !important;     /* Nos aseguramos de que esté por encima de otros elementos */
+        
+        /* Limitamos su altura máxima y permitimos scroll si el carrito es muy largo */
+        max-height: 45vh !important;  /* Podrá ocupar hasta el 45% de la altura de la pantalla */
+        overflow-y: auto !important;  /* Si el contenido excede la altura, se podrá hacer scroll dentro del carrito */
+        
+        /* Ajustes estéticos para que se vea bien como barra inferior */
         background-color: #222;
-        border-top: 4px solid #fff;
-        border-left: none;
+        border-top: 3px solid #fff;
         border-right: none;
+        border-left: none;
         border-bottom: none;
-        z-index: 9999 !important;
+        margin: 0 !important;         /* Quitamos cualquier margen */
+        border-radius: 0 !important;  /* Quitamos los bordes redondeados si los tuviera */
+        
         box-shadow: 0 -3px 10px rgba(0,0,0,0.7);
-        overflow: hidden;
         transition: height 0.3s ease-in-out;
-        margin: 0 !important;
         padding: 0 !important;
         box-sizing: border-box;
-        
-        /* Asegurar que esté completamente pegado al borde */
-        margin-bottom: 0 !important;
-        padding-bottom: 0 !important;
-        border-bottom-left-radius: 0 !important;
-        border-bottom-right-radius: 0 !important;
         
         /* Forzar posicionamiento móvil */
         transform: translateZ(0); /* Activar aceleración hardware */
@@ -280,9 +293,9 @@ h2 {
         
         /* Reset de estilos desktop */
         flex-direction: column;
-        max-height: unset;
         flex: none !important;
-        position: fixed !important;
+        height: auto !important;
+        min-height: 70px !important;
     }
 
     /* Estado expandido del carrito móvil */
@@ -354,9 +367,11 @@ h2 {
     
     .boton-comprar { 
         width: auto; 
-        padding: 12px 16px; 
-        font-size: 0.7em;
-        white-space: nowrap;
+        padding: 8px 12px; 
+        font-size: 0.65em;
+        white-space: pre-line; /* Permite saltos de línea */
+        line-height: 1.2;
+        text-align: center;
     }
 
     /* Productos grid ajustado para móvil */
@@ -367,8 +382,10 @@ h2 {
         margin: 0;
     }
     
+    /* Opcional: Ajustar el tamaño de la fuente en la tarjeta de producto para móviles */
     .producto-item {
         padding: 10px;
+        font-size: 0.9em;
         margin: 0;
     }
     
