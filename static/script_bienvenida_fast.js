@@ -139,19 +139,22 @@ function closeModal() {
 // Login optimizado
 async function attemptLogin() {
     if (!selectedEmoji) {
-        showStatus('Selecciona un avatar primero', 'error');
+        showError('Selecciona un avatar primero');
         return;
     }
     
     const password = document.getElementById('password-input').value.trim();
     if (!password) {
-        showStatus('Ingresa una contraseña', 'error');
+        showError('Ingresa una contraseña');
         return;
     }
     
-    const button = document.getElementById('login-button');
+    const button = document.querySelector('#access-form button[type="submit"]');
+    const originalText = button.textContent;
     button.disabled = true;
     button.textContent = 'Entrando...';
+    
+    console.log('Intentando login con emoji:', selectedEmoji);
     
     try {
         const response = await fetch('/api/emoji-access', {
@@ -161,32 +164,58 @@ async function attemptLogin() {
         });
         
         const result = await response.json();
+        console.log('Respuesta del servidor:', result);
         
         if (result.success) {
-            showStatus('¡Acceso concedido! Redirigiendo...', 'success');
-            setTimeout(() => window.location.href = '/', 1000);
+            showError('¡Acceso concedido! Redirigiendo...', 'success');
+            closeModal();
+            setTimeout(() => {
+                console.log('Redirigiendo a /');
+                window.location.href = '/';
+            }, 1500);
         } else {
-            showStatus(result.message || 'Error de acceso', 'error');
+            showError(result.message || 'Error de acceso');
             button.disabled = false;
-            button.textContent = 'Entrar';
+            button.textContent = originalText;
         }
     } catch (error) {
-        showStatus('Error de conexión', 'error');
+        console.error('Error en attemptLogin:', error);
+        showError('Error de conexión');
         button.disabled = false;
-        button.textContent = 'Entrar';
+        button.textContent = originalText;
     }
 }
 
-// Mostrar mensaje de estado
-function showStatus(message, type) {
-    const statusEl = document.getElementById('status-message');
-    statusEl.textContent = message;
-    statusEl.className = type;
-    statusEl.style.display = 'block';
-    
-    if (type === 'error') {
-        setTimeout(() => statusEl.style.display = 'none', 3000);
+// Mostrar mensaje de estado en el modal y/o página principal
+function showError(message, type = 'error') {
+    // Mostrar en el modal si está abierto
+    const errorEl = document.getElementById('error-message');
+    if (errorEl) {
+        errorEl.textContent = message;
+        errorEl.className = type === 'success' ? 'success' : 'error';
+        errorEl.style.display = 'block';
+        
+        if (type === 'error') {
+            setTimeout(() => errorEl.style.display = 'none', 3000);
+        }
     }
+    
+    // También mostrar en la página principal para mensajes de éxito
+    if (type === 'success') {
+        const statusEl = document.getElementById('status-message');
+        if (statusEl) {
+            statusEl.textContent = message;
+            statusEl.className = 'success';
+            statusEl.style.display = 'block';
+        }
+    }
+    
+    console.log('Mensaje mostrado:', message, type);
+}
+
+// Mostrar mensaje de estado (función legacy)
+function showStatus(message, type) {
+    showError(message, type);
 }
 
 // Inicialización rápida
