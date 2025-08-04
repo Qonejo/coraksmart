@@ -166,7 +166,7 @@ def index():
     return render_template(
         "index.html",
         PRODUCTOS_ORDENADOS=productos_ordenados, # Enviamos la lista
-        PRODUCTOS_DICT=productos_dict,       # Y el diccionario original
+        PRODUCTOS=productos_dict,       # Y el diccionario original (nombre correcto)
         aura_data=aura_data,
         AURA_LEVELS=AURA_LEVELS
     )
