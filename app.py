@@ -20,14 +20,17 @@ app.wsgi_app = WhiteNoise(app.wsgi_app, root="static/", max_age=31536000)
 print("WhiteNoise configurado.")
 
 UPLOAD_FOLDER = 'static'
-# Configuración de SocketIO unificada
+# Configuración de SocketIO unificada y compatible
 socketio = SocketIO(
     app,
     cors_allowed_origins="*",
     logger=False,
     engineio_logger=False,
     ping_timeout=60,
-    ping_interval=25
+    ping_interval=25,
+    transports=['polling', 'websocket'],
+    allow_upgrades=True,
+    async_mode='threading'
 )
 
 # --- CONFIGURACIÓN DE ARCHIVOS ---
@@ -459,6 +462,8 @@ def try_match_players():
 @socketio.on('connect')
 def handle_connect():
     print(f"[CONNECT] Cliente conectado: {request.sid}")
+    # Enviar inicialización al cliente
+    emit('init', {'playerId': request.sid})
 
 # HANDLERS DE LOBBY DESHABILITADOS
 @socketio.on('join_lobby')

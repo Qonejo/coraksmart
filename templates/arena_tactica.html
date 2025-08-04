@@ -94,9 +94,9 @@
     </style>
 </head>
 <body>
-    <h1>⚔️ Arena Táctica PvP ⚔️</h1>
+    <h1>⚔️ Arena Tactica PvP ⚔️</h1>
     <canvas id="board" width="500" height="500"></canvas>
-    <div id="info">Esperando conexión...</div>
+    <div id="info">Esperando conexion...</div>
     <div id="players">
         <div class="player-info">
             <div>Jugador 1</div>
@@ -109,9 +109,13 @@
     </div>
     <div id="units-info"></div>
 
-    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdn.socket.io/4.7.1/socket.io.min.js"></script>
     <script>
-        const socket = io();
+        const socket = io({
+            transports: ['polling', 'websocket'],
+            upgrade: true,
+            rememberUpgrade: false
+        });
         const canvas = document.getElementById('board');
         const ctx = canvas.getContext('2d');
         const size = 5;
@@ -211,8 +215,24 @@
             socket.emit('select_cell', { x, y });
         });
 
-        // Socket events
+        // Socket events y debugging
+        socket.on('connect', () => {
+            console.log('Conectado al servidor');
+            document.getElementById('info').textContent = 'Conectado, esperando inicializacion...';
+        });
+
+        socket.on('disconnect', () => {
+            console.log('Desconectado del servidor');
+            document.getElementById('info').textContent = 'Desconectado del servidor';
+        });
+
+        socket.on('connect_error', (error) => {
+            console.error('Error de conexion:', error);
+            document.getElementById('info').textContent = 'Error de conexion';
+        });
+
         socket.on('init', data => {
+            console.log('Inicializacion recibida:', data);
             playerId = data.playerId;
             document.getElementById('info').textContent = 'Esperando oponente...';
         });
@@ -245,7 +265,7 @@
         });
 
         socket.on('invalid_move', data => {
-            document.getElementById('info').textContent = `Movimiento inválido: ${data.reason}`;
+            document.getElementById('info').textContent = `Movimiento invalido: ${data.reason}`;
             setTimeout(() => {
                 if (gameState) {
                     const isMyTurn = gameState.turn === playerId;
@@ -263,7 +283,7 @@
             document.getElementById('info').textContent = 'Oponente desconectado';
         });
 
-        // Cargar sprites cuando estén listos
+        // Cargar sprites cuando esten listos
         tileset.onload = () => drawBoard();
         unitsImg.onload = () => drawBoard();
     </script>
