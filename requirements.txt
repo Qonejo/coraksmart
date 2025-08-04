@@ -3,5 +3,4 @@ gunicorn
 Flask-SocketIO
 werkzeug
 whitenoise
-gevent
-gevent-websocket
+eventlet

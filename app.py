@@ -20,17 +20,18 @@ app.wsgi_app = WhiteNoise(app.wsgi_app, root="static/", max_age=31536000)
 print("WhiteNoise configurado.")
 
 UPLOAD_FOLDER = 'static'
-# Configuración de SocketIO unificada y compatible
+# Configuración de SocketIO optimizada para producción
 socketio = SocketIO(
     app,
     cors_allowed_origins="*",
     logger=False,
     engineio_logger=False,
-    ping_timeout=60,
-    ping_interval=25,
+    ping_timeout=120,  # Timeout más alto para producción
+    ping_interval=60,   # Intervalo más alto
     transports=['polling', 'websocket'],
     allow_upgrades=True,
-    async_mode='threading'
+    async_mode='eventlet',  # Cambiado a eventlet para producción
+    manage_session=False    # Desactivar gestión de sesiones automática
 )
 
 # --- CONFIGURACIÓN DE ARCHIVOS ---
@@ -461,9 +462,13 @@ def try_match_players():
 
 @socketio.on('connect')
 def handle_connect():
-    print(f"[CONNECT] Cliente conectado: {request.sid}")
-    # Enviar inicialización al cliente
-    emit('init', {'playerId': request.sid})
+    try:
+        print(f"[CONNECT] Cliente conectado: {request.sid}")
+        # Enviar inicialización al cliente
+        emit('init', {'playerId': request.sid})
+    except Exception as e:
+        print(f"[ERROR] Error en conexión: {e}")
+        return False
 
 # HANDLERS DE LOBBY DESHABILITADOS
 @socketio.on('join_lobby')
@@ -649,17 +654,23 @@ def game_loop():
 @socketio.on('disconnect')
 def handle_disconnect():
     """Usuario se desconecta - SIMPLIFICADO"""
-    player_sid = request.sid
-    
-    # Solo limpiar juegos activos si es necesario
-    for room_name in list(active_games.keys()):
-        if player_sid in active_games[room_name].get("players", {}):
-            emit('player_disconnected', room=room_name)
-            del active_games[room_name]
-            print(f"[DISCONNECT] Juego {room_name} terminado por desconexión")
-            break
-    
-    print(f"[DISCONNECT] Cliente {player_sid} se desconectó")
+    try:
+        player_sid = request.sid
+        
+        # Solo limpiar juegos activos si es necesario
+        for room_name in list(active_games.keys()):
+            if player_sid in active_games[room_name].get("players", []):
+                try:
+                    emit('player_disconnected', room=room_name)
+                except:
+                    pass  # Ignorar errores de emisión
+                del active_games[room_name]
+                print(f"[DISCONNECT] Juego {room_name} terminado por desconexión")
+                break
+        
+        print(f"[DISCONNECT] Cliente {player_sid} se desconectó")
+    except Exception as e:
+        print(f"[ERROR] Error en desconexión: {e}")
 
 def handle_game_over(room_name, winner_data=None):
     """Maneja el final de un juego y devuelve jugadores al lobby"""
@@ -910,7 +921,19 @@ def comprar():
     return redirect(whatsapp_url)
 
 if __name__ == "__main__":
+    import os
     print("Iniciando servidor...")
-    socketio.run(app, host='0.0.0.0', port=5000, debug=True, use_reloader=False)
+    
+    # Configuración para desarrollo vs producción
+    debug_mode = os.environ.get('FLASK_ENV', 'development') == 'development'
+    port = int(os.environ.get('PORT', 5000))
+    
+    if debug_mode:
+        # Modo desarrollo
+        socketio.run(app, host='0.0.0.0', port=port, debug=True, use_reloader=False)
+    else:
+        # Modo producción - Gunicorn se encarga del servidor
+        print(f"Aplicación lista para producción en puerto {port}")
+        app.run(host='0.0.0.0', port=port, debug=False)
     
     

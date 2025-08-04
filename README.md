@@ -149,17 +149,34 @@ Los niveles se configuran en `AURA_LEVELS` en app.py:
 
 ## 🚀 Despliegue
 
+### **Render (Recomendado)**
+1. **Conecta tu repositorio en render.com**
+2. **Configuración automática**: 
+   - Build Command: `pip install -r requirements.txt`
+   - Start Command: `gunicorn --config gunicorn.conf.py app:app`
+3. **Variables de entorno**:
+   - `FLASK_ENV`: `production`
+   - `WEB_CONCURRENCY`: `1` (importante para Socket.IO)
+
 ### **Heroku**
 ```bash
 # Instalar Heroku CLI y luego:
 heroku create tu-app-name
+heroku config:set FLASK_ENV=production
+heroku config:set WEB_CONCURRENCY=1
 git push heroku main
 ```
 
-### **Railway/Render**
+### **Railway**
 - Conecta tu repositorio
-- Comando de construcción: `pip install -r requirements.txt`
-- Comando de inicio: `python app.py`
+- Variables de entorno: `FLASK_ENV=production`, `WEB_CONCURRENCY=1`
+- Comando de inicio automático desde `Procfile`
+
+### **Configuración importante para producción:**
+- ✅ **Solo 1 worker** (Socket.IO no funciona con múltiples workers)
+- ✅ **Eventlet** como motor asíncrono
+- ✅ **Timeouts aumentados** para WebSockets
+- ✅ **Manejo de errores** mejorado
 
 ## 🤝 Contribuir
 
