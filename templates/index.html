@@ -9,9 +9,14 @@
     <link rel="preload" href="{{ url_for('static', filename='style.css') }}" as="style">
     <link rel="preload" href="{{ url_for('static', filename='script_fast.js') }}" as="script">
     
+    <!-- Importar fuente RPG de Google -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    
     <!-- CSS inline crítico para carga inmediata -->
     <style>
-        body{background:#222;color:#fff;font-family:monospace,sans-serif;margin:0;padding:0}
+        body{background:#222;color:#fff;font-family:'Press Start 2P',cursive,monospace;margin:0;padding:0}
         header{display:flex;justify-content:space-between;align-items:center;padding:10px 20px;border-bottom:2px solid #fff}
         #logo{max-width:200px;height:auto}
         .rpg-container{display:flex;max-width:1200px;margin:0 auto;padding:20px;gap:20px}
@@ -22,9 +27,8 @@
         .loading{text-align:center;padding:50px;font-size:1.2rem}
     </style>
     
-    <!-- CSS no crítico cargado de forma asíncrona -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" media="print" onload="this.media='all'">
-    <noscript><link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"></noscript>
+    <!-- CSS no crítico -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
 <header>

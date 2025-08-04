@@ -191,87 +191,159 @@ h2 {
 /* ... (El resto de tus estilos hasta el bloque @media se quedan igual) ... */
 
 
-/* ========= ESTILOS PARA PANTALLAS PEQUEÑAS (MÓVILES) - VERSIÓN CORREGIDA ========= */
+/* ========= ESTILOS PARA PANTALLAS PEQUEÑAS (MÓVILES) - MEJORADO ========= */
 @media (max-width: 850px) {
+    /* Ajustes del body para móvil */
+    body {
+        padding: 0;
+        overflow-x: hidden; /* Evita scroll horizontal */
+    }
+    
     header {
         flex-direction: column;
         gap: 15px;
+        margin: 0;
+        padding: 15px;
+        border-left: none;
+        border-right: none;
     }
+    
     .rpg-container {
         flex-direction: column;
-    }
-
-    /* --- ¡CORRECCIÓN IMPORTANTE AQUÍ! --- */
-    #productos-panel h2 {
-        /* Hacemos que la barra del título se ajuste correctamente */
+        padding: 10px;
+        margin: 0;
+        gap: 0;
         width: 100%;
-        box-sizing: border-box; /* Asegura que el padding no cause desbordamiento */
+        box-sizing: border-box;
     }
 
+    /* Panel de productos ajustado */
     #productos-panel {
         border-right: none;
-        padding-bottom: 100px; /* Espacio para la barra flotante */
+        border-left: none;
+        padding: 15px 10px;
+        padding-bottom: 120px; /* Más espacio para la barra flotante */
+        margin: 0;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    
+    #productos-panel h2 {
+        width: 100%;
+        box-sizing: border-box;
+        margin: 0 0 20px 0;
+        padding: 15px 10px;
+        border-left: none;
+        border-right: none;
     }
 
+    /* Carrito móvil fijo en la parte inferior */
     #carrito-panel {
         position: fixed;
         bottom: 0;
         left: 0;
+        right: 0;
         width: 100%;
-        /* Altura inicial de la barra colapsada */
-        height: 65px;
+        height: 70px; /* Altura inicial más cómoda */
         background-color: #222;
         border-top: 4px solid #fff;
-        z-index: 999;
-        box-shadow: 0 -5px 15px rgba(0,0,0,0.5);
-        overflow: hidden; /* Oculta el contenido que no cabe */
-        transition: height 0.4s ease-in-out; /* ¡LA ANIMACIÓN DE EXPANSIÓN! */
-
-        /* Reseteamos valores de desktop */
+        border-left: none;
+        border-right: none;
+        border-bottom: none;
+        z-index: 1000;
+        box-shadow: 0 -3px 10px rgba(0,0,0,0.7);
+        overflow: hidden;
+        transition: height 0.3s ease-in-out;
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        
+        /* Reset de estilos desktop */
         flex-direction: column;
         max-height: unset;
-        border-left: none;
+        position: fixed !important;
     }
 
-    /* --- ESTADO EXPANDIDO DEL CARRITO (CONTROLADO POR JS) --- */
+    /* Estado expandido del carrito móvil */
     #carrito-panel.expanded {
-        height: 250px; /* Altura máxima al expandirse */
+        height: 280px; /* Altura máxima más cómoda */
     }
 
-    /* Ocultamos el H2 "Inventario" en móvil para más espacio */
+    /* Ocultar título en móvil para ahorrar espacio */
     #carrito-panel h2 {
         display: none;
     }
 
+    /* Contenido del carrito expandido */
     #carrito-contenido {
         display: block;
-        height: calc(100% - 65px); /* Ocupa el espacio restante al expandirse */
+        height: calc(100% - 70px); /* Altura ajustada */
         overflow-y: auto;
         width: 100%;
-        padding: 10px;
-        border-top: 1px dashed #555;
+        padding: 10px 15px;
+        border-top: 2px dashed #555;
+        box-sizing: border-box;
+        background-color: #222;
     }
 
+    /* Resumen del carrito - siempre visible */
     #carrito-resumen {
-        /* Esta será la parte siempre visible (la barra de abajo) */
         display: flex;
         align-items: center;
         justify-content: space-between;
         width: 100%;
-        height: 65px; /* Altura fija de la barra */
-        padding: 0 15px;
+        height: 70px; /* Altura fija ajustada */
+        padding: 0 20px;
         border: none;
         background-color: #222;
-        cursor: pointer; /* Cambia el cursor para indicar que es clickeable */
-        position: sticky;
+        cursor: pointer;
+        position: absolute;
         bottom: 0;
-        z-index: 1000;
+        left: 0;
+        right: 0;
+        z-index: 1001;
+        box-sizing: border-box;
+        border-top: 1px solid #444;
     }
-    .total-line { margin-bottom: 0; }
-    .boton-comprar { width: auto; padding: 8px 12px; font-size: 0.8em; }
+    /* Ajustes del texto y botones en el resumen móvil */
+    .total-line { 
+        margin-bottom: 0;
+        font-size: 0.9em;
+    }
+    
+    #carrito-total {
+        font-size: 1.1em;
+        font-weight: bold;
+    }
+    
+    .boton-comprar { 
+        width: auto; 
+        padding: 12px 16px; 
+        font-size: 0.7em;
+        white-space: nowrap;
+    }
 
+    /* Productos grid ajustado para móvil */
+    .productos-grid {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 10px;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .producto-item {
+        padding: 10px;
+        margin: 0;
+    }
+    
+    /* Header ajustado */
+    .header-user-info {
+        text-align: center;
+        width: 100%;
+    }
+    
     .header-user-info .perfil-link {
-       /* Ocultamos el enlace de perfil del header en móvil si lo deseamos */
+        font-size: 0.7em;
     }
 }
 /* ========= MEJORAS VISUALES FINALES (MÓVIL Y ESCRITORIO) ========= */

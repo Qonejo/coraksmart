@@ -200,7 +200,7 @@ function initMobileCartToggle() {
             // Solo en móvil (ancho menor a 850px)
             if (window.innerWidth <= 850) {
                 // No hacer toggle si se clickeó el botón de comprar
-                if (!e.target.matches('.boton-comprar')) {
+                if (!e.target.matches('.boton-comprar') && !e.target.closest('.boton-comprar')) {
                     carritoPanel.classList.toggle('expanded');
                     console.log('Carrito móvil toggled');
                 }
@@ -213,6 +213,13 @@ function initMobileCartToggle() {
                 if (!carritoPanel.contains(e.target)) {
                     carritoPanel.classList.remove('expanded');
                 }
+            }
+        });
+        
+        // Manejar cambios de orientación/tamaño de pantalla
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 850) {
+                carritoPanel.classList.remove('expanded');
             }
         });
     }
