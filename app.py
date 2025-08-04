@@ -21,6 +21,8 @@ print("WhiteNoise configurado.")
 UPLOAD_FOLDER = 'static'
 
 # --- CONFIGURACIÓN DE ARCHIVOS ---
+# Cambiar contraseña del admin
+ADMIN_PASSWORD = "coraker12"
 ADMIN_PASSWORD = "[REDACTED:password]"
 PEDIDOS_FILE = "pedidos.json"
 PRODUCTOS_FILE = "productos.json"
@@ -56,13 +58,13 @@ def guardar_usuarios(usuarios):
 # --- SISTEMA DE AURA Y GENERADOR DE IDS ---
 AURA_LEVELS = [
     {"level": 0, "points_needed": -float('inf'), "flame_color": "black",  "prize": "Sin Rango"},
-    {"level": 1, "points_needed": 0,         "flame_color": "white",  "prize": "Gomita + Pelón"},
-    {"level": 2, "points_needed": 8000,      "flame_color": "blue",   "prize": "Cupón 10%"},
-    {"level": 3, "points_needed": 20000,     "flame_color": "green",  "prize": "Producto Sorpresa"},
-    {"level": 4, "points_needed": 50000,     "flame_color": "yellow", "prize": "Cupón 15%"},
-    {"level": 5, "points_needed": 100000,    "flame_color": "orange", "prize": "1 : : + Salvia"},
-    {"level": 6, "points_needed": 250000,    "flame_color": "red",    "prize": "Cupón del 20%"},
-    {"level": 7, "points_needed": 500000,    "flame_color": "purple", "prize": "Regalo Misterioso"}
+    {"level": 1, "points_needed": 0,         "flame_color": "white",  "prize": "1 Gomita gratis"},
+    {"level": 2, "points_needed": 7000,      "flame_color": "blue",   "prize": "5% descuento en tu próxima compra"},
+    {"level": 3, "points_needed": 9030,      "flame_color": "green",  "prize": "Salvia + 1"},
+    {"level": 4, "points_needed": 15270,     "flame_color": "yellow", "prize": "10% descuento en tu próxima compra"},
+    {"level": 5, "points_needed": 19820,     "flame_color": "orange", "prize": "1 Olla"},
+    {"level": 6, "points_needed": 24000,     "flame_color": "red",    "prize": "15% descuento en tu próxima compra"},
+    {"level": 7, "points_needed": 33000,     "flame_color": "purple", "prize": "1 Brownie + 1 Gomita + Media olla + 5% descuento en tu próxima compra"}
 ]
 
 def get_user_aura_info(user_emoji):
@@ -74,7 +76,127 @@ def get_user_aura_info(user_emoji):
         if points >= level_info["points_needed"]:
             current_level_info = level_info
             break
-    return {"points": points, "level_info": current_level_info}
+    
+    # Determinar el personaje correcto basado en nivel y progreso
+    character_gif = get_character_gif(points, current_level_info)
+    current_level_info["character_gif"] = character_gif
+    
+    # Determinar información de la barra de progreso
+    progress_bar_info = get_progress_bar_info(points, current_level_info, user_emoji)
+    
+    return {
+        "points": points, 
+        "level_info": current_level_info,
+        "progress_bar": progress_bar_info
+    }
+
+def get_character_gif(points, level_info):
+    """Determinar qué archivo GIF del personaje mostrar basado en puntos y nivel"""
+    level = level_info["level"]
+    
+    # Nivel 0 (sin experiencia)
+    if points == 0:
+        return "f0.gif"
+    
+    # Nivel 1 - con sub-niveles basados en progreso
+    if level == 1:
+        # Buscar el siguiente nivel para calcular progreso
+        next_level_points = None
+        for next_level in AURA_LEVELS:
+            if next_level["level"] == 2:
+                next_level_points = next_level["points_needed"]
+                break
+        
+        if next_level_points:
+            progress = points / next_level_points
+            if progress < 1/3:
+                return "f1a.gif"
+            elif progress < 2/3:
+                return "f1b.gif"
+            else:
+                return "f1c.gif"
+        else:
+            return "f1a.gif"
+    
+    # Niveles 2-7
+    elif 2 <= level <= 7:
+        return f"f{level}.gif"
+    
+    # Por defecto
+    return "f0.gif"
+
+def get_progress_bar_info(points, current_level_info, user_emoji):
+    """Determinar información de la barra de progreso visual"""
+    level = current_level_info["level"]
+    
+    # Si está en el nivel máximo
+    if level >= 7:
+        return {
+            "bar_type": "barcom.png",
+            "exp_orbs": 0,
+            "completed": True
+        }
+    
+    # Buscar el siguiente nivel
+    next_level_info = None
+    for level_info in AURA_LEVELS:
+        if level_info["level"] == level + 1:
+            next_level_info = level_info
+            break
+    
+    if not next_level_info:
+        return {
+            "bar_type": "barcom.png",
+            "exp_orbs": 0,
+            "completed": True
+        }
+    
+    # Calcular puntos necesarios para el siguiente nivel
+    points_needed_for_next = next_level_info["points_needed"]
+    points_in_current_level = points - current_level_info["points_needed"]
+    points_needed_in_level = points_needed_for_next - current_level_info["points_needed"]
+    
+    # Si no tiene puntos en el nivel actual
+    if points_in_current_level <= 0:
+        return {
+            "bar_type": "barva.png",
+            "exp_orbs": 0,
+            "completed": False
+        }
+    
+    # Si ya completó el nivel actual
+    if points >= points_needed_for_next:
+        # Verificar si ya reclamó la recompensa de este nivel
+        usuarios = cargar_usuarios()
+        user_data = usuarios.get(user_emoji, {})
+        claimed_levels = user_data.get("claimed_levels", [])
+        next_level = next_level_info["level"]
+        
+        return {
+            "bar_type": "barcom.png",
+            "exp_orbs": 0,
+            "completed": True,
+            "level_up": next_level not in claimed_levels,  # Solo mostrar si no ha reclamado
+            "reward": next_level_info["prize"]
+        }
+    
+    # Determinar cuántas orbes de experiencia mostrar
+    # Cada orbe representa aproximadamente 240 puntos, pero es relativo al nivel
+    orb_value = max(240, points_needed_in_level / 10)  # Máximo 10 orbes por nivel
+    exp_orbs = int(points_in_current_level / orb_value)
+    
+    # Determinar tipo de barra
+    if points_in_current_level >= 240:
+        bar_type = "barinic.png"
+    else:
+        bar_type = "barva.png"
+    
+    return {
+        "bar_type": bar_type,
+        "exp_orbs": exp_orbs,
+        "completed": False,
+        "progress_percent": int((points_in_current_level / points_needed_in_level) * 100)
+    }
 
 def get_aura_points_for_product(product_id, price):
     """Calcular puntos de aura basado en el producto y precio"""
@@ -145,6 +267,82 @@ def generar_id_pedido():
     sello_aleatorio = "".join(random.choices(string.ascii_uppercase + string.digits, k=3))
     return f"{parte_fecha}-{parte_hora}-{parte_pedido}-{sello_aleatorio}"
 
+def procesar_compra_interna(carrito, productos, user_emoji):
+    """Procesa internamente una compra y devuelve total, detalle y puntos de aura"""
+    total = 0
+    detalle_completo = {}
+    aura_total = 0
+    
+    for cart_id, cant in carrito.items():
+        parts = cart_id.split('-', 1)
+        base_id = parts[0]
+        variation_id = parts[1] if len(parts) > 1 else None
+        prod_data = productos.get(base_id if variation_id else cart_id)
+        
+        if not prod_data:
+            continue
+            
+        precio_item = 0
+        
+        if "bundle_items" in prod_data:
+            precio_item = prod_data.get("bundle_precio", 0)
+        elif variation_id and "variaciones" in prod_data:
+            variation_data = prod_data["variaciones"].get(variation_id)
+            if variation_data:
+                precio_item = variation_data.get("precio", 0)
+        elif "precio" in prod_data:
+            precio_item = prod_data.get("precio", 0)
+        
+        subtotal = precio_item * cant
+        total += subtotal
+        
+        # Calcular puntos de aura
+        puntos_por_item = get_aura_points_for_product(base_id, precio_item)
+        aura_total += puntos_por_item * cant
+        
+        # Guardar detalle completo
+        detalle_completo[cart_id] = {
+            "nombre": prod_data.get("nombre", "Producto"),
+            "precio": precio_item,
+            "cantidad": cant,
+            "subtotal": subtotal
+        }
+    
+    return total, detalle_completo, aura_total
+
+def crear_mensaje_pedido(pedido, detalle_completo):
+    """Crea el mensaje de WhatsApp para el pedido"""
+    delivery_info = pedido.get("delivery_info", {})
+    
+    mensaje_partes = [
+        f"¡Que onda! 🛒",
+        f"*Pedido #{pedido['id']}*",
+        ""
+    ]
+    
+    # Lista de productos
+    for cart_id, info in detalle_completo.items():
+        mensaje_partes.append(f"• {info['cantidad']}x {info['nombre']}")
+    
+    mensaje_partes.append("")
+    mensaje_partes.append(f"*Total: ${pedido['total']:.2f}*")
+    mensaje_partes.append("")
+    
+    # Información de entrega
+    mensaje_partes.append(f"📅 *Horario:* {delivery_info.get('day', 'No especificado')} a las {delivery_info.get('time', 'No especificado')}")
+    
+    # Zona/ubicación
+    if delivery_info.get('station'):
+        mensaje_partes.append(f"📍 *Zona:* {delivery_info.get('station', 'No especificado')}")
+    
+    if delivery_info.get('instructions'):
+        mensaje_partes.append(f"📝 *Notas:* {delivery_info['instructions']}")
+    
+    if delivery_info.get('phone'):
+        mensaje_partes.append(f"📱 *Teléfono:* {delivery_info['phone']}")
+    
+    return "\n".join(mensaje_partes)
+
 # --- VISTAS PRINCIPALES ---
 @app.route("/entrar")
 def entrar():
@@ -197,7 +395,8 @@ def admin_view():
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        if request.form.get("password") == ADMIN_PASSWORD:
+        # Usar la nueva contraseña
+        if request.form.get("password") == "coraker12":
             session["logged_in"] = True
             return redirect(url_for("admin_view"))
         else:
@@ -211,7 +410,23 @@ def logout():
     return redirect(url_for("entrar"))
 
 # --- API PARA EMOJIS ---
-EMOJI_LIST = ["😀", "🚀", "🌟", "🍕", "🤖", "👻", "👽", "👾", "🦊", "🧙", "🌮", "💎", "🌙", "🔮", "🧬", "🌵", "🎉", "🔥", "💯", "👑", "💡", "🎮", "🛰️", "🛸", "🗿", "🌴", "🧪", "✨", "🔑", "🗺️", "🐙", "🦋", "🐲", "🍩", "⚡", "🎯", "⚓", "🌈", "🌌", "🌠", "🎱", "🎰", "🕹️", "🏆", "💊", "🎁", "💌", "📈", "🗿"]
+def cargar_emoji_list():
+    """Cargar lista de emojis desde archivo, o usar lista por defecto"""
+    try:
+        with open('emoji_config.json', 'r', encoding='utf-8') as f:
+            config = json.load(f)
+            return config.get('available_emojis', [])
+    except (FileNotFoundError, json.JSONDecodeError):
+        return ["😀", "🚀", "🌟", "🍕", "🤖", "👻", "👽", "👾", "🦊", "🧙", "🌮", "💎", "🌙", "🔮", "🧬", "🌵", "🎉", "🔥", "💯", "👑", "💡", "🎮", "🛰️", "🛸", "🗿", "🌴", "🧪", "✨", "🔑", "🗺️", "🐙", "🦋", "🐲", "🍩", "⚡", "🎯", "⚓", "🌈", "🌌", "🌠", "🎱", "🎰", "🕹️", "🏆", "💊", "🎁", "💌", "📈", "🗿"]
+
+def guardar_emoji_list(emoji_list):
+    """Guardar lista de emojis en archivo"""
+    config = {"available_emojis": emoji_list}
+    with open('emoji_config.json', 'w', encoding='utf-8') as f:
+        json.dump(config, f, indent=4, ensure_ascii=False)
+
+# Inicializar lista de emojis
+EMOJI_LIST = cargar_emoji_list()
 
 @app.route("/api/get-emojis")
 def get_emojis():
@@ -249,6 +464,204 @@ def niveles_aura():
     user_emoji = session["logged_in_user_emoji"]
     aura_data = get_user_aura_info(user_emoji)
     return render_template("niveles.html", aura_data=aura_data, AURA_LEVELS=AURA_LEVELS)
+
+# --- PÁGINA DE CHECKOUT ---
+@app.route("/checkout")
+def checkout():
+    if not session.get("logged_in_user_emoji"): return redirect(url_for("entrar"))
+    
+    carrito = session.get('carrito', {})
+    if not carrito:
+        flash("Tu carrito está vacío.", "error")
+        return redirect(url_for("index"))
+    
+    productos = cargar_productos()
+    carrito_items = []
+    item_total = {}
+    total = 0
+    
+    for item_id, cantidad in carrito.items():
+        if '-' in item_id:
+            product_id, variation_id = item_id.split('-', 1)
+            product = productos.get(product_id, {})
+            if 'variaciones' in product and variation_id in product['variaciones']:
+                precio = product['variaciones'][variation_id]['precio']
+        else:
+            product = productos.get(item_id, {})
+            if 'bundle_precio' in product:
+                precio = product['bundle_precio']
+            else:
+                precio = product.get('precio', 0)
+        
+        subtotal = precio * cantidad
+        item_total[item_id] = subtotal
+        total += subtotal
+        carrito_items.append((item_id, cantidad))
+    
+    return render_template("checkout.html", 
+                         carrito_items=carrito_items, 
+                         item_total=item_total,
+                         total=total,
+                         productos=productos,
+                         config=CONFIG)
+
+# --- PROCESAR PEDIDO ---
+@app.route("/procesar_pedido", methods=["POST"])
+def procesar_pedido():
+    if not session.get("logged_in_user_emoji"): return redirect(url_for("entrar"))
+    
+    user_emoji = session["logged_in_user_emoji"]
+    carrito = session.get('carrito', {})
+    
+    if not carrito:
+        flash("Tu carrito está vacío.", "error")
+        return redirect(url_for("index"))
+    
+    # Obtener datos del formulario
+    delivery_day = request.form.get('delivery_day')
+    delivery_time = request.form.get('delivery_time')
+    delivery_station = request.form.get('delivery_station')
+    special_instructions = request.form.get('special_instructions', '')
+    phone_number = request.form.get('phone_number', '')
+    
+    # Validar campos requeridos
+    if not all([delivery_day, delivery_time, delivery_station]):
+        flash("Por favor completa todos los campos requeridos.", "error")
+        return redirect(url_for("checkout"))
+    
+    # Procesar pedido (usar la función existente pero con datos adicionales)
+    productos = cargar_productos()
+    total, detalle_completo, aura_total = procesar_compra_interna(carrito, productos, user_emoji)
+    
+    # Crear pedido con información adicional
+    pedido = {
+        "id": generar_id_pedido(),
+        "user_emoji": user_emoji,
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "detalle": carrito.copy(),
+        "detalle_completo": detalle_completo,
+        "total": total,
+        "aura_ganada": aura_total,
+        "delivery_info": {
+            "day": delivery_day,
+            "time": delivery_time,
+            "station": delivery_station,
+            "instructions": special_instructions,
+            "phone": phone_number
+        },
+        "completado": False
+    }
+    
+    # Guardar pedido
+    todos_los_pedidos = cargar_pedidos()
+    todos_los_pedidos.append(pedido)
+    guardar_pedidos(todos_los_pedidos)
+    
+    # Actualizar aura del usuario
+    usuarios = cargar_usuarios()
+    if user_emoji in usuarios:
+        usuarios[user_emoji]["aura_points"] = usuarios[user_emoji].get("aura_points", 0) + aura_total
+        guardar_usuarios(usuarios)
+    
+    # Limpiar carrito
+    session['carrito'] = {}
+    
+    # Crear mensaje de WhatsApp
+    mensaje_whatsapp = crear_mensaje_pedido(pedido, detalle_completo)
+    whatsapp_link = f"https://wa.me/{CONFIG['whatsapp_principal']}?text={urllib.parse.quote(mensaje_whatsapp)}"
+    
+    flash(f"¡Pedido realizado con éxito! Ganaste {aura_total} puntos de Aura.", "success")
+    return redirect(whatsapp_link)
+
+# --- RUTA PARA RECLAMAR RECOMPENSAS ---
+@app.route("/reclamar_recompensa", methods=["POST"])
+def reclamar_recompensa():
+    if not session.get("logged_in_user_emoji"): return redirect(url_for("entrar"))
+    
+    user_emoji = session["logged_in_user_emoji"]
+    usuarios = cargar_usuarios()
+    
+    if user_emoji not in usuarios:
+        return jsonify({"success": False, "message": "Usuario no encontrado"})
+    
+    # Marcar que ya reclamó la recompensa de este nivel
+    # Esto se puede implementar guardando el último nivel reclamado
+    user_data = usuarios[user_emoji]
+    current_points = user_data.get("aura_points", 0)
+    
+    # Determinar nivel actual
+    current_level = 0
+    for level_info in reversed(AURA_LEVELS):
+        if current_points >= level_info["points_needed"]:
+            current_level = level_info["level"]
+            break
+    
+    # Marcar el nivel como reclamado
+    if "claimed_levels" not in user_data:
+        user_data["claimed_levels"] = []
+    
+    if current_level not in user_data["claimed_levels"]:
+        user_data["claimed_levels"].append(current_level)
+        usuarios[user_emoji] = user_data
+        guardar_usuarios(usuarios)
+        
+        return jsonify({
+            "success": True, 
+            "message": "¡Recompensa reclamada con éxito!",
+            "level": current_level
+        })
+    else:
+        return jsonify({
+            "success": False, 
+            "message": "Ya has reclamado la recompensa de este nivel"
+        })
+
+# --- RUTA PARA CAMBIAR EMOJI DEL USUARIO ---
+@app.route("/profile/change-emoji", methods=["POST"])
+def change_user_emoji():
+    if not session.get("logged_in_user_emoji"): 
+        return jsonify({"success": False, "message": "No autorizado"})
+    
+    data = request.get_json()
+    new_emoji = data.get("new_emoji")
+    current_emoji = session["logged_in_user_emoji"]
+    
+    if not new_emoji or new_emoji not in EMOJI_LIST:
+        return jsonify({"success": False, "message": "Emoji no válido"})
+    
+    if new_emoji == current_emoji:
+        return jsonify({"success": False, "message": "Ya tienes este emoji seleccionado"})
+    
+    usuarios = cargar_usuarios()
+    
+    # Verificar que el nuevo emoji no esté ocupado
+    if new_emoji in usuarios:
+        return jsonify({"success": False, "message": "Este emoji ya está ocupado por otro usuario"})
+    
+    # Verificar que el usuario actual exista
+    if current_emoji not in usuarios:
+        return jsonify({"success": False, "message": "Usuario actual no encontrado"})
+    
+    # Mover todos los datos del usuario al nuevo emoji
+    user_data = usuarios[current_emoji].copy()
+    usuarios[new_emoji] = user_data
+    del usuarios[current_emoji]
+    
+    # Actualizar pedidos existentes con el nuevo emoji
+    pedidos = cargar_pedidos()
+    for pedido in pedidos:
+        if pedido.get("user_emoji") == current_emoji:
+            pedido["user_emoji"] = new_emoji
+    guardar_pedidos(pedidos)
+    
+    # Guardar cambios y actualizar sesión
+    guardar_usuarios(usuarios)
+    session["logged_in_user_emoji"] = new_emoji
+    
+    return jsonify({
+        "success": True, 
+        "message": "Avatar cambiado exitosamente"
+    })
 
 # --- RUTAS DE CONFIGURACIÓN ADMIN ---
 @app.route("/admin/configuracion", methods=["GET", "POST"])
@@ -289,6 +702,176 @@ def admin_reset_user_password():
     flash(f"Contraseña reiniciada exitosamente para el usuario {user_emoji}", "success")
     return redirect(url_for("admin_configuracion"))
 
+# --- GESTIÓN DE EMOJIS EN ADMIN ---
+@app.route("/admin/emojis", methods=["GET", "POST"])
+def admin_emojis():
+    if not session.get("logged_in"): return redirect(url_for("login"))
+    
+    global EMOJI_LIST
+    
+    if request.method == "POST":
+        action = request.form.get("action")
+        
+        if action == "add_emoji":
+            new_emoji = request.form.get("new_emoji")
+            if new_emoji and new_emoji not in EMOJI_LIST:
+                EMOJI_LIST.append(new_emoji)
+                guardar_emoji_list(EMOJI_LIST)
+                flash(f"Emoji {new_emoji} agregado exitosamente", "success")
+            else:
+                flash("Emoji ya existe o es inválido", "error")
+                
+        elif action == "remove_emoji":
+            emoji_to_remove = request.form.get("emoji_to_remove")
+            if emoji_to_remove in EMOJI_LIST:
+                # Verificar que no esté en uso
+                usuarios = cargar_usuarios()
+                if emoji_to_remove in usuarios:
+                    flash(f"No se puede eliminar {emoji_to_remove} porque está en uso", "error")
+                else:
+                    EMOJI_LIST.remove(emoji_to_remove)
+                    guardar_emoji_list(EMOJI_LIST)
+                    flash(f"Emoji {emoji_to_remove} eliminado exitosamente", "success")
+            else:
+                flash("Emoji no encontrado", "error")
+        
+        return redirect(url_for("admin_emojis"))
+    
+    usuarios = cargar_usuarios()
+    return render_template("admin_emojis.html", 
+                         emoji_list=EMOJI_LIST, 
+                         usuarios=usuarios)
+
+# --- GESTIÓN DE USUARIOS EN ADMIN ---
+@app.route("/admin/change-user-emoji", methods=["POST"])
+def admin_change_user_emoji():
+    if not session.get("logged_in"): return redirect(url_for("login"))
+    
+    current_emoji = request.form.get("current_emoji")
+    new_emoji = request.form.get("new_emoji")
+    
+    if not current_emoji or not new_emoji:
+        flash("Debe proporcionar emoji actual y nuevo", "error")
+        return redirect(url_for("admin_emojis"))
+    
+    if new_emoji not in EMOJI_LIST:
+        flash("El nuevo emoji no está en la lista disponible", "error")
+        return redirect(url_for("admin_emojis"))
+    
+    usuarios = cargar_usuarios()
+    
+    if current_emoji not in usuarios:
+        flash(f"Usuario con emoji {current_emoji} no encontrado", "error")
+        return redirect(url_for("admin_emojis"))
+    
+    if new_emoji in usuarios:
+        flash(f"El emoji {new_emoji} ya está en uso", "error")
+        return redirect(url_for("admin_emojis"))
+    
+    # Mover usuario al nuevo emoji
+    user_data = usuarios[current_emoji].copy()
+    usuarios[new_emoji] = user_data
+    del usuarios[current_emoji]
+    
+    # Actualizar pedidos
+    pedidos = cargar_pedidos()
+    for pedido in pedidos:
+        if pedido.get("user_emoji") == current_emoji:
+            pedido["user_emoji"] = new_emoji
+    guardar_pedidos(pedidos)
+    
+    guardar_usuarios(usuarios)
+    
+    flash(f"Usuario movido de {current_emoji} a {new_emoji} exitosamente", "success")
+    return redirect(url_for("admin_emojis"))
+
+# --- API PARA GESTIÓN DE EMOJIS ---
+@app.route("/admin/emojis/add", methods=["POST"])
+def admin_api_add_emoji():
+    if not session.get("logged_in"):
+        return jsonify({"success": False, "message": "No autorizado"})
+    
+    data = request.get_json()
+    emoji = data.get("emoji")
+    
+    if not emoji:
+        return jsonify({"success": False, "message": "Emoji no proporcionado"})
+    
+    global EMOJI_LIST
+    
+    if emoji in EMOJI_LIST:
+        return jsonify({"success": False, "message": "El emoji ya existe en la lista"})
+    
+    EMOJI_LIST.append(emoji)
+    guardar_emoji_list(EMOJI_LIST)
+    
+    return jsonify({"success": True, "message": f"Emoji {emoji} agregado exitosamente"})
+
+@app.route("/admin/emojis/remove", methods=["POST"])
+def admin_api_remove_emoji():
+    if not session.get("logged_in"):
+        return jsonify({"success": False, "message": "No autorizado"})
+    
+    data = request.get_json()
+    emoji = data.get("emoji")
+    
+    if not emoji:
+        return jsonify({"success": False, "message": "Emoji no proporcionado"})
+    
+    global EMOJI_LIST
+    
+    if emoji not in EMOJI_LIST:
+        return jsonify({"success": False, "message": "Emoji no encontrado en la lista"})
+    
+    # Verificar que no esté en uso
+    usuarios = cargar_usuarios()
+    if emoji in usuarios:
+        return jsonify({"success": False, "message": f"No se puede eliminar {emoji} porque está en uso"})
+    
+    EMOJI_LIST.remove(emoji)
+    guardar_emoji_list(EMOJI_LIST)
+    
+    return jsonify({"success": True, "message": f"Emoji {emoji} eliminado exitosamente"})
+
+@app.route("/admin/users/change-emoji", methods=["POST"])
+def admin_api_change_user_emoji():
+    if not session.get("logged_in"):
+        return jsonify({"success": False, "message": "No autorizado"})
+    
+    data = request.get_json()
+    old_emoji = data.get("old_emoji")
+    new_emoji = data.get("new_emoji")
+    
+    if not old_emoji or not new_emoji:
+        return jsonify({"success": False, "message": "Emojis no proporcionados"})
+    
+    if new_emoji not in EMOJI_LIST:
+        return jsonify({"success": False, "message": "El nuevo emoji no está en la lista disponible"})
+    
+    usuarios = cargar_usuarios()
+    
+    if old_emoji not in usuarios:
+        return jsonify({"success": False, "message": f"Usuario con emoji {old_emoji} no encontrado"})
+    
+    if new_emoji in usuarios:
+        return jsonify({"success": False, "message": f"El emoji {new_emoji} ya está en uso"})
+    
+    # Mover usuario al nuevo emoji
+    user_data = usuarios[old_emoji].copy()
+    usuarios[new_emoji] = user_data
+    del usuarios[old_emoji]
+    
+    # Actualizar pedidos
+    pedidos = cargar_pedidos()
+    for pedido in pedidos:
+        if pedido.get("user_emoji") == old_emoji:
+            pedido["user_emoji"] = new_emoji
+    guardar_pedidos(pedidos)
+    
+    guardar_usuarios(usuarios)
+    
+    return jsonify({"success": True, "message": f"Usuario movido de {old_emoji} a {new_emoji} exitosamente"})
+
 @app.route("/admin/clear-orders", methods=["POST"])
 def admin_clear_orders():
     if not session.get("logged_in"): return redirect(url_for("login"))
@@ -309,6 +892,178 @@ def admin_clear_orders():
     
     flash(f"TODOS los pedidos han sido eliminados. Se creó una copia de respaldo: {backup_filename}", "success")
     return redirect(url_for("admin_configuracion"))
+
+# --- RUTAS DE GESTIÓN DE NIVELES DE AURA ---
+@app.route("/admin/aura-levels", methods=["GET", "POST"])
+def admin_aura_levels():
+    if not session.get("logged_in"): return redirect(url_for("login"))
+    
+    global AURA_LEVELS
+    
+    if request.method == "POST":
+        # Procesar archivos de personajes subidos
+        for level_info in AURA_LEVELS:
+            level = level_info["level"]
+            character_file = request.files.get(f'character_{level}')
+            
+            if character_file and character_file.filename:
+                filename = secure_filename(f"f{level}.gif")
+                character_file.save(os.path.join('static', filename))
+                level_info["character_gif"] = filename
+            
+            # Actualizar datos del nivel
+            new_points = request.form.get(f'points_{level}')
+            new_title = request.form.get(f'title_{level}')
+            new_prize = request.form.get(f'prize_{level}')
+            
+            if new_points is not None and level != 0:  # No cambiar nivel 0
+                level_info["points_needed"] = int(new_points)
+            if new_title is not None:
+                level_info["title"] = new_title
+            if new_prize is not None:
+                level_info["prize"] = new_prize
+        
+        # Guardar cambios (aquí podrías guardar en un archivo JSON si quieres persistencia)
+        flash("Niveles de aura actualizados correctamente", "success")
+        return redirect(url_for("admin_aura_levels"))
+    
+    return render_template("admin_aura_levels.html", levels=AURA_LEVELS)
+
+# --- RUTAS DE GESTIÓN DE MEDIOS ---
+@app.route("/admin/media", methods=["GET", "POST"])
+def admin_media():
+    if not session.get("logged_in"): return redirect(url_for("login"))
+    
+    if request.method == "POST":
+        upload_type = request.form.get('upload_type')
+        
+        if upload_type == 'logo':
+            logo_file = request.files.get('logo_file')
+            if logo_file and logo_file.filename:
+                # Hacer backup del logo actual
+                try:
+                    import shutil
+                    shutil.copy('static/logo.png', f'static/logo_backup_{datetime.now().strftime("%Y%m%d_%H%M%S")}.png')
+                except:
+                    pass
+                
+                # Guardar nuevo logo
+                logo_file.save(os.path.join('static', 'logo.png'))
+                flash("Logo actualizado correctamente", "success")
+                
+        elif upload_type == 'progress_bar':
+            bar_type = request.form.get('bar_type')
+            progress_file = request.files.get('progress_file')
+            
+            if progress_file and progress_file.filename and bar_type:
+                filename = f"{bar_type}.png"
+                progress_file.save(os.path.join('static', filename))
+                flash(f"Barra {bar_type} actualizada correctamente", "success")
+        
+        return redirect(url_for("admin_media"))
+    
+    # Obtener lista de archivos en static/
+    try:
+        media_files = [f for f in os.listdir('static') if os.path.isfile(os.path.join('static', f))]
+        media_files.sort()
+    except:
+        media_files = []
+    
+    return render_template("admin_media.html", media_files=media_files)
+
+@app.route("/admin/delete-media", methods=["POST"])
+def admin_delete_media():
+    if not session.get("logged_in"):
+        return jsonify({"success": False, "message": "No autorizado"})
+    
+    data = request.get_json()
+    filename = data.get('filename')
+    
+    if not filename:
+        return jsonify({"success": False, "message": "Nombre de archivo no especificado"})
+    
+    # Proteger archivos críticos
+    protected_files = ['logo.png', 'style.css', 'script_fast.js']
+    if filename in protected_files:
+        return jsonify({"success": False, "message": "No se puede eliminar este archivo crítico"})
+    
+    try:
+        file_path = os.path.join('static', filename)
+        if os.path.exists(file_path):
+            os.remove(file_path)
+            return jsonify({"success": True, "message": "Archivo eliminado correctamente"})
+        else:
+            return jsonify({"success": False, "message": "Archivo no encontrado"})
+    except Exception as e:
+        return jsonify({"success": False, "message": f"Error al eliminar: {str(e)}"})
+
+# --- RUTAS DE GESTIÓN DE PRODUCTOS ---
+@app.route("/admin/productos")
+def admin_productos():
+    if not session.get("logged_in"): return redirect(url_for("login"))
+    
+    productos = cargar_productos()
+    return render_template("admin_productos.html", productos=productos)
+
+@app.route("/admin/upload-product-images", methods=["POST"])
+def admin_upload_product_images():
+    if not session.get("logged_in"):
+        return jsonify({"success": False, "message": "No autorizado"})
+    
+    product_id = request.form.get('product_id')
+    if not product_id:
+        return jsonify({"success": False, "message": "ID de producto no especificado"})
+    
+    # Cargar productos actuales
+    productos = cargar_productos()
+    if product_id not in productos:
+        return jsonify({"success": False, "message": "Producto no encontrado"})
+    
+    # Procesar archivos subidos
+    uploaded_files = request.files.getlist('images')
+    if not uploaded_files:
+        return jsonify({"success": False, "message": "No se subieron archivos"})
+    
+    try:
+        # Inicializar imagenes_adicionales si no existe
+        if 'imagenes_adicionales' not in productos[product_id]:
+            productos[product_id]['imagenes_adicionales'] = {}
+        
+        # Encontrar el siguiente índice disponible
+        existing_indices = [int(k) for k in productos[product_id]['imagenes_adicionales'].keys() if k.isdigit()]
+        next_index = max(existing_indices, default=0) + 1
+        
+        uploaded_count = 0
+        for file in uploaded_files:
+            if file and file.filename:
+                # Generar nombre de archivo único
+                file_extension = file.filename.split('.')[-1].lower()
+                new_filename = f"{product_id}_img_{next_index}.{file_extension}"
+                
+                # Guardar archivo
+                file.save(os.path.join('static', new_filename))
+                
+                # Agregar a la lista de imágenes adicionales
+                productos[product_id]['imagenes_adicionales'][str(next_index)] = new_filename
+                
+                next_index += 1
+                uploaded_count += 1
+        
+        # Guardar productos actualizados
+        guardar_productos(productos)
+        
+        return jsonify({
+            "success": True, 
+            "message": f"{uploaded_count} imágenes subidas correctamente"
+        })
+        
+    except Exception as e:
+        return jsonify({"success": False, "message": f"Error al subir imágenes: {str(e)}"})
+    
+def guardar_productos(productos):
+    """Guardar productos en el archivo JSON"""
+    with open(PRODUCTOS_FILE, 'w', encoding='utf-8') as f:
+        json.dump(productos, f, indent=4, ensure_ascii=False)
 
 # --- API PARA CARRITO ---
 def _get_cart_data():

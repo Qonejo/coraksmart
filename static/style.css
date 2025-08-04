@@ -136,7 +136,206 @@ h2 {
 .aura-display { display: flex; align-items: center; gap: 10px; border: 2px solid #888; padding: 5px 15px; background-color: #111; }
 .aura-text { font-size: 1.2em; animation: aura-glow 2s infinite linear; }
 .aura-points { font-size: 1.2em; color: #ffcc00; }
-.aura-flame { width: 96px; height: 96px; }
+.aura-character { width: 96px; height: 96px; }
+
+/* --- BARRA DE PROGRESO VISUAL --- */
+.visual-progress-bar {
+    position: relative;
+    margin-top: 10px;
+    width: 200px;
+    height: 30px;
+}
+
+.progress-bar-base {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.exp-orbs-container {
+    position: absolute;
+    top: 5px;
+    left: 0;
+    width: 100%;
+    height: 20px;
+    pointer-events: none;
+}
+
+.exp-orb {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    top: 0;
+}
+
+/* --- MODAL DE FELICITACIONES --- */
+#level-up-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    animation: fadeIn 0.5s ease-in;
+}
+
+.level-up-content {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    border: 4px solid #ffcc00;
+    border-radius: 20px;
+    padding: 30px;
+    text-align: center;
+    max-width: 400px;
+    width: 90%;
+    box-shadow: 0 0 30px rgba(255, 204, 0, 0.5);
+    animation: bounceIn 0.8s ease-out;
+}
+
+.level-up-content h2 {
+    color: #ffcc00;
+    font-size: 1.5em;
+    margin-bottom: 20px;
+    text-shadow: 0 0 10px #ffcc00;
+    animation: glow 2s ease-in-out infinite alternate;
+}
+
+.celebration-animation {
+    margin: 20px 0;
+    animation: bounce 1s ease-in-out infinite;
+}
+
+.celebration-character {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    border: 3px solid #ffcc00;
+    box-shadow: 0 0 20px rgba(255, 204, 0, 0.8);
+}
+
+.level-up-content h3 {
+    color: #fff;
+    font-size: 1.2em;
+    margin: 20px 0;
+}
+
+.reward-info {
+    background: rgba(255, 204, 0, 0.1);
+    border: 2px solid #ffcc00;
+    border-radius: 10px;
+    padding: 15px;
+    margin: 20px 0;
+}
+
+.reward-info h4 {
+    color: #ffcc00;
+    font-size: 1em;
+    margin-bottom: 10px;
+}
+
+.reward-info p {
+    color: #fff;
+    font-size: 0.9em;
+    line-height: 1.4;
+}
+
+.claim-reward-button {
+    background: linear-gradient(135deg, #ffcc00 0%, #ff9900 100%);
+    color: #000;
+    border: none;
+    padding: 15px 25px;
+    border-radius: 25px;
+    font-family: 'Press Start 2P', cursive;
+    font-size: 0.8em;
+    cursor: pointer;
+    margin: 10px 5px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(255, 204, 0, 0.4);
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.claim-reward-button:hover {
+    background: linear-gradient(135deg, #ff9900 0%, #ffcc00 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 204, 0, 0.6);
+}
+
+.close-level-button {
+    background: #444;
+    color: #fff;
+    border: 2px solid #666;
+    padding: 10px 20px;
+    border-radius: 15px;
+    font-family: 'Press Start 2P', cursive;
+    font-size: 0.7em;
+    cursor: pointer;
+    margin: 10px 5px;
+    transition: all 0.3s ease;
+}
+
+.close-level-button:hover {
+    background: #666;
+    border-color: #888;
+}
+
+/* --- ANIMACIONES --- */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes bounceIn {
+    0% {
+        transform: scale(0.3) rotate(-10deg);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.05) rotate(5deg);
+    }
+    70% {
+        transform: scale(0.9) rotate(-2deg);
+    }
+    100% {
+        transform: scale(1) rotate(0deg);
+        opacity: 1;
+    }
+}
+
+@keyframes glow {
+    from {
+        text-shadow: 0 0 10px #ffcc00, 0 0 20px #ffcc00, 0 0 30px #ffcc00;
+    }
+    to {
+        text-shadow: 0 0 20px #ffcc00, 0 0 30px #ffcc00, 0 0 40px #ffcc00;
+    }
+}
+
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% {
+        transform: translateY(0);
+    }
+    40% {
+        transform: translateY(-10px);
+    }
+    60% {
+        transform: translateY(-5px);
+    }
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
 @keyframes aura-glow { 0%, 100% { text-shadow: 0 0 5px #ff00ff; } 25% { text-shadow: 0 0 5px #00ffff; } 50% { text-shadow: 0 0 5px #ffff00; } 75% { text-shadow: 0 0 5px #00ff00; } }
 
 .aura-info { 
@@ -448,7 +647,31 @@ h2 {
 
 /* Hacemos los botones +/- más grandes y con más espacio */
 #carrito-lista .item-controles button {
-    font-size: 1.2em;  /* Aumentamos el tamaño de la fuente (+ y -) */
-    padding: 4px 10px; /* Aumentamos el padding para hacerlos más grandes */
-    margin-left: 8px; /* Aumentamos la separación entre ellos */
+font-size: 1.2em;  /* Aumentamos el tamaño de la fuente (+ y -) */
+padding: 4px 10px; /* Aumentamos el padding para hacerlos más grandes */
+margin-left: 8px; /* Aumentamos la separación entre ellos */
+}
+    
+    /* ====== GALERÍA DE PRODUCTOS RESPONSIVA ====== */
+    #gallery-prev, #gallery-next {
+        width: 40px !important;
+        height: 40px !important;
+        font-size: 18px !important;
+    }
+    
+    #gallery-counter {
+        font-size: 8px !important;
+        padding: 3px 10px !important;
+    }
+    
+    /* ====== PANEL DE ADMIN RESPONSIVO ====== */
+    .admin-actions {
+        flex-wrap: wrap;
+        gap: 5px;
+    }
+    
+    .admin-actions a {
+        font-size: 8px !important;
+        padding: 6px 10px !important;
+    }
 }
