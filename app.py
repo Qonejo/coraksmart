@@ -347,6 +347,11 @@ def admin_crear_paquete():
 @app.route("/lobby")
 def lobby():
     if not session.get("logged_in_user_emoji"): return redirect(url_for("entrar"))
+    return render_template("lobby_simple.html")
+
+@app.route("/lobby-old")
+def lobby_old():
+    if not session.get("logged_in_user_emoji"): return redirect(url_for("entrar"))
     return render_template("lobby.html")
 
 @app.route("/arena")
@@ -354,11 +359,11 @@ def arena():
     if not session.get("logged_in_user_emoji"): return redirect(url_for("entrar"))
     return render_template("arena.html")
 
-# Estado global del lobby
+# Estado global del lobby - SIMPLIFICADO
 lobby_state = {
-    "spectators": {},      # {session_id: {"emoji": "😀", "aura_points": 1500}}
-    "searching": {},       # {session_id: {"emoji": "🚀", "aura_points": 2500}}
-    "in_combat": {}        # {room_id: {"player1": {...}, "player2": {...}}}
+    "spectators": {},      
+    "searching": {},       
+    "in_combat": {}        
 }
 
 active_games = {}
@@ -376,22 +381,10 @@ def get_user_data(user_emoji):
     aura_points = user_data.get("aura_points", 0)
     return {"emoji": user_emoji, "aura_points": aura_points}
 
+# FUNCIÓN DESHABILITADA - LOBBY SIMPLIFICADO
 def broadcast_lobby_state():
-    """Envía el estado actualizado del lobby a todos los clientes conectados"""
-    # Convertir el estado interno a formato para el frontend
-    frontend_state = {
-        "spectators": list(lobby_state["spectators"].values()),
-        "searching": list(lobby_state["searching"].values()),
-        "in_combat": list(lobby_state["in_combat"].values())
-    }
-    
-    # Solo broadcast a usuarios en el lobby (no en juego)
-    lobby_sids = list(lobby_state["spectators"].keys()) + list(lobby_state["searching"].keys())
-    for sid in lobby_sids:
-        emit('update_lobby_state', frontend_state, room=sid)
-    
-    print(f"[LOBBY] Estado enviado a {len(lobby_sids)} usuarios: {len(frontend_state['spectators'])} espectadores, "
-          f"{len(frontend_state['searching'])} buscando, {len(frontend_state['in_combat'])} en combate")
+    """DESHABILITADO - Lobby simplificado sin broadcasts"""
+    pass
 
 def try_match_players():
     """Intenta emparejar jugadores que están buscando duelo"""
@@ -459,74 +452,21 @@ def try_match_players():
 def handle_connect():
     print(f"[CONNECT] Cliente conectado: {request.sid}")
 
+# HANDLERS DE LOBBY DESHABILITADOS
 @socketio.on('join_lobby')
 def handle_join_lobby(data):
-    """Usuario se une al lobby como espectador"""
-    user_emoji = data.get('emoji')
-    if not user_emoji:
-        emit('error', {'message': 'Emoji requerido'})
-        return
-    
-    # Obtener datos del usuario
-    user_data = get_user_data(user_emoji)
-    
-    # Agregar como espectador
-    lobby_state["spectators"][request.sid] = user_data
-    
-    # Enviar estado actual del lobby al nuevo usuario
-    frontend_state = {
-        "spectators": list(lobby_state["spectators"].values()),
-        "searching": list(lobby_state["searching"].values()),
-        "in_combat": list(lobby_state["in_combat"].values())
-    }
-    emit('update_lobby_state', frontend_state)
-    
-    # Notificar a todos sobre el cambio
-    broadcast_lobby_state()
-    
-    print(f"[JOIN] {user_emoji} se unió al lobby como espectador")
+    """DESHABILITADO - Lobby simplificado"""
+    print(f"[JOIN] Lobby join request ignored - using simple lobby")
 
 @socketio.on('search_for_game')
 def handle_search_for_game():
-    """Usuario busca un duelo"""
-    sid = request.sid
-    
-    # Verificar que el usuario esté en espectadores
-    if sid not in lobby_state["spectators"]:
-        emit('error', {'message': 'Debes estar en el lobby para buscar duelo'})
-        return
-    
-    # Mover de espectadores a buscando
-    user_data = lobby_state["spectators"].pop(sid)
-    lobby_state["searching"][sid] = user_data
-    
-    print(f"[SEARCH] {user_data['emoji']} está buscando duelo")
-    
-    # Intentar emparejar
-    if not try_match_players():
-        # No hay emparejamiento, actualizar lobby
-        broadcast_lobby_state()
-        emit('searching_started')
+    """DESHABILITADO - Lobby simplificado"""
+    print(f"[SEARCH] Search request ignored - using simple lobby")
 
 @socketio.on('cancel_search')
 def handle_cancel_search():
-    """Usuario cancela la búsqueda de duelo"""
-    sid = request.sid
-    
-    # Verificar que el usuario esté buscando
-    if sid not in lobby_state["searching"]:
-        emit('error', {'message': 'No estás buscando duelo'})
-        return
-    
-    # Mover de buscando a espectadores
-    user_data = lobby_state["searching"].pop(sid)
-    lobby_state["spectators"][sid] = user_data
-    
-    print(f"[CANCEL] {user_data['emoji']} canceló la búsqueda")
-    
-    # Actualizar lobby
-    broadcast_lobby_state()
-    emit('search_cancelled')
+    """DESHABILITADO - Lobby simplificado"""
+    print(f"[CANCEL] Cancel request ignored - using simple lobby")
 
 @socketio.on('ping')
 def handle_ping():
@@ -619,51 +559,33 @@ def update_game(room_name):
             "food": game["food"]
         }, room=room_name)
 
-# Game loop simplificado sin gevent
+# GAME LOOP DESHABILITADO - LOBBY SIMPLIFICADO
+# El juego se maneja por eventos, no por loop constante
 import threading
 import time
 
 def game_loop():
-    while True:
-        if active_games:  # Solo procesar si hay juegos activos
-            for room_name in list(active_games.keys()):
-                update_game(room_name)
-            time.sleep(0.15)  # ~6.7 FPS estable
-        else:
-            time.sleep(2.0)   # Esperar más tiempo si no hay juegos
+    """DESHABILITADO - Consume muchos recursos"""
+    pass  # Loop deshabilitado para mejorar rendimiento
 
-# Iniciar el game loop en hilo separado
-game_thread = threading.Thread(target=game_loop, daemon=True)
-game_thread.start()
+# Game thread deshabilitado
+# game_thread = threading.Thread(target=game_loop, daemon=True)
+# game_thread.start()
 
 @socketio.on('disconnect')
 def handle_disconnect():
-    """Usuario se desconecta del lobby"""
+    """Usuario se desconecta - SIMPLIFICADO"""
     player_sid = request.sid
-    user_data = None
     
-    # Remover de cualquier estado del lobby
-    if player_sid in lobby_state["spectators"]:
-        user_data = lobby_state["spectators"].pop(player_sid)
-    elif player_sid in lobby_state["searching"]:
-        user_data = lobby_state["searching"].pop(player_sid)
-    
-    # Verificar si estaba en combate y terminar el juego
-    for room_name, combat_data in list(lobby_state["in_combat"].items()):
-        if (player_sid in active_games.get(room_name, {}).get("players", {})):
-            # Terminar el juego por desconexión
+    # Solo limpiar juegos activos si es necesario
+    for room_name in list(active_games.keys()):
+        if player_sid in active_games[room_name].get("players", {}):
             emit('player_disconnected', room=room_name)
-            del lobby_state["in_combat"][room_name]
-            if room_name in active_games:
-                del active_games[room_name]
+            del active_games[room_name]
+            print(f"[DISCONNECT] Juego {room_name} terminado por desconexión")
             break
     
-    # Actualizar lobby si el usuario estaba registrado
-    if user_data:
-        broadcast_lobby_state()
-        print(f"[DISCONNECT] {user_data['emoji']} se desconectó del lobby")
-    else:
-        print(f"[DISCONNECT] Cliente {player_sid} se desconectó")
+    print(f"[DISCONNECT] Cliente {player_sid} se desconectó")
 
 def handle_game_over(room_name, winner_data=None):
     """Maneja el final de un juego y devuelve jugadores al lobby"""
