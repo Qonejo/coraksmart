@@ -6,8 +6,8 @@
     {# Para bundles, comprobamos el stock de cada componente #}
     {% set max_bundles_posibles = [] %}
     {% for item_id, cant_nec in prod.bundle_items.items() %}
-        {# --- ¡CORRECCIÓN AQUÍ! Usamos PRODUCTOS_DICT para la búsqueda --- #}
-        {% set item_stock = PRODUCTOS_DICT.get(item_id, {}).get('stock', 0) %}
+        {# --- ¡CORRECCIÓN AQUÍ! Usamos PRODUCTOS para la búsqueda --- #}
+        {% set item_stock = PRODUCTOS.get(item_id, {}).get('stock', 0) %}
         {% if cant_nec > 0 %}
             {% do max_bundles_posibles.append(item_stock // cant_nec) %}
         {% else %}

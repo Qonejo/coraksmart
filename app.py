@@ -210,6 +210,38 @@ def logout():
     session.pop("logged_in_user_emoji", None)
     return redirect(url_for("entrar"))
 
+# --- API PARA EMOJIS ---
+EMOJI_LIST = ["😀", "🚀", "🌟", "🍕", "🤖", "👻", "👽", "👾", "🦊", "🧙", "🌮", "💎", "🌙", "🔮", "🧬", "🌵", "🎉", "🔥", "💯", "👑", "💡", "🎮", "🛰️", "🛸", "🗿", "🌴", "🧪", "✨", "🔑", "🗺️", "🐙", "🦋", "🐲", "🍩", "⚡", "🎯", "⚓", "🌈", "🌌", "🌠", "🎱", "🎰", "🕹️", "🏆", "💊", "🎁", "💌", "📈", "🗿"]
+
+@app.route("/api/get-emojis")
+def get_emojis():
+    usuarios = cargar_usuarios()
+    response = jsonify({ "all_emojis": EMOJI_LIST, "occupied_emojis": list(usuarios.keys()) })
+    response.headers['Cache-Control'] = 'max-age=60'  # Cache por 1 minuto
+    return response
+
+@app.route("/api/emoji-access", methods=["POST"])
+def emoji_access():
+    data = request.get_json()
+    emoji = data.get("emoji")
+    password = data.get("password")
+    if not emoji or not password or emoji not in EMOJI_LIST:
+        return jsonify({"success": False, "message": "Datos inválidos."})
+    usuarios = cargar_usuarios()
+    if emoji in usuarios:
+        if check_password_hash(usuarios[emoji]["password_hash"], password):
+            session["logged_in_user_emoji"] = emoji
+            return jsonify({"success": True})
+        else:
+            return jsonify({"success": False, "message": "Contraseña incorrecta."})
+    else:
+        if len(usuarios) >= 50:
+            return jsonify({"success": False, "message": "Todas las vacantes están ocupadas."})
+        usuarios[emoji] = {"password_hash": generate_password_hash(password), "aura_points": 0}
+        guardar_usuarios(usuarios)
+        session["logged_in_user_emoji"] = emoji
+        return jsonify({"success": True, "message": "¡Avatar registrado con éxito!"})
+
 # --- PÁGINA DE NIVELES DE AURA ---
 @app.route("/niveles")
 def niveles_aura():
@@ -233,6 +265,51 @@ def admin_configuracion():
         return redirect(url_for("admin_configuracion"))
     
     return render_template("admin_config.html", config=CONFIG)
+
+@app.route("/admin/reset-password", methods=["POST"])
+def admin_reset_user_password():
+    if not session.get("logged_in"): return redirect(url_for("login"))
+    
+    user_emoji = request.form.get("user_emoji")
+    new_password = request.form.get("new_password")
+    
+    if not user_emoji or not new_password:
+        flash("Debe proporcionar tanto el emoji del usuario como la nueva contraseña", "error")
+        return redirect(url_for("admin_configuracion"))
+    
+    usuarios = cargar_usuarios()
+    if user_emoji not in usuarios:
+        flash(f"No se encontró un usuario con el emoji: {user_emoji}", "error")
+        return redirect(url_for("admin_configuracion"))
+    
+    # Reiniciar la contraseña
+    usuarios[user_emoji]["password_hash"] = generate_password_hash(new_password)
+    guardar_usuarios(usuarios)
+    
+    flash(f"Contraseña reiniciada exitosamente para el usuario {user_emoji}", "success")
+    return redirect(url_for("admin_configuracion"))
+
+@app.route("/admin/clear-orders", methods=["POST"])
+def admin_clear_orders():
+    if not session.get("logged_in"): return redirect(url_for("login"))
+    
+    # Crear una copia de respaldo antes de borrar
+    import shutil
+    import datetime
+    
+    backup_filename = f"pedidos_backup_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+    try:
+        shutil.copy("pedidos.json", backup_filename)
+    except FileNotFoundError:
+        pass  # No hay archivo de pedidos para respaldar
+    
+    # Borrar todos los pedidos
+    pedidos_vacios = []
+    guardar_pedidos(pedidos_vacios)
+    
+    flash(f"TODOS los pedidos han sido eliminados. Se creó una copia de respaldo: {backup_filename}", "success")
+    return redirect(url_for("admin_configuracion"))
+
 # --- API PARA CARRITO ---
 def _get_cart_data():
     productos = cargar_productos()
