@@ -32,7 +32,13 @@ USUARIOS_FILE = "usuarios.json"
 CONFIG = {
 "horarios_atencion": "Lunes a Viernes: 9:00 AM - 6:00 PM",
 "whatsapp_principal": "5215513361764", 
-"whatsapp_secundario": ""
+"whatsapp_secundario": "",
+    "whatsapp_1": "5215513361764",
+    "whatsapp_2": "",
+    "whatsapp_3": "",
+    "whatsapp_1_nombre": "Principal",
+    "whatsapp_2_nombre": "Secundario",
+    "whatsapp_3_nombre": "Terciario"
 }
 
 def cargar_configuracion():
@@ -41,7 +47,13 @@ def cargar_configuracion():
 # --- FUNCIONES DE PERSISTENCIA ---
 def cargar_productos():
     try:
-        with open(PRODUCTOS_FILE, 'r', encoding='utf-8') as f: return json.load(f)
+        with open(PRODUCTOS_FILE, 'r', encoding='utf-8') as f: 
+            productos = json.load(f)
+            # Asegurar que todos los productos tengan whatsapp_asignado
+            for product_id, product_data in productos.items():
+                if 'whatsapp_asignado' not in product_data:
+                    product_data['whatsapp_asignado'] = '1'
+            return productos
     except (FileNotFoundError, json.JSONDecodeError): return {}
 def guardar_productos(productos):
     with open(PRODUCTOS_FILE, 'w', encoding='utf-8') as f: json.dump(productos, f, indent=4)
@@ -163,6 +175,14 @@ def get_progress_bar_info(points, current_level_info, user_emoji):
     points_in_current_level = points - current_level_info["points_needed"]
     points_needed_in_level = points_needed_for_next - current_level_info["points_needed"]
     
+    # Validar que no tengamos valores inválidos
+    if points_needed_in_level <= 0 or points_in_current_level < 0:
+        return {
+            "bar_type": "barva.png",
+            "exp_orbs": 0,
+            "completed": False
+        }
+    
     # Si no tiene puntos en el nivel actual
     if points_in_current_level <= 0:
         return {
@@ -197,9 +217,21 @@ def get_progress_bar_info(points, current_level_info, user_emoji):
     # Para nivel 1: 7000 puntos / 10 = 700 puntos por orbe
     # Para nivel 2: 2030 puntos / 10 = 203 puntos por orbe (pero mínimo 240)
     max_orbs = 8  # Máximo 8 orbes por barra para que no se desborde visualmente
-    orb_value = max(240, points_needed_in_level / max_orbs)
     
-    exp_orbs = min(max_orbs, int(points_in_current_level / orb_value))
+    # Protección adicional contra división por cero y valores inválidos
+    if points_needed_in_level <= 0:
+        orb_value = 240
+    else:
+        orb_value = max(240, points_needed_in_level / max_orbs)
+    
+    # Protección contra NaN
+    if orb_value <= 0 or points_in_current_level < 0:
+        exp_orbs = 0
+    else:
+        try:
+            exp_orbs = min(max_orbs, int(points_in_current_level / orb_value))
+        except (ValueError, ZeroDivisionError):
+            exp_orbs = 0
     
     # Determinar tipo de barra
     if points_in_current_level >= 240:
@@ -390,6 +422,39 @@ def crear_mensaje_pedido(pedido, detalle_completo):
     
     return "\n".join(mensaje_partes)
 
+def determinar_whatsapp_destino(carrito, productos):
+    """Determinar qué WhatsApp debe recibir el pedido basándose en los productos"""
+    whatsapp_counts = {"1": 0, "2": 0, "3": 0}
+    
+    for product_cart_id, cantidad in carrito.items():
+        # Separar product_id de variation_id si existe
+        if '-' in product_cart_id:
+            product_id = product_cart_id.split('-')[0]
+        else:
+            product_id = product_cart_id
+        
+        if product_id in productos:
+            whatsapp_asignado = productos[product_id].get('whatsapp_asignado', '1')
+            whatsapp_counts[whatsapp_asignado] += cantidad
+    
+    # Retornar el WhatsApp con más productos
+    max_whatsapp = max(whatsapp_counts, key=whatsapp_counts.get)
+    
+    # Mapear a los números de WhatsApp configurados
+    whatsapp_map = {
+        "1": CONFIG.get('whatsapp_1', CONFIG.get('whatsapp_principal', '')),
+        "2": CONFIG.get('whatsapp_2', CONFIG.get('whatsapp_secundario', '')),
+        "3": CONFIG.get('whatsapp_3', '')
+    }
+    
+    whatsapp_numero = whatsapp_map.get(max_whatsapp, CONFIG.get('whatsapp_principal', ''))
+    
+    # Si no hay número configurado, usar el principal
+    if not whatsapp_numero:
+        whatsapp_numero = CONFIG.get('whatsapp_principal', '')
+    
+    return whatsapp_numero, max_whatsapp
+
 # --- VISTAS PRINCIPALES ---
 @app.route("/entrar")
 def entrar():
@@ -437,7 +502,7 @@ def admin_view():
         if emoji_key not in pedidos_agrupados:
             pedidos_agrupados[emoji_key] = []
         pedidos_agrupados[emoji_key].append(pedido)
-    return render_template("admin.html", PEDIDOS_AGRUPADOS=pedidos_agrupados, PRODUCTOS_ORDENADOS=productos_ordenados_admin, PRODUCTOS=productos_dict)
+    return render_template("admin.html", PEDIDOS_AGRUPADOS=pedidos_agrupados, PRODUCTOS_ORDENADOS=productos_ordenados_admin, PRODUCTOS=productos_dict, config=CONFIG)
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -611,9 +676,19 @@ def procesar_pedido():
     # Limpiar carrito
     session['carrito'] = {}
     
+    # Determinar WhatsApp destino basándose en productos
+    whatsapp_numero, whatsapp_id = determinar_whatsapp_destino(carrito, productos)
+    
     # Crear mensaje de WhatsApp
     mensaje_whatsapp = crear_mensaje_pedido(pedido, detalle_completo)
-    whatsapp_link = f"https://wa.me/{CONFIG['whatsapp_principal']}?text={urllib.parse.quote(mensaje_whatsapp)}"
+    whatsapp_link = f"https://wa.me/{whatsapp_numero}?text={urllib.parse.quote(mensaje_whatsapp)}"
+    
+    # Guardar información del WhatsApp usado en el pedido
+    pedido["whatsapp_usado"] = {
+        "numero": whatsapp_numero,
+        "id": whatsapp_id,
+        "nombre": CONFIG.get(f'whatsapp_{whatsapp_id}_nombre', 'Principal')
+    }
     
     flash(f"¡Pedido realizado con éxito! Podrás ganar {aura_total} puntos de Aura cuando sea confirmado.", "success")
     return redirect(whatsapp_link)
@@ -784,8 +859,8 @@ def generate_reward_code():
 
 @app.route("/admin/recompensas", methods=["GET", "POST"])
 def admin_recompensas():
-    if not session.get("is_admin"):
-        return redirect(url_for("admin_login"))
+    if not session.get("logged_in"):
+        return redirect(url_for("login"))
     
     if request.method == "POST":
         data = request.get_json()
@@ -866,6 +941,12 @@ def admin_configuracion():
         CONFIG["horarios_atencion"] = request.form.get("horarios_atencion", CONFIG["horarios_atencion"])
         CONFIG["whatsapp_principal"] = request.form.get("whatsapp_principal", CONFIG["whatsapp_principal"])
         CONFIG["whatsapp_secundario"] = request.form.get("whatsapp_secundario", CONFIG["whatsapp_secundario"])
+        CONFIG["whatsapp_1"] = request.form.get("whatsapp_1", CONFIG["whatsapp_1"])
+        CONFIG["whatsapp_2"] = request.form.get("whatsapp_2", CONFIG["whatsapp_2"])
+        CONFIG["whatsapp_3"] = request.form.get("whatsapp_3", CONFIG["whatsapp_3"])
+        CONFIG["whatsapp_1_nombre"] = request.form.get("whatsapp_1_nombre", CONFIG["whatsapp_1_nombre"])
+        CONFIG["whatsapp_2_nombre"] = request.form.get("whatsapp_2_nombre", CONFIG["whatsapp_2_nombre"])
+        CONFIG["whatsapp_3_nombre"] = request.form.get("whatsapp_3_nombre", CONFIG["whatsapp_3_nombre"])
         
         flash("Configuración actualizada con éxito.", "success")
         return redirect(url_for("admin_configuracion"))
@@ -1351,7 +1432,116 @@ def admin_productos():
     if not session.get("logged_in"): return redirect(url_for("login"))
     
     productos = cargar_productos()
-    return render_template("admin_productos.html", productos=productos)
+    return render_template("admin_productos.html", productos=productos, config=CONFIG)
+
+@app.route("/admin/agregar-producto", methods=["GET", "POST"])
+def admin_agregar_producto():
+    if not session.get("logged_in"): return redirect(url_for("login"))
+    
+    if request.method == "POST":
+        productos = cargar_productos()
+        
+        # Obtener datos del formulario
+        nombre = request.form.get("nombre")
+        descripcion = request.form.get("descripcion", "")
+        precio = float(request.form.get("precio"))
+        stock = int(request.form.get("stock"))
+        whatsapp_asignado = request.form.get("whatsapp_asignado", "1")
+        
+        # Manejar archivo de imagen
+        imagen = request.files.get("imagen")
+        imagen_filename = "default.png"  # imagen por defecto
+        
+        if imagen and imagen.filename:
+            imagen_filename = secure_filename(imagen.filename)
+            imagen.save(os.path.join("static", imagen_filename))
+        
+        # Crear ID único para el producto
+        product_id = nombre.lower().replace(" ", "_").replace("ñ", "n")
+        counter = 1
+        original_id = product_id
+        while product_id in productos:
+            product_id = f"{original_id}_{counter}"
+            counter += 1
+        
+        # Crear producto
+        productos[product_id] = {
+            "nombre": nombre,
+            "descripcion": descripcion,
+            "precio": precio,
+            "stock": stock,
+            "imagen": imagen_filename,
+            "whatsapp_asignado": whatsapp_asignado,
+            "orden": max([p.get("orden", 0) for p in productos.values()], default=0) + 1
+        }
+        
+        guardar_productos(productos)
+        flash(f"Producto '{nombre}' agregado exitosamente.", "success")
+        return redirect(url_for("admin_productos"))
+    
+    return render_template("add_product.html", config=CONFIG)
+
+@app.route("/admin/editar-producto/<product_id>", methods=["GET", "POST"])
+def admin_editar_producto(product_id):
+    if not session.get("logged_in"): return redirect(url_for("login"))
+    
+    productos = cargar_productos()
+    if product_id not in productos:
+        flash("Producto no encontrado.", "error")
+        return redirect(url_for("admin_productos"))
+    
+    if request.method == "POST":
+        # Actualizar datos del producto
+        productos[product_id]["nombre"] = request.form.get("nombre")
+        productos[product_id]["descripcion"] = request.form.get("descripcion", "")
+        productos[product_id]["precio"] = float(request.form.get("precio"))
+        productos[product_id]["whatsapp_asignado"] = request.form.get("whatsapp_asignado", "1")
+        
+        if not productos[product_id].get("bundle_items"):  # Solo actualizar stock si no es bundle
+            productos[product_id]["stock"] = int(request.form.get("stock"))
+        
+        # Manejar nueva imagen si se subió
+        imagen = request.files.get("imagen")
+        if imagen and imagen.filename:
+            imagen_filename = secure_filename(imagen.filename)
+            imagen.save(os.path.join("static", imagen_filename))
+            productos[product_id]["imagen"] = imagen_filename
+        
+        guardar_productos(productos)
+        flash(f"Producto '{productos[product_id]['nombre']}' actualizado exitosamente.", "success")
+        return redirect(url_for("admin_productos"))
+    
+    return render_template("edit_product.html", producto=productos[product_id], product_id=product_id, config=CONFIG)
+
+@app.route("/admin/upload-logo", methods=["POST"])
+def admin_upload_logo():
+    if not session.get("logged_in"):
+        return jsonify({"success": False, "message": "No autorizado"})
+    
+    if 'logo' not in request.files:
+        return jsonify({"success": False, "message": "No se seleccionó archivo"})
+    
+    file = request.files['logo']
+    if file.filename == '':
+        return jsonify({"success": False, "message": "No se seleccionó archivo"})
+    
+    if file and file.filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
+        filename = secure_filename(file.filename)
+        
+        # Guardar con nombre fijo como logo.png
+        logo_path = os.path.join("static", "logo.png")
+        
+        # Hacer backup del logo anterior
+        if os.path.exists(logo_path):
+            backup_path = os.path.join("static", f"logo_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png")
+            os.rename(logo_path, backup_path)
+        
+        file.save(logo_path)
+        
+        flash("Logo actualizado exitosamente", "success")
+        return jsonify({"success": True, "message": "Logo actualizado exitosamente"})
+    else:
+        return jsonify({"success": False, "message": "Formato de archivo no válido. Use PNG, JPG, JPEG o GIF."})
 
 @app.route("/admin/upload-product-images", methods=["POST"])
 def admin_upload_product_images():
@@ -1611,6 +1801,11 @@ def comprar():
     
     session.pop('carrito', None)
     return redirect(whatsapp_url)
+
+@app.route("/cronjob")
+def cronjob():
+    """Ruta especial para mantener el servidor activo con cronjobs"""
+    return "Success", 200
 
 if __name__ == "__main__":
     import os

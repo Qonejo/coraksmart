@@ -43,6 +43,14 @@
             <label for="imagen">Imagen del Producto:</label>
             <input type="file" name="imagen" id="imagen" accept="image/*">
         </p>
+        <p>
+            <label for="whatsapp_asignado">WhatsApp Asignado:</label>
+            <select name="whatsapp_asignado" id="whatsapp_asignado" style="width: 95%; padding: 10px; font-family: inherit; background-color: #555; border: 1px solid #888; color: #fff;">
+                <option value="1">WhatsApp 1 - {{ config.whatsapp_1_nombre or 'Principal' }}</option>
+                <option value="2">WhatsApp 2 - {{ config.whatsapp_2_nombre or 'Secundario' }}</option>
+                <option value="3">WhatsApp 3 - {{ config.whatsapp_3_nombre or 'Terciario' }}</option>
+            </select>
+        </p>
         <button type="submit">Añadir Producto</button>
         <a href="{{ url_for('admin_view') }}" class="btn">Cancelar</a>
     </form>

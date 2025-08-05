@@ -83,6 +83,7 @@
                 <th>Producto</th>
                 <th>Stock Actual</th>
                 <th>Promoción</th>
+                <th>WhatsApp</th>
                 <th>Acciones</th>
             </tr>
         </thead>
@@ -95,6 +96,7 @@
                         <td class="promo-cell">
                             <input type="checkbox" {% if prod.get('promocion') %}checked{% endif %} disabled>
                         </td>
+                        <td>{{ config.get('whatsapp_' + (prod.get('whatsapp_asignado', '1')) + '_nombre', 'Principal') }}</td>
                         <td class="actions-cell">
                             <a href="{{ url_for('admin_productos') }}" class="btn btn-edit">Gestionar</a>
                         </td>
@@ -103,6 +105,7 @@
                         <tr class="variation-row">
                             <td style="padding-left: 40px;">- {{ var_id }}</td>
                             <td>{{ var_data.stock }}</td>
+                            <td></td>
                             <td></td>
                             <td></td>
                         </tr>
@@ -114,6 +117,7 @@
                         <td class="promo-cell">
                             <input type="checkbox" {% if prod.get('promocion') %}checked{% endif %} disabled>
                         </td>
+                        <td>{{ config.get('whatsapp_' + (prod.get('whatsapp_asignado', '1')) + '_nombre', 'Principal') }}</td>
                         <td class="actions-cell">
                             <a href="{{ url_for('admin_productos') }}" class="btn btn-edit">Gestionar</a>
                         </td>

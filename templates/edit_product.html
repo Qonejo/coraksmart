@@ -48,6 +48,14 @@
             <label for="imagen">Subir nueva imagen (deja en blanco para no cambiar):</label>
             <input type="file" name="imagen" id="imagen" accept="image/*">
         </p>
+        <p>
+            <label for="whatsapp_asignado">WhatsApp Asignado:</label>
+            <select name="whatsapp_asignado" id="whatsapp_asignado" style="width: 95%; padding: 10px; font-family: inherit; background-color: #555; border: 1px solid #888; color: #fff;">
+                <option value="1" {% if producto.get('whatsapp_asignado', '1') == '1' %}selected{% endif %}>WhatsApp 1 - {{ config.whatsapp_1_nombre or 'Principal' }}</option>
+                <option value="2" {% if producto.get('whatsapp_asignado', '1') == '2' %}selected{% endif %}>WhatsApp 2 - {{ config.whatsapp_2_nombre or 'Secundario' }}</option>
+                <option value="3" {% if producto.get('whatsapp_asignado', '1') == '3' %}selected{% endif %}>WhatsApp 3 - {{ config.whatsapp_3_nombre or 'Terciario' }}</option>
+            </select>
+        </p>
         <button type="submit">Guardar Cambios</button>
         <a href="{{ url_for('admin_view') }}" class="btn">Cancelar</a>
     </form>
