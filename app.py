@@ -57,14 +57,14 @@ def guardar_usuarios(usuarios):
 
 # --- SISTEMA DE AURA Y GENERADOR DE IDS ---
 AURA_LEVELS = [
-    {"level": 0, "points_needed": -float('inf'), "flame_color": "black",  "prize": "Sin Rango"},
-    {"level": 1, "points_needed": 0,         "flame_color": "white",  "prize": "1 Gomita gratis"},
-    {"level": 2, "points_needed": 7000,      "flame_color": "blue",   "prize": "5% descuento en tu próxima compra"},
-    {"level": 3, "points_needed": 9030,      "flame_color": "green",  "prize": "Salvia + 1"},
-    {"level": 4, "points_needed": 15270,     "flame_color": "yellow", "prize": "10% descuento en tu próxima compra"},
-    {"level": 5, "points_needed": 19820,     "flame_color": "orange", "prize": "1 Olla"},
-    {"level": 6, "points_needed": 24000,     "flame_color": "red",    "prize": "15% descuento en tu próxima compra"},
-    {"level": 7, "points_needed": 33000,     "flame_color": "purple", "prize": "1 Brownie + 1 Gomita + Media olla + 5% descuento en tu próxima compra"}
+    {"level": 0, "points_needed": -float('inf'), "flame_color": "black",  "name": "Bandido", "prize": "Sin Rango", "character_size": 96},
+    {"level": 1, "points_needed": 0,         "flame_color": "white",  "name": "Vampiro ojón", "prize": "1 Gomita gratis", "character_size": 96},
+    {"level": 2, "points_needed": 7000,      "flame_color": "blue",   "name": "Avispa mutante", "prize": "5% descuento en tu próxima compra", "character_size": 96},
+    {"level": 3, "points_needed": 9030,      "flame_color": "green",  "name": "Lombriz mounstro", "prize": "Salvia + 1", "character_size": 96},
+    {"level": 4, "points_needed": 15270,     "flame_color": "yellow", "name": "Perrodragón", "prize": "10% descuento en tu próxima compra", "character_size": 96},
+    {"level": 5, "points_needed": 19820,     "flame_color": "orange", "name": "Brujo runero", "prize": "1 Olla", "character_size": 96},
+    {"level": 6, "points_needed": 24000,     "flame_color": "red",    "name": "Obelisco runa", "prize": "15% descuento en tu próxima compra", "character_size": 96},
+    {"level": 7, "points_needed": 33000,     "flame_color": "purple", "name": "Entidad", "prize": "1 Brownie + 1 Gomita + Media olla + 5% descuento en tu próxima compra", "character_size": 96}
 ]
 
 def get_user_aura_info(user_emoji):
@@ -84,10 +84,14 @@ def get_user_aura_info(user_emoji):
     # Determinar información de la barra de progreso
     progress_bar_info = get_progress_bar_info(points, current_level_info, user_emoji)
     
+    # Verificar recompensas pendientes
+    pending_rewards = check_pending_rewards(user_emoji)
+    
     return {
         "points": points, 
         "level_info": current_level_info,
-        "progress_bar": progress_bar_info
+        "progress_bar": progress_bar_info,
+        "pending_rewards": pending_rewards
     }
 
 def get_character_gif(points, level_info):
@@ -278,6 +282,34 @@ def generar_id_pedido():
     parte_pedido = codificar_numero(100 + len(cargar_pedidos()))
     sello_aleatorio = "".join(random.choices(string.ascii_uppercase + string.digits, k=3))
     return f"{parte_fecha}-{parte_hora}-{parte_pedido}-{sello_aleatorio}"
+
+def generar_codigo_recompensa():
+    """Generar código alfanumérico de 6 dígitos para reclamar recompensas"""
+    return "".join(random.choices(string.ascii_uppercase + string.digits, k=6))
+
+def check_pending_rewards(user_emoji):
+    """Verificar si el usuario tiene recompensas pendientes por reclamar"""
+    usuarios = cargar_usuarios()
+    user_data = usuarios.get(user_emoji, {})
+    current_points = user_data.get("aura_points", 0)
+    claimed_levels = user_data.get("claimed_levels", [])
+    
+    # Determinar nivel actual
+    current_level = 0
+    for level_info in reversed(AURA_LEVELS):
+        if current_points >= level_info["points_needed"]:
+            current_level = level_info["level"]
+            break
+    
+    # Verificar si hay niveles completados sin reclamar
+    pending_rewards = []
+    for level in range(1, current_level + 1):
+        if level not in claimed_levels:
+            level_info = next((l for l in AURA_LEVELS if l["level"] == level), None)
+            if level_info:
+                pending_rewards.append(level_info)
+    
+    return pending_rewards
 
 def procesar_compra_interna(carrito, productos, user_emoji):
     """Procesa internamente una compra y devuelve total, detalle y puntos de aura"""
@@ -702,6 +734,51 @@ def delete_user_account():
         "message": "Cuenta eliminada exitosamente"
     })
 
+# --- RUTA PARA GENERAR CÓDIGOS DE RECOMPENSA ---
+@app.route("/generate-reward-code", methods=["POST"])
+def generate_reward_code():
+    if not session.get("logged_in_user_emoji"):
+        return jsonify({"success": False, "message": "No autorizado"})
+    
+    data = request.get_json()
+    level = data.get("level")
+    user_emoji = session["logged_in_user_emoji"]
+    
+    if not level:
+        return jsonify({"success": False, "message": "Nivel no especificado"})
+    
+    usuarios = cargar_usuarios()
+    if user_emoji not in usuarios:
+        return jsonify({"success": False, "message": "Usuario no encontrado"})
+    
+    # Verificar que el usuario realmente alcanzó ese nivel
+    user_points = usuarios[user_emoji].get("aura_points", 0)
+    level_info = next((l for l in AURA_LEVELS if l["level"] == level), None)
+    
+    if not level_info or user_points < level_info["points_needed"]:
+        return jsonify({"success": False, "message": "No tienes suficientes puntos para este nivel"})
+    
+    # Generar código único
+    codigo = generar_codigo_recompensa()
+    
+    # Guardar código de reclamación (opcional, para tracking)
+    if "reward_codes" not in usuarios[user_emoji]:
+        usuarios[user_emoji]["reward_codes"] = {}
+    
+    usuarios[user_emoji]["reward_codes"][str(level)] = {
+        "code": codigo,
+        "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "claimed": False
+    }
+    
+    guardar_usuarios(usuarios)
+    
+    return jsonify({
+        "success": True,
+        "code": codigo,
+        "level": level
+    })
+
 # --- RUTAS DE CONFIGURACIÓN ADMIN ---
 @app.route("/admin/configuracion", methods=["GET", "POST"])
 def admin_configuracion():
@@ -1106,13 +1183,16 @@ def admin_aura_levels():
             new_points = request.form.get(f'points_{level}')
             new_title = request.form.get(f'title_{level}')
             new_prize = request.form.get(f'prize_{level}')
+            new_size = request.form.get(f'character_size_{level}')
             
             if new_points is not None and level != 0:  # No cambiar nivel 0
                 level_info["points_needed"] = int(new_points)
             if new_title is not None:
-                level_info["title"] = new_title
+                level_info["name"] = new_title  # Usar 'name' en lugar de 'title'
             if new_prize is not None:
                 level_info["prize"] = new_prize
+            if new_size is not None:
+                level_info["character_size"] = int(new_size)
         
         # Guardar cambios (aquí podrías guardar en un archivo JSON si quieres persistencia)
         flash("Niveles de aura actualizados correctamente", "success")

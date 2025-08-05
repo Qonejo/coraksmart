@@ -211,6 +211,15 @@
                            name="prize_{{ level.level }}" 
                            value="{{ level.prize or '' }}" 
                            placeholder="Ej: 1 Gomita gratis">
+                    
+                    <label for="character_size_{{ level.level }}">Tamaño del Personaje (px):</label>
+                    <input type="number" 
+                           id="character_size_{{ level.level }}" 
+                           name="character_size_{{ level.level }}" 
+                           value="{{ level.character_size or 96 }}" 
+                           min="20" 
+                           max="200" 
+                           onchange="updateCharacterPreview({{ level.level }}, this.value)">
                 </div>
                 
                 <div class="character-preview">
@@ -259,6 +268,12 @@
                 };
                 reader.readAsDataURL(input.files[0]);
             }
+        }
+        
+        function updateCharacterPreview(level, size) {
+            const img = document.querySelector(`#character_${level}`).closest('.level-card').querySelector('.character-img');
+            img.style.width = size + 'px';
+            img.style.height = size + 'px';
         }
         
         // Validación en tiempo real

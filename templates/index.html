@@ -64,6 +64,13 @@
                 <div class="aura-progress-fill" data-progress="{{ progress_percent }}"></div>
             </div>
             
+            <!-- Notificación de recompensas pendientes -->
+            {% if aura_data.pending_rewards %}
+            <div class="pending-rewards-notification" style="margin-top: 5px; padding: 5px 10px; background: rgba(255, 204, 0, 0.2); border: 1px solid #ffcc00; border-radius: 5px; font-size: 9px; color: #ffcc00; animation: pulse 2s infinite;">
+                🎁 Tienes {{ aura_data.pending_rewards|length }} recompensa(s) pendiente(s) - <a href="{{ url_for('niveles_aura') }}" style="color: #ffcc00; text-decoration: underline;">¡Reclámalas!</a>
+            </div>
+            {% endif %}
+            
             <!-- Barra de progreso visual removida por solicitud del usuario -->
         </div>
         {% endif %}
@@ -150,16 +157,16 @@ COMPRA
     
     <!-- Inicializar galerías de productos -->
     <script>
-        // Configurar galerías de productos con imágenes adicionales
+        // Configurar galerías de productos con imágenes (principales y adicionales)
         {% for id, prod in PRODUCTOS_ORDENADOS %}
-        {% if prod.get('imagenes_adicionales') %}
         setProductGallery('{{ id }}', [
             '{{ prod.imagen }}'
-            {% for img_index, img_name in prod.imagenes_adicionales.items() %}
-                , '{{ img_name }}'
-            {% endfor %}
+            {% if prod.get('imagenes_adicionales') %}
+                {% for img_index, img_name in prod.imagenes_adicionales.items() %}
+                    , '{{ img_name }}'
+                {% endfor %}
+            {% endif %}
         ]);
-        {% endif %}
         {% endfor %}
     </script>
     

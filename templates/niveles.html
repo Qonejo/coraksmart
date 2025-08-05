@@ -39,15 +39,18 @@
             background: #333;
         }
         
-        .flame-icon {
-            width: 40px;
-            height: 40px;
+        .character-icon {
+            width: 60px;
+            height: 60px;
             margin-right: 15px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
+            border-radius: 8px;
+            object-fit: contain;
+            border: 2px solid #444;
+        }
+        
+        .character-icon.current {
+            border-color: #00ff00;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
         }
         
         .flame-white { background: linear-gradient(45deg, #fff, #ddd); color: #333; }
@@ -195,13 +198,14 @@
                     {% elif aura_data.points >= nivel.points_needed %}completed
                     {% endif %}">
                     
-                    <div class="flame-icon flame-{{ nivel.flame_color }}">
-                        🔥
-                    </div>
+                    <img src="{{ url_for('static', filename='f' + nivel.level|string + '.gif') }}" 
+                         alt="{{ nivel.name }}" 
+                         class="character-icon {% if aura_data.level_info.level == nivel.level %}current{% endif %}"
+                         style="width: {{ nivel.character_size }}px; height: {{ nivel.character_size }}px;">
                     
                     <div class="nivel-info">
                         <div class="nivel-titulo">
-                            Nivel {{ nivel.level }} - Llama {{ nivel.flame_color.title() }}
+                            Nivel {{ nivel.level }} - {{ nivel.name }}
                         </div>
                         <div class="nivel-puntos">
                             {% if nivel.points_needed == 0 %}
@@ -215,11 +219,20 @@
                         </div>
                     </div>
                     
-                    {% if aura_data.points >= nivel.points_needed %}
-                        <div style="color: #00ff00; font-size: 20px;">✓</div>
-                    {% elif aura_data.level_info.level + 1 == nivel.level %}
-                        <div style="color: #ffff44; font-size: 16px;">⭐</div>
-                    {% endif %}
+                    <div style="display: flex; flex-direction: column; gap: 10px; align-items: center;">
+                        {% if aura_data.points >= nivel.points_needed %}
+                            {% if nivel.level not in (aura_data.progress_bar.get('claimed_levels', []) if aura_data.progress_bar else []) %}
+                                <button onclick="claimReward({{ nivel.level }}, '{{ nivel.prize }}')" 
+                                        style="background: #ffcc00; color: #000; border: 2px solid #ff9900; padding: 8px 12px; border-radius: 5px; font-family: 'Press Start 2P', cursive; font-size: 8px; cursor: pointer;">
+                                    🎁 Obtener Recompensa
+                                </button>
+                            {% else %}
+                                <div style="color: #00ff00; font-size: 20px;">✓ Reclamado</div>
+                            {% endif %}
+                        {% elif aura_data.level_info.level + 1 == nivel.level %}
+                            <div style="color: #ffff44; font-size: 16px;">⭐ Próximo</div>
+                        {% endif %}
+                    </div>
                 </div>
             {% endfor %}
         </div>
@@ -228,5 +241,48 @@
             <a href="{{ url_for('index') }}" class="volver-btn">← Volver a la Tienda</a>
         </div>
     </div>
+    
+    <script>
+        async function claimReward(level, prize) {
+            try {
+                // Generar código de reclamación
+                const response = await fetch('/generate-reward-code', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ level: level })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    const code = data.code;
+                    const userEmoji = '{{ session.logged_in_user_emoji }}';
+                    
+                    // Crear mensaje para WhatsApp
+                    const message = `🎁 RECLAMACIÓN DE RECOMPENSA 🎁\n\n` +
+                                   `Usuario: ${userEmoji}\n` +
+                                   `Nivel alcanzado: ${level}\n` +
+                                   `Recompensa: ${prize}\n` +
+                                   `Código de reclamación: ${code}\n\n` +
+                                   `Por favor, entregar mi recompensa presentando este código.`;
+                    
+                    // Abrir WhatsApp
+                    const whatsappUrl = `https://wa.me/{{ config.whatsapp_principal or "5215513361764" }}?text=${encodeURIComponent(message)}`;
+                    window.open(whatsappUrl, '_blank');
+                    
+                    // Marcar como reclamado localmente
+                    event.target.style.display = 'none';
+                    event.target.parentElement.innerHTML = '<div style="color: #ffcc00; font-size: 12px;">⏳ Enviado</div>';
+                    
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            } catch (error) {
+                alert('Error al generar código de reclamación');
+            }
+        }
+    </script>
 </body>
 </html>
