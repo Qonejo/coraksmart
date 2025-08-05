@@ -569,11 +569,9 @@ def procesar_pedido():
     todos_los_pedidos.append(pedido)
     guardar_pedidos(todos_los_pedidos)
     
-    # Actualizar aura del usuario
-    usuarios = cargar_usuarios()
-    if user_emoji in usuarios:
-        usuarios[user_emoji]["aura_points"] = usuarios[user_emoji].get("aura_points", 0) + aura_total
-        guardar_usuarios(usuarios)
+    # NO otorgar puntos de aura aquí - se otorgarán cuando el admin complete el pedido
+    # Guardar información de aura potencial en el pedido para referencia
+    pedido["aura_potencial"] = aura_total
     
     # Limpiar carrito
     session['carrito'] = {}
@@ -582,7 +580,7 @@ def procesar_pedido():
     mensaje_whatsapp = crear_mensaje_pedido(pedido, detalle_completo)
     whatsapp_link = f"https://wa.me/{CONFIG['whatsapp_principal']}?text={urllib.parse.quote(mensaje_whatsapp)}"
     
-    flash(f"¡Pedido realizado con éxito! Ganaste {aura_total} puntos de Aura.", "success")
+    flash(f"¡Pedido realizado con éxito! Podrás ganar {aura_total} puntos de Aura cuando sea confirmado.", "success")
     return redirect(whatsapp_link)
 
 # --- RUTA PARA RECLAMAR RECOMPENSAS ---
@@ -883,6 +881,90 @@ def admin_api_change_user_emoji():
     guardar_usuarios(usuarios)
     
     return jsonify({"success": True, "message": f"Usuario movido de {old_emoji} a {new_emoji} exitosamente"})
+
+# --- RUTA PARA COMPLETAR PEDIDOS Y OTORGAR AURA ---
+@app.route("/admin/completar_pedido/<pedido_id>", methods=["POST"])
+def admin_completar_pedido(pedido_id):
+    if not session.get("logged_in"): return redirect(url_for("login"))
+    
+    pedidos = cargar_pedidos()
+    productos = cargar_productos()
+    usuarios = cargar_usuarios()
+    
+    # Buscar el pedido
+    pedido_encontrado = None
+    for pedido in pedidos:
+        if pedido.get("id") == pedido_id:
+            pedido_encontrado = pedido
+            break
+    
+    if not pedido_encontrado:
+        flash(f"Pedido {pedido_id} no encontrado", "error")
+        return redirect(url_for("admin_view"))
+    
+    # Cambiar estado del pedido
+    was_completed = pedido_encontrado.get("completado", False)
+    pedido_encontrado["completado"] = not was_completed
+    
+    # Si se está marcando como completado por primera vez, otorgar puntos de aura
+    if not was_completed and pedido_encontrado["completado"]:
+        user_emoji = pedido_encontrado.get("user_emoji")
+        if user_emoji and user_emoji in usuarios:
+            # Calcular puntos de aura para este pedido
+            aura_total = 0
+            for cart_id, cant in pedido_encontrado.get("detalle", {}).items():
+                parts = cart_id.split('-', 1)
+                base_id = parts[0]
+                prod_data = productos.get(base_id if len(parts) > 1 else cart_id)
+                
+                if not prod_data:
+                    continue
+                
+                precio_item = 0
+                if "bundle_items" in prod_data:
+                    precio_item = prod_data.get("bundle_precio", 0)
+                elif len(parts) > 1 and "variaciones" in prod_data:
+                    variation_id = parts[1]
+                    variation_data = prod_data["variaciones"].get(variation_id)
+                    if variation_data:
+                        precio_item = variation_data.get("precio", 0)
+                elif "precio" in prod_data:
+                    precio_item = prod_data.get("precio", 0)
+                
+                puntos_por_item = get_aura_points_for_product(base_id, precio_item)
+                aura_total += puntos_por_item * cant
+            
+            # Otorgar puntos al usuario
+            usuarios[user_emoji]["aura_points"] = usuarios[user_emoji].get("aura_points", 0) + aura_total
+            guardar_usuarios(usuarios)
+            
+            # Actualizar el pedido con los puntos otorgados
+            pedido_encontrado["aura_otorgada"] = aura_total
+            
+            flash(f"Pedido {pedido_id} completado. Se otorgaron {aura_total} puntos de aura al usuario {user_emoji}", "success")
+        else:
+            flash(f"Pedido {pedido_id} completado (usuario no encontrado para otorgar aura)", "warning")
+    
+    # Si se está desmarcando como completado, quitar puntos de aura
+    elif was_completed and not pedido_encontrado["completado"]:
+        user_emoji = pedido_encontrado.get("user_emoji")
+        aura_otorgada = pedido_encontrado.get("aura_otorgada", 0)
+        
+        if user_emoji and user_emoji in usuarios and aura_otorgada > 0:
+            usuarios[user_emoji]["aura_points"] = max(0, usuarios[user_emoji].get("aura_points", 0) - aura_otorgada)
+            guardar_usuarios(usuarios)
+            
+            # Quitar la marca de aura otorgada
+            pedido_encontrado.pop("aura_otorgada", None)
+            
+            flash(f"Pedido {pedido_id} marcado como no completado. Se quitaron {aura_otorgada} puntos de aura", "warning")
+        else:
+            flash(f"Pedido {pedido_id} marcado como no completado", "info")
+    
+    # Guardar cambios
+    guardar_pedidos(pedidos)
+    
+    return redirect(url_for("admin_view"))
 
 @app.route("/admin/clear-orders", methods=["POST"])
 def admin_clear_orders():

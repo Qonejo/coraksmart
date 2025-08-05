@@ -53,61 +53,54 @@
     {% endwith %}
 
     <h2>Gestionar Productos e Inventario</h2>
-    <a href="{{ url_for('admin_agregar_producto') }}"><button class="btn-add">+ Añadir Producto Simple</button></a>
-    <a href="{{ url_for('admin_crear_paquete') }}"><button class="btn-bundle">+ Crear Paquete</button></a>
+    <a href="{{ url_for('admin_productos') }}"><button class="btn-add">📦 Gestión de Productos</button></a>
 
-    <form action="{{ url_for('admin_actualizar_productos') }}" method="POST">
-        <table>
-            <thead>
-                <tr>
-                    <th>Orden</th>
-                    <th>Producto</th>
-                    <th>Stock Actual</th>
-                    <th>Nuevo Stock</th>
-                    <th>Promoción</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for id, prod in PRODUCTOS_ORDENADOS %}
-                    {% if prod.variaciones %}
-                        <tr>
-                            <td><input type="number" name="orden-{{ id }}" value="{{ prod.get('orden', 999) }}" style="width: 60px;"></td>
-                            <td><img src="{{ url_for('static', filename=prod.imagen) }}"><strong>{{ prod.nombre }}</strong></td>
-                            <td colspan="2"><em>(Gestionar por variación)</em></td>
-                            <td class="promo-cell"><form action="{{ url_for('admin_toggle_promocion', product_id=id) }}" method="POST"><input type="checkbox" onchange="this.form.submit()" {% if prod.get('promocion') %}checked{% endif %}></form></td>
-                            <td class="actions-cell">
-                                <a href="{{ url_for('admin_editar_producto', product_id=id) }}" class="btn btn-edit">Editar</a>
-                                <form method="POST" action="{{ url_for('admin_eliminar_producto', product_id=id) }}" onsubmit="return confirm('¿Estás seguro?');"><button type="submit" class="btn btn-delete">Eliminar</button></form>
-                            </td>
+    <!-- Tabla de vista de productos simplificada -->
+    <table>
+        <thead>
+            <tr>
+                <th>Producto</th>
+                <th>Stock Actual</th>
+                <th>Promoción</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for id, prod in PRODUCTOS_ORDENADOS %}
+                {% if prod.variaciones %}
+                    <tr>
+                        <td><img src="{{ url_for('static', filename=prod.imagen) }}"><strong>{{ prod.nombre }}</strong></td>
+                        <td><em>(Ver variaciones)</em></td>
+                        <td class="promo-cell">
+                            <input type="checkbox" {% if prod.get('promocion') %}checked{% endif %} disabled>
+                        </td>
+                        <td class="actions-cell">
+                            <a href="{{ url_for('admin_productos') }}" class="btn btn-edit">Gestionar</a>
+                        </td>
+                    </tr>
+                    {% for var_id, var_data in prod.variaciones.items() %}
+                        <tr class="variation-row">
+                            <td style="padding-left: 40px;">- {{ var_id }}</td>
+                            <td>{{ var_data.stock }}</td>
+                            <td></td>
+                            <td></td>
                         </tr>
-                        {% for var_id, var_data in prod.variaciones.items() %}
-                            <tr class="variation-row">
-                                <td></td> <!-- Celda de orden vacía -->
-                                <td style="padding-left: 40px;">- {{ var_id }}</td>
-                                <td>{{ var_data.stock }}</td>
-                                <td><input type="number" name="stock-{{ id }}-{{ var_id }}" placeholder="Nuevo" style="width: 60px;"></td>
-                                <td colspan="2"></td>
-                            </tr>
-                        {% endfor %}
-                    {% else %}
-                        <tr>
-                            <td><input type="number" name="orden-{{ id }}" value="{{ prod.get('orden', 999) }}" style="width: 60px;"></td>
-                            <td><img src="{{ url_for('static', filename=prod.get('imagen', 'default.png')) }}">{{ prod.get('nombre', 'Nombre no encontrado') }}</td>
-                            <td>{{ prod.get('stock', 'N/A') }}</td>
-                            <td><input type="number" name="stock-{{ id }}" placeholder="Nuevo" style="width: 60px;"></td>
-                            <td class="promo-cell"><form action="{{ url_for('admin_toggle_promocion', product_id=id) }}" method="POST"><input type="checkbox" onchange="this.form.submit()" {% if prod.get('promocion') %}checked{% endif %}></form></td>
-                            <td class="actions-cell">
-                                <a href="{{ url_for('admin_editar_producto', product_id=id) }}" class="btn btn-edit">Editar</a>
-                                <form method="POST" action="{{ url_for('admin_eliminar_producto', product_id=id) }}" onsubmit="return confirm('¿Estás seguro?');"><button type="submit" class="btn btn-delete">Eliminar</button></form>
-                            </td>
-                        </tr>
-                    {% endif %}
-                {% endfor %}
-            </tbody>
-        </table>
-        <button type="submit" class="btn-update-stock">Guardar Todos los Cambios</button>
-    </form>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td><img src="{{ url_for('static', filename=prod.get('imagen', 'default.png')) }}">{{ prod.get('nombre', 'Nombre no encontrado') }}</td>
+                        <td>{{ prod.get('stock', 'N/A') }}</td>
+                        <td class="promo-cell">
+                            <input type="checkbox" {% if prod.get('promocion') %}checked{% endif %} disabled>
+                        </td>
+                        <td class="actions-cell">
+                            <a href="{{ url_for('admin_productos') }}" class="btn btn-edit">Gestionar</a>
+                        </td>
+                    </tr>
+                {% endif %}
+            {% endfor %}
+        </tbody>
+    </table>
 
     <h2>Historial de Pedidos</h2>
 
@@ -124,6 +117,7 @@
                             <th>Fecha y Hora</th>
                             <th>Detalle</th>
                             <th>Total</th>
+                            <th>Aura</th>
                             <th>Completado</th>
                         </tr>
                     </thead>
@@ -149,6 +143,15 @@
                                 </ul>
                             </td>
                             <td>${{ "%.2f"|format(pedido.total) }}</td>
+                            <td>
+                                {% if pedido.get('aura_otorgada') %}
+                                    <span style="color: #00ff00;">✅ {{ pedido.aura_otorgada }} pts</span>
+                                {% elif pedido.get('aura_potencial') %}
+                                    <span style="color: #ffcc00;">⏳ {{ pedido.aura_potencial }} pts</span>
+                                {% else %}
+                                    <span style="color: #888;">-- pts</span>
+                                {% endif %}
+                            </td>
                             <td>
                                 <form action="{{ url_for('admin_completar_pedido', pedido_id=pedido.id) }}" method="POST" style="margin:0;">
                                     <input type="checkbox" onchange="this.form.submit()" {% if pedido.completado %}checked{% endif %}>
