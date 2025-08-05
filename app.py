@@ -29,20 +29,33 @@ PRODUCTOS_FILE = "productos.json"
 USUARIOS_FILE = "usuarios.json"
 
 # --- CONFIGURACIÓN GLOBAL DE LA APLICACIÓN ---
-CONFIG = {
-"horarios_atencion": "Lunes a Viernes: 9:00 AM - 6:00 PM",
-"whatsapp_principal": "5215513361764", 
-"whatsapp_secundario": "",
-    "whatsapp_1": "5215513361764",
-    "whatsapp_2": "",
-    "whatsapp_3": "",
-    "whatsapp_1_nombre": "Principal",
-    "whatsapp_2_nombre": "Secundario",
-    "whatsapp_3_nombre": "Terciario"
-}
+CONFIG_FILE = "config.json"
 
 def cargar_configuracion():
-    return CONFIG
+    """Cargar configuración desde archivo o usar valores por defecto"""
+    try:
+        with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {
+            "horarios_atencion": "Lunes a Viernes: 9:00 AM - 6:00 PM",
+            "whatsapp_principal": "5215513361764", 
+            "whatsapp_secundario": "",
+            "whatsapp_1": "5215513361764",
+            "whatsapp_2": "",
+            "whatsapp_3": "",
+            "whatsapp_1_nombre": "Principal",
+            "whatsapp_2_nombre": "Secundario",
+            "whatsapp_3_nombre": "Terciario"
+        }
+
+def guardar_configuracion(config):
+    """Guardar configuración en archivo"""
+    with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
+        json.dump(config, f, indent=4, ensure_ascii=False)
+
+# Cargar configuración al iniciar
+CONFIG = cargar_configuracion()
 
 # --- FUNCIONES DE PERSISTENCIA ---
 def cargar_productos():
@@ -71,16 +84,47 @@ def guardar_usuarios(usuarios):
     with open(USUARIOS_FILE, 'w', encoding='utf-8') as f: json.dump(usuarios, f, indent=4)
 
 # --- SISTEMA DE AURA Y GENERADOR DE IDS ---
-AURA_LEVELS = [
-    {"level": 0, "points_needed": -float('inf'), "flame_color": "black",  "name": "Bandido", "prize": "No hay recompensas en este nivel", "character_size": 96},
-    {"level": 1, "points_needed": 0,         "flame_color": "white",  "name": "Vampiro ojón", "prize": "1 Gomita gratis", "character_size": 96},
-    {"level": 2, "points_needed": 7000,      "flame_color": "blue",   "name": "Avispa mutante", "prize": "5% descuento en tu próxima compra", "character_size": 96},
-    {"level": 3, "points_needed": 9030,      "flame_color": "green",  "name": "Lombriz mounstro", "prize": "Salvia + 1", "character_size": 96},
-    {"level": 4, "points_needed": 15270,     "flame_color": "yellow", "name": "Perrodragón", "prize": "10% descuento en tu próxima compra", "character_size": 96},
-    {"level": 5, "points_needed": 19820,     "flame_color": "orange", "name": "Brujo runero", "prize": "1 Olla", "character_size": 96},
-    {"level": 6, "points_needed": 24000,     "flame_color": "red",    "name": "Obelisco runa", "prize": "15% descuento en tu próxima compra", "character_size": 96},
-    {"level": 7, "points_needed": 33000,     "flame_color": "purple", "name": "Entidad", "prize": "1 Brownie + 1 Gomita + Media olla + 5% descuento en tu próxima compra", "character_size": 96}
-]
+AURA_LEVELS_FILE = "aura_levels.json"
+
+def cargar_aura_levels():
+    """Cargar niveles de aura desde archivo o usar valores por defecto"""
+    try:
+        with open(AURA_LEVELS_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return [
+            {"level": 0, "points_needed": -float('inf'), "flame_color": "black",  "name": "Bandido", "prize": "No hay recompensas en este nivel", "character_size": 96},
+            {"level": 1, "points_needed": 0,         "flame_color": "white",  "name": "Vampiro ojón", "prize": "1 Gomita gratis", "character_size": 96},
+            {"level": 2, "points_needed": 7000,      "flame_color": "blue",   "name": "Avispa mutante", "prize": "5% descuento en tu próxima compra", "character_size": 96},
+            {"level": 3, "points_needed": 9030,      "flame_color": "green",  "name": "Lombriz mounstro", "prize": "Salvia + 1", "character_size": 96},
+            {"level": 4, "points_needed": 15270,     "flame_color": "yellow", "name": "Perrodragón", "prize": "10% descuento en tu próxima compra", "character_size": 96},
+            {"level": 5, "points_needed": 19820,     "flame_color": "orange", "name": "Brujo runero", "prize": "1 Olla", "character_size": 96},
+            {"level": 6, "points_needed": 24000,     "flame_color": "red",    "name": "Obelisco runa", "prize": "15% descuento en tu próxima compra", "character_size": 96},
+            {"level": 7, "points_needed": 33000,     "flame_color": "purple", "name": "Entidad", "prize": "1 Brownie + 1 Gomita + Media olla + 5% descuento en tu próxima compra", "character_size": 96}
+        ]
+
+def guardar_aura_levels(levels):
+    """Guardar niveles de aura en archivo"""
+    # Convertir -inf a string para JSON
+    levels_for_json = []
+    for level in levels:
+        level_copy = level.copy()
+        if level_copy["points_needed"] == -float('inf'):
+            level_copy["points_needed"] = "negative_infinity"
+        levels_for_json.append(level_copy)
+    
+    with open(AURA_LEVELS_FILE, 'w', encoding='utf-8') as f:
+        json.dump(levels_for_json, f, indent=4, ensure_ascii=False)
+
+def procesar_aura_levels_loaded(levels):
+    """Procesar niveles cargados para convertir string infinity a float"""
+    for level in levels:
+        if level["points_needed"] == "negative_infinity":
+            level["points_needed"] = -float('inf')
+    return levels
+
+# Cargar niveles de aura al iniciar
+AURA_LEVELS = procesar_aura_levels_loaded(cargar_aura_levels())
 
 def get_user_aura_info(user_emoji):
     usuarios = cargar_usuarios()
@@ -937,16 +981,26 @@ def admin_configuracion():
     if not session.get("logged_in"): return redirect(url_for("login"))
     
     if request.method == "POST":
+        # Cargar configuración actual
+        config = cargar_configuracion()
+        
         # Actualizar configuración
-        CONFIG["horarios_atencion"] = request.form.get("horarios_atencion", CONFIG["horarios_atencion"])
-        CONFIG["whatsapp_principal"] = request.form.get("whatsapp_principal", CONFIG["whatsapp_principal"])
-        CONFIG["whatsapp_secundario"] = request.form.get("whatsapp_secundario", CONFIG["whatsapp_secundario"])
-        CONFIG["whatsapp_1"] = request.form.get("whatsapp_1", CONFIG["whatsapp_1"])
-        CONFIG["whatsapp_2"] = request.form.get("whatsapp_2", CONFIG["whatsapp_2"])
-        CONFIG["whatsapp_3"] = request.form.get("whatsapp_3", CONFIG["whatsapp_3"])
-        CONFIG["whatsapp_1_nombre"] = request.form.get("whatsapp_1_nombre", CONFIG["whatsapp_1_nombre"])
-        CONFIG["whatsapp_2_nombre"] = request.form.get("whatsapp_2_nombre", CONFIG["whatsapp_2_nombre"])
-        CONFIG["whatsapp_3_nombre"] = request.form.get("whatsapp_3_nombre", CONFIG["whatsapp_3_nombre"])
+        config["horarios_atencion"] = request.form.get("horarios_atencion", config.get("horarios_atencion", ""))
+        config["whatsapp_principal"] = request.form.get("whatsapp_principal", config.get("whatsapp_principal", ""))
+        config["whatsapp_secundario"] = request.form.get("whatsapp_secundario", config.get("whatsapp_secundario", ""))
+        config["whatsapp_1"] = request.form.get("whatsapp_1", config.get("whatsapp_1", ""))
+        config["whatsapp_2"] = request.form.get("whatsapp_2", config.get("whatsapp_2", ""))
+        config["whatsapp_3"] = request.form.get("whatsapp_3", config.get("whatsapp_3", ""))
+        config["whatsapp_1_nombre"] = request.form.get("whatsapp_1_nombre", config.get("whatsapp_1_nombre", ""))
+        config["whatsapp_2_nombre"] = request.form.get("whatsapp_2_nombre", config.get("whatsapp_2_nombre", ""))
+        config["whatsapp_3_nombre"] = request.form.get("whatsapp_3_nombre", config.get("whatsapp_3_nombre", ""))
+        
+        # Guardar configuración en archivo
+        guardar_configuracion(config)
+        
+        # Actualizar CONFIG global
+        global CONFIG
+        CONFIG = config
         
         flash("Configuración actualizada con éxito.", "success")
         return redirect(url_for("admin_configuracion"))
@@ -1108,10 +1162,14 @@ def admin_api_add_emoji():
     if emoji in EMOJI_LIST:
         return jsonify({"success": False, "message": "El emoji ya existe en la lista"})
     
+    # Verificar límite de 200 emojis
+    if len(EMOJI_LIST) >= 200:
+        return jsonify({"success": False, "message": "Se ha alcanzado el límite máximo de 200 emojis"})
+    
     EMOJI_LIST.append(emoji)
     guardar_emoji_list(EMOJI_LIST)
     
-    return jsonify({"success": True, "message": f"Emoji {emoji} agregado exitosamente"})
+    return jsonify({"success": True, "message": f"Emoji {emoji} agregado exitosamente. Total: {len(EMOJI_LIST)}/200"})
 
 @app.route("/admin/emojis/remove", methods=["POST"])
 def admin_api_remove_emoji():
@@ -1352,7 +1410,8 @@ def admin_aura_levels():
             if new_size is not None:
                 level_info["character_size"] = int(new_size)
         
-        # Guardar cambios (aquí podrías guardar en un archivo JSON si quieres persistencia)
+        # Guardar cambios permanentemente
+        guardar_aura_levels(AURA_LEVELS)
         flash("Niveles de aura actualizados correctamente", "success")
         return redirect(url_for("admin_aura_levels"))
     

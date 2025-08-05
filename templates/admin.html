@@ -75,6 +75,7 @@
 
     <h2>Gestionar Productos e Inventario</h2>
     <a href="{{ url_for('admin_productos') }}"><button class="btn-add">📦 Gestión de Productos</button></a>
+    <a href="{{ url_for('admin_agregar_producto') }}"><button class="btn-add">➕ Agregar Producto</button></a>
 
     <!-- Tabla de vista de productos simplificada -->
     <table>
@@ -99,6 +100,7 @@
                         <td>{{ config.get('whatsapp_' + (prod.get('whatsapp_asignado', '1')) + '_nombre', 'Principal') }}</td>
                         <td class="actions-cell">
                             <a href="{{ url_for('admin_productos') }}" class="btn btn-edit">Gestionar</a>
+                            <a href="{{ url_for('admin_editar_producto', product_id=id) }}" class="btn btn-edit">✏️ Editar</a>
                         </td>
                     </tr>
                     {% for var_id, var_data in prod.variaciones.items() %}
@@ -120,6 +122,7 @@
                         <td>{{ config.get('whatsapp_' + (prod.get('whatsapp_asignado', '1')) + '_nombre', 'Principal') }}</td>
                         <td class="actions-cell">
                             <a href="{{ url_for('admin_productos') }}" class="btn btn-edit">Gestionar</a>
+                            <a href="{{ url_for('admin_editar_producto', product_id=id) }}" class="btn btn-edit">✏️ Editar</a>
                         </td>
                     </tr>
                 {% endif %}
