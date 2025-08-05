@@ -343,7 +343,7 @@
             
             <div class="product-actions">
                 <button class="action-btn" onclick="editProduct('{{ product_id }}')">✏️ Editar</button>
-                <button class="action-btn" onclick="manageImages('{{ product_id }}')">🖼️ Imágenes</button>
+                <form id="delete-form-{{ product_id }}" action="{{ url_for('admin_delete_product', product_id=product_id) }}" method="POST" style="display: none;"></form>
                 <button class="action-btn delete" onclick="deleteProduct('{{ product_id }}')">🗑️ Eliminar</button>
             </div>
         </div>
@@ -453,24 +453,17 @@
         }
         
         function editProduct(productId) {
-            // Implementar modal de edición o redirigir a página de edición
-            alert(`Función de edición para ${productId} - Por implementar`);
-        }
-        
-        function manageImages(productId) {
-            alert(`Gestión de imágenes para ${productId} - Por implementar`);
+            window.location.href = '/admin/editar-producto/' + productId;
         }
         
         function deleteProduct(productId) {
             if (confirm(`¿Estás seguro de eliminar el producto ${productId}?`)) {
-                // Implementar eliminación
-                alert(`Eliminación de ${productId} - Por implementar`);
+                document.getElementById(`delete-form-${productId}`).submit();
             }
         }
         
         function addNewProduct() {
-            // Implementar modal o página para agregar producto
-            alert('Agregar nuevo producto - Por implementar');
+            window.location.href = "{{ url_for('admin_agregar_producto') }}";
         }
         
         // Cerrar modal con Escape

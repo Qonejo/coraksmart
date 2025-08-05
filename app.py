@@ -1668,6 +1668,21 @@ def admin_upload_product_images():
         
     except Exception as e:
         return jsonify({"success": False, "message": f"Error al subir imágenes: {str(e)}"})
+
+@app.route("/admin/productos/delete/<product_id>", methods=["POST"])
+def admin_delete_product(product_id):
+    if not session.get("logged_in"):
+        return redirect(url_for("login"))
+
+    productos = cargar_productos()
+    if product_id in productos:
+        del productos[product_id]
+        guardar_productos(productos)
+        flash(f"Producto '{product_id}' eliminado exitosamente.", "success")
+    else:
+        flash("Producto no encontrado.", "error")
+
+    return redirect(url_for("admin_productos"))
     
 def guardar_productos(productos):
     """Guardar productos en el archivo JSON"""
