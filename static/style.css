@@ -354,6 +354,57 @@ h2 {
     background-color: #ffcc00; 
     width: 0%; /* El width se controla desde el HTML (inline style) */
 }
+
+/* --- BARRA DE PROGRESO VISUAL CON IMÁGENES --- */
+.visual-progress-bar {
+    position: relative;
+    margin-top: 5px;
+    height: 40px; /* Altura suficiente para las imágenes */
+    width: 200px; /* Ancho fijo para la barra */
+    max-width: 100%; /* Responsive */
+}
+
+.progress-bar-base {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: auto;
+    max-width: 100%;
+    image-rendering: pixelated; /* Para mantener el estilo pixelado */
+}
+
+.exp-orbs-container {
+    position: absolute;
+    top: 5px; /* 5 píxeles abajo de la barra base */
+    left: 5px; /* 5 píxeles a la derecha según requerimiento */
+    height: 30px;
+    width: calc(100% - 10px); /* Ajustar por el offset izquierdo */
+    pointer-events: none; /* Para que no interfiera con clics */
+}
+
+.exp-orb {
+    position: absolute;
+    top: 0;
+    height: 18px; /* Tamaño ajustado para mejor visualización */
+    width: auto;
+    image-rendering: pixelated;
+    z-index: 10; /* Encima de la barra base */
+    animation: exp-orb-glow 2s ease-in-out infinite alternate;
+    filter: drop-shadow(0 0 3px rgba(255, 255, 0, 0.8)); /* Brillo dorado */
+}
+
+/* Animación para las orbes de experiencia */
+@keyframes exp-orb-glow {
+    0% {
+        filter: brightness(1);
+        transform: scale(1);
+    }
+    100% {
+        filter: brightness(1.2);
+        transform: scale(1.05);
+    }
+}
 .header-actions { 
     display: flex; 
     gap: 20px; 
@@ -422,6 +473,21 @@ h2 {
     header img {
         margin: 0 auto; /* Centrar el logo específicamente */
         display: block;
+    }
+    
+    /* Ajustar aura display en móvil */
+    .aura-display {
+        align-items: center;
+        text-align: center;
+    }
+    
+    .visual-progress-bar {
+        width: 180px; /* Reducir ancho en móvil */
+        margin: 0 auto; /* Centrar la barra */
+    }
+    
+    .exp-orb {
+        height: 14px; /* Orbes más pequeñas en móvil */
     }
     
     /* 1. Hacemos que el contenedor principal apile los elementos verticalmente */

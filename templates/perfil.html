@@ -18,6 +18,43 @@
         th { background-color: #444; }
         a { color: #ffcc00; text-decoration: none; }
         ul { padding-left: 20px; margin: 0; }
+        
+        .emoji-container { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+        .cambiar-emoji-btn { 
+            background: #333; color: #ffcc00; border: 2px solid #ffcc00; 
+            padding: 5px 10px; border-radius: 5px; font-size: 8px; cursor: pointer; 
+            font-family: 'Press Start 2P', cursive; transition: all 0.3s;
+        }
+        .cambiar-emoji-btn:hover { background: #ffcc00; color: #000; }
+        
+        /* Modal selector de emoji */
+        .emoji-selector-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); z-index: 10000; 
+            display: flex; justify-content: center; align-items: center;
+        }
+        .emoji-selector-content {
+            background: #222; border: 4px solid #ffcc00; border-radius: 10px;
+            padding: 20px; max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto;
+        }
+        .emoji-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+            gap: 10px; margin: 20px 0;
+        }
+        .emoji-option {
+            font-size: 2em; cursor: pointer; border: 2px solid #888;
+            padding: 10px; transition: all 0.3s; background: #111;
+            display: flex; justify-content: center; align-items: center;
+            border-radius: 5px;
+        }
+        .emoji-option:hover { transform: scale(1.1); border-color: #ffcc00; }
+        .emoji-option.occupied { opacity: 0.5; cursor: not-allowed; }
+        .emoji-option.occupied::after { content: '🔒'; position: absolute; }
+        .close-emoji-btn {
+            background: #dc3545; color: #fff; border: none; padding: 8px 15px;
+            border-radius: 5px; cursor: pointer; font-family: 'Press Start 2P', cursive;
+            font-size: 9px; float: right;
+        }
     </style>
 </head>
 <body>
@@ -27,7 +64,10 @@
     </div>
 
     <div class="perfil-header">
-        <span class="perfil-emoji">{{ user_emoji }}</span>
+        <div class="emoji-container">
+            <span class="perfil-emoji">{{ user_emoji }}</span>
+            <button class="cambiar-emoji-btn" onclick="openEmojiSelector()">🔄 Cambiar Avatar</button>
+        </div>
         <h1>Mi Perfil</h1>
     </div>
 
@@ -73,5 +113,125 @@
             {% endfor %}
         </tbody>
     </table>
+    
+    <!-- Modal selector de emoji -->
+    <div id="emoji-selector-modal" class="emoji-selector-modal" style="display: none;">
+        <div class="emoji-selector-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="color: #ffcc00; margin: 0;">Cambiar Avatar</h3>
+                <button class="close-emoji-btn" onclick="closeEmojiSelector()">✕ Cerrar</button>
+            </div>
+            
+            <div style="font-size: 10px; color: #ccc; margin-bottom: 15px;">
+                Selecciona un nuevo emoji para tu perfil. Los emojis con 🔒 están ocupados por otros usuarios.
+            </div>
+            
+            <div id="emoji-grid" class="emoji-grid">
+                <!-- Los emojis se cargarán aquí -->
+            </div>
+            
+            <div style="text-align: center; margin-top: 20px;">
+                <div style="font-size: 8px; color: #888;">
+                    Si cambias tu avatar, mantendrás todos tus puntos de aura y pedidos.
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let availableEmojis = [];
+        let occupiedEmojis = [];
+        
+        async function openEmojiSelector() {
+            try {
+                // Cargar emojis disponibles
+                const response = await fetch('/api/get-emojis');
+                const data = await response.json();
+                
+                availableEmojis = data.all_emojis;
+                occupiedEmojis = data.occupied_emojis;
+                
+                renderEmojiGrid();
+                document.getElementById('emoji-selector-modal').style.display = 'flex';
+            } catch (error) {
+                alert('Error al cargar emojis disponibles');
+            }
+        }
+        
+        function closeEmojiSelector() {
+            document.getElementById('emoji-selector-modal').style.display = 'none';
+        }
+        
+        function renderEmojiGrid() {
+            const grid = document.getElementById('emoji-grid');
+            grid.innerHTML = '';
+            
+            availableEmojis.forEach(emoji => {
+                const emojiDiv = document.createElement('div');
+                emojiDiv.className = 'emoji-option';
+                emojiDiv.textContent = emoji;
+                
+                const isOccupied = occupiedEmojis.includes(emoji);
+                const isCurrentUser = emoji === '{{ user_emoji }}';
+                
+                if (isOccupied && !isCurrentUser) {
+                    emojiDiv.classList.add('occupied');
+                } else {
+                    emojiDiv.addEventListener('click', () => selectEmoji(emoji));
+                }
+                
+                if (isCurrentUser) {
+                    emojiDiv.style.borderColor = '#00ff00';
+                    emojiDiv.style.background = '#004400';
+                }
+                
+                grid.appendChild(emojiDiv);
+            });
+        }
+        
+        async function selectEmoji(newEmoji) {
+            if (newEmoji === '{{ user_emoji }}') {
+                alert('Ya tienes este emoji seleccionado');
+                return;
+            }
+            
+            if (confirm(`¿Estás seguro de cambiar tu avatar a ${newEmoji}?`)) {
+                try {
+                    const response = await fetch('/profile/change-emoji', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ new_emoji: newEmoji })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        alert('Avatar cambiado exitosamente');
+                        location.reload();
+                    } else {
+                        alert('Error: ' + result.message);
+                    }
+                } catch (error) {
+                    alert('Error al cambiar el avatar');
+                }
+            }
+        }
+        
+        // Cerrar modal con Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeEmojiSelector();
+            }
+        });
+        
+        // Cerrar modal al hacer click fuera
+        document.getElementById('emoji-selector-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'emoji-selector-modal') {
+                closeEmojiSelector();
+            }
+        });
+    </script>
 </body>
 </html>

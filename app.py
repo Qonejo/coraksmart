@@ -132,7 +132,7 @@ def get_progress_bar_info(points, current_level_info, user_emoji):
     # Si está en el nivel máximo
     if level >= 7:
         return {
-            "bar_type": "barcom.png",
+            "bar_type": "barcom.gif",
             "exp_orbs": 0,
             "completed": True
         }
@@ -146,7 +146,7 @@ def get_progress_bar_info(points, current_level_info, user_emoji):
     
     if not next_level_info:
         return {
-            "bar_type": "barcom.png",
+            "bar_type": "barcom.gif",
             "exp_orbs": 0,
             "completed": True
         }
@@ -173,17 +173,26 @@ def get_progress_bar_info(points, current_level_info, user_emoji):
         next_level = next_level_info["level"]
         
         return {
-            "bar_type": "barcom.png",
+            "bar_type": "barcom.gif",
             "exp_orbs": 0,
             "completed": True,
             "level_up": next_level not in claimed_levels,  # Solo mostrar si no ha reclamado
-            "reward": next_level_info["prize"]
+            "reward": next_level_info["prize"],
+            "next_level": next_level,
+            "points_in_level": points_in_current_level,
+            "points_needed_for_next": points_needed_for_next
         }
     
     # Determinar cuántas orbes de experiencia mostrar
-    # Cada orbe representa aproximadamente 240 puntos, pero es relativo al nivel
-    orb_value = max(240, points_needed_in_level / 10)  # Máximo 10 orbes por nivel
-    exp_orbs = int(points_in_current_level / orb_value)
+    # Cada orbe exp.png representa una porción relativa de los puntos del nivel
+    # Calculamos el valor de cada orbe basado en los puntos totales del nivel
+    
+    # Para nivel 1: 7000 puntos / 10 = 700 puntos por orbe
+    # Para nivel 2: 2030 puntos / 10 = 203 puntos por orbe (pero mínimo 240)
+    max_orbs = 8  # Máximo 8 orbes por barra para que no se desborde visualmente
+    orb_value = max(240, points_needed_in_level / max_orbs)
+    
+    exp_orbs = min(max_orbs, int(points_in_current_level / orb_value))
     
     # Determinar tipo de barra
     if points_in_current_level >= 240:
@@ -195,7 +204,10 @@ def get_progress_bar_info(points, current_level_info, user_emoji):
         "bar_type": bar_type,
         "exp_orbs": exp_orbs,
         "completed": False,
-        "progress_percent": int((points_in_current_level / points_needed_in_level) * 100)
+        "progress_percent": int((points_in_current_level / points_needed_in_level) * 100),
+        "points_in_level": points_in_current_level,
+        "points_needed_for_next": points_needed_for_next,
+        "orb_value": int(orb_value)
     }
 
 def get_aura_points_for_product(product_id, price):

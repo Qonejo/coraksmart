@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finalizar Compra - CorakSmart</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .checkout-container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            border: 4px solid #00ff00;
+            border-radius: 10px;
+        }
+        
+        .form-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #2a2a2a;
+            border: 2px solid #555;
+            border-radius: 8px;
+        }
+        
+        .form-section h3 {
+            color: #00ff00;
+            margin-bottom: 15px;
+            font-size: 12px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            color: #fff;
+            margin-bottom: 8px;
+            font-size: 10px;
+        }
+        
+        .form-group select,
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            background: #333;
+            border: 2px solid #555;
+            color: #fff;
+            border-radius: 5px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 9px;
+            box-sizing: border-box;
+        }
+        
+        .form-group select:focus,
+        .form-group input:focus {
+            border-color: #00ff00;
+            outline: none;
+        }
+        
+        .metro-section {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 15px;
+        }
+        
+        .metro-lines {
+            background: #1a1a1a;
+            border: 2px solid #444;
+            border-radius: 5px;
+            padding: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .metro-line {
+            margin-bottom: 10px;
+            padding: 5px;
+            cursor: pointer;
+            border-radius: 3px;
+            font-size: 8px;
+            transition: background-color 0.3s;
+        }
+        
+        .metro-line:hover {
+            background: #333;
+        }
+        
+        .metro-line.selected {
+            background: #004400;
+            border: 1px solid #00ff00;
+        }
+        
+        .metro-stations {
+            background: #1a1a1a;
+            border: 2px solid #444;
+            border-radius: 5px;
+            padding: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .station-option {
+            padding: 8px 10px;
+            margin-bottom: 5px;
+            cursor: pointer;
+            border-radius: 3px;
+            font-size: 8px;
+            transition: background-color 0.3s;
+        }
+        
+        .station-option:hover {
+            background: #333;
+        }
+        
+        .station-option.selected {
+            background: #004400;
+            border: 1px solid #00ff00;
+        }
+        
+        .order-summary {
+            background: #2a2a2a;
+            border: 2px solid #00ff00;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .submit-section {
+            text-align: center;
+            margin-top: 30px;
+        }
+        
+        .submit-btn {
+            background: #003300;
+            color: #00ff00;
+            border: 2px solid #00ff00;
+            padding: 15px 30px;
+            border-radius: 5px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .submit-btn:hover {
+            background: #00ff00;
+            color: #000;
+        }
+        
+        .submit-btn:disabled {
+            background: #444;
+            color: #666;
+            border-color: #666;
+            cursor: not-allowed;
+        }
+        
+        .back-btn {
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 8px 15px;
+            background: #333;
+            color: #00ff00;
+            text-decoration: none;
+            border: 2px solid #00ff00;
+            border-radius: 5px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 9px;
+            transition: all 0.3s ease;
+        }
+        
+        .back-btn:hover {
+            background: #00ff00;
+            color: #000;
+        }
+        
+        .location-type-selector {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            padding: 8px 12px;
+            border: 2px solid #555;
+            border-radius: 5px;
+            background: #2a2a2a;
+            transition: all 0.3s ease;
+        }
+        
+        .radio-option:hover {
+            border-color: #00ff00;
+            background: #333;
+        }
+        
+        .radio-option input[type="radio"] {
+            margin: 0;
+        }
+        
+        .radio-option input[type="radio"]:checked + span {
+            color: #00ff00;
+            font-weight: bold;
+        }
+        
+        .location-method {
+            transition: opacity 0.3s ease;
+        }
+        
+        @media (max-width: 768px) {
+            .checkout-container {
+                margin: 10px;
+                padding: 15px;
+            }
+            
+            .metro-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .metro-lines,
+            .metro-stations {
+                max-height: 200px;
+            }
+            
+            .location-type-selector {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo-container">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="CorakSmart" style="height: 60px;">
+        </div>
+        <div class="user-info">
+            <span>🛒 Finalizar Compra</span>
+        </div>
+    </header>
+
+    <div class="checkout-container">
+        <a href="{{ url_for('index') }}" class="back-btn">← Volver a la Tienda</a>
+        
+        <h1 style="text-align: center; color: #00ff00; margin-bottom: 30px;">🎯 Finalizar Pedido</h1>
+        
+        <!-- Resumen del pedido -->
+        <div class="order-summary">
+            <h3>📦 Resumen de tu Pedido:</h3>
+            <div id="order-items">
+                {% for item_id, cantidad in carrito_items %}
+                    {% set product = productos.get(item_id.split('-')[0], {}) %}
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 9px;">
+                        <span>{{ cantidad }}x {{ product.get('nombre', 'Producto') }}</span>
+                        <span>${{ "%.2f"|format(item_total[item_id] if item_total else 0) }}</span>
+                    </div>
+                {% endfor %}
+            </div>
+            <hr style="border-color: #555; margin: 15px 0;">
+            <div style="display: flex; justify-content: space-between; font-size: 12px; color: #00ff00;">
+                <strong>TOTAL:</strong>
+                <strong>${{ "%.2f"|format(total) }}</strong>
+            </div>
+        </div>
+        
+        <form id="checkout-form" method="POST" action="{{ url_for('procesar_pedido') }}">
+            <!-- Sección de horarios -->
+            <div class="form-section">
+                <h3>📅 Selecciona Día y Hora de Entrega</h3>
+                <div class="form-group">
+                    <label for="delivery_day">Día de Entrega:</label>
+                    <select id="delivery_day" name="delivery_day" required>
+                        <option value="">Selecciona un día...</option>
+                        <option value="hoy">Hoy</option>
+                        <option value="manana">Mañana</option>
+                        <option value="lunes">Lunes</option>
+                        <option value="martes">Martes</option>
+                        <option value="miercoles">Miércoles</option>
+                        <option value="jueves">Jueves</option>
+                        <option value="viernes">Viernes</option>
+                        <option value="sabado">Sábado</option>
+                        <option value="domingo">Domingo</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="delivery_time">Hora de Entrega:</label>
+                    <select id="delivery_time" name="delivery_time" required>
+                        <option value="">Selecciona una hora...</option>
+                        <!-- Las horas se cargarán basadas en los horarios del admin -->
+                    </select>
+                </div>
+                
+                <div style="background: #1a2a1a; padding: 10px; border-radius: 5px; margin-top: 10px;">
+                    <strong style="color: #00ff00;">Horarios Disponibles:</strong>
+                    <div style="font-size: 8px; color: #ccc; margin-top: 5px; line-height: 1.4;">
+                        {{ config.horarios_atencion or "Lunes a Viernes: 9:00 AM - 6:00 PM" }}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Sección de ubicación (Metro) -->
+            <div class="form-section">
+                <h3>📍 Selecciona tu Ubicación</h3>
+                
+                <!-- Selector de tipo de ubicación -->
+                <div class="form-group">
+                    <label>Tipo de Ubicación:</label>
+                    <div class="location-type-selector">
+                        <label class="radio-option">
+                            <input type="radio" name="location_type" value="metro" checked onchange="toggleLocationMethod()">
+                            <span>🚇 Estación de Metro</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="location_type" value="custom" onchange="toggleLocationMethod()">
+                            <span>✍️ Escribir Zona Personalizada</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- Sección Metro -->
+                <div id="metro-selection" class="location-method">
+                    <div class="metro-section">
+                        <div>
+                            <label>Líneas de Metro:</label>
+                            <div class="metro-lines" id="metro-lines">
+                                <!-- Las líneas se cargarán con JavaScript -->
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label>Estaciones:</label>
+                            <div class="metro-stations" id="metro-stations">
+                                <div style="text-align: center; color: #666; padding: 20px; font-size: 8px;">
+                                    Selecciona una línea para ver las estaciones
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="selected-station-display" style="margin-top: 15px; padding: 10px; background: #1a2a1a; border-radius: 5px; display: none;">
+                        <strong style="color: #00ff00;">Estación Seleccionada:</strong>
+                        <span id="station-name" style="margin-left: 10px;"></span>
+                    </div>
+                </div>
+                
+                <!-- Sección Zona Personalizada -->
+                <div id="custom-location" class="location-method" style="display: none;">
+                    <div class="form-group">
+                        <label for="custom_zone">Escribe tu Zona/Dirección:</label>
+                        <input type="text" id="custom_zone" name="custom_zone" 
+                               placeholder="Ej: Colonia Roma Norte, Coyoacán Centro, Polanco, etc."
+                               style="width: 100%; padding: 10px; background: #333; border: 2px solid #555; color: #fff; border-radius: 5px; font-family: 'Press Start 2P', cursive; font-size: 9px;">
+                        <div style="font-size: 8px; color: #888; margin-top: 5px; line-height: 1.4;">
+                            Puedes escribir cualquier zona, colonia, delegación o punto de referencia de la Ciudad de México.
+                        </div>
+                    </div>
+                </div>
+                
+                <input type="hidden" id="final-location" name="delivery_station" required>
+            </div>
+            
+            <!-- Información adicional -->
+            <div class="form-section">
+                <h3>📝 Información Adicional</h3>
+                <div class="form-group">
+                    <label for="special_instructions">Instrucciones Especiales (Opcional):</label>
+                    <input type="text" id="special_instructions" name="special_instructions" 
+                           placeholder="Ej: Edificio azul, entregar a Juan, etc.">
+                </div>
+                
+                <div class="form-group">
+                    <label for="phone_number">Número de Teléfono (Opcional):</label>
+                    <input type="tel" id="phone_number" name="phone_number" 
+                           placeholder="Ej: 5512345678">
+                </div>
+            </div>
+            
+            <div class="submit-section">
+                <button type="submit" class="submit-btn" id="submit-btn" disabled>
+                    🚀 CONFIRMAR PEDIDO
+                </button>
+            </div>
+        </form>
+    </div>
+    
+    <script src="{{ url_for('static', filename='checkout.js') }}"></script>
+</body>
+</html>

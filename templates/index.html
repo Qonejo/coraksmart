@@ -39,10 +39,11 @@
         <div class="aura-display">
             <div class="aura-info">
                 {% if aura_data.points > 0 %}
-                    <img src="{{ url_for('static', filename='flame_' + aura_data.level_info.flame_color + '.gif') }}" alt="Aura Flame">
+                    <img src="{{ url_for('static', filename=aura_data.level_info.character_gif) }}" alt="Aura Character" class="aura-character">
                     <span class="aura-text">Aura: +{{ "{:,.0f}".format(aura_data.points) }} pts</span>
                 {% else %}
-                    <span>🔥 Aura: +0 pts</span>
+                    <img src="{{ url_for('static', filename='f0.gif') }}" alt="Aura Character" class="aura-character">
+                    <span>Aura: +0 pts</span>
                 {% endif %}
             </div>
             
@@ -62,6 +63,23 @@
                 <!-- Pasamos el porcentaje como un 'data-attribute' -->
                 <div class="aura-progress-fill" data-progress="{{ progress_percent }}"></div>
             </div>
+            
+            <!-- Nueva barra de progreso visual con imágenes -->
+            {% if aura_data.progress_bar %}
+            <div class="visual-progress-bar">
+                <!-- Barra base -->
+                <img src="{{ url_for('static', filename=aura_data.progress_bar.bar_type) }}" alt="Progress Bar" class="progress-bar-base">
+                
+                <!-- Orbes de experiencia -->
+                {% if aura_data.progress_bar.exp_orbs > 0 %}
+                <div class="exp-orbs-container">
+                    {% for i in range(aura_data.progress_bar.exp_orbs) %}
+                        <img src="{{ url_for('static', filename='exp.png') }}" alt="Exp Orb" class="exp-orb" style="left: {{ 5 + (i * 12) }}px;">
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
         </div>
         {% endif %}
         
@@ -107,7 +125,7 @@
                     <span>TOTAL:</span>
                     <span id="carrito-total">$0.00</span>
                 </div>
-                <a id="comprar-btn" href="/comprar" class="boton-comprar disabled">
+                <a id="comprar-btn" href="/checkout" class="boton-comprar disabled">
                     FINALIZAR
 COMPRA
                 </a>
@@ -121,7 +139,93 @@ COMPRA
         <img id="modal-image" class="modal-content-image">
     </div>
     
+    <!-- Modal de Felicitaciones por Subir de Nivel -->
+    <div id="level-up-modal" class="modal-hidden">
+        <div class="level-up-content">
+            <h2>🎉 ¡FELICITACIONES! 🎉</h2>
+            <div class="celebration-animation">
+                <img id="level-character" src="" alt="Character" class="celebration-character">
+            </div>
+            <h3 id="level-title">¡Has alcanzado un nuevo nivel!</h3>
+            <div class="reward-info">
+                <h4>🏆 Tu Recompensa:</h4>
+                <p id="reward-description"></p>
+            </div>
+            <button id="claim-reward-btn" class="claim-reward-button" onclick="claimReward()">
+                ✨ RECLAMAR RECOMPENSA ✨
+            </button>
+            <button id="close-level-modal" class="close-level-button" onclick="closeLevelUpModal()">
+                Cerrar
+            </button>
+        </div>
+    </div>
+    
     <!-- Script optimizado -->
     <script src="{{ url_for('static', filename='script_fast.js') }}"></script>
+    
+    <!-- Inicializar galerías de productos -->
+    <script>
+        // Configurar galerías de productos con imágenes adicionales
+        {% for id, prod in PRODUCTOS_ORDENADOS %}
+        {% if prod.get('imagenes_adicionales') %}
+        setProductGallery('{{ id }}', [
+            '{{ prod.imagen }}'
+            {% for img_index, img_name in prod.imagenes_adicionales.items() %}
+                , '{{ img_name }}'
+            {% endfor %}
+        ]);
+        {% endif %}
+        {% endfor %}
+    </script>
+    
+    <!-- Script para el sistema de nivel -->
+    <script>
+        // Verificar si el usuario subió de nivel
+        {% if aura_data.progress_bar and aura_data.progress_bar.get('level_up') %}
+        window.addEventListener('load', function() {
+            showLevelUpModal(
+                {{ aura_data.level_info.level }}, 
+                "{{ aura_data.progress_bar.reward }}", 
+                "{{ aura_data.level_info.character_gif }}"
+            );
+        });
+        {% endif %}
+        
+        function showLevelUpModal(level, reward, characterGif) {
+            document.getElementById('level-character').src = "{{ url_for('static', filename='') }}" + characterGif;
+            document.getElementById('level-title').textContent = `¡Has alcanzado el Nivel ${level}!`;
+            document.getElementById('reward-description').textContent = reward;
+            document.getElementById('level-up-modal').classList.remove('modal-hidden');
+        }
+        
+        function closeLevelUpModal() {
+            document.getElementById('level-up-modal').classList.add('modal-hidden');
+        }
+        
+        async function claimReward() {
+            try {
+                const response = await fetch('/reclamar_recompensa', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('¡Recompensa reclamada con éxito! Recibirás tu premio en tu próximo pedido.');
+                    closeLevelUpModal();
+                    // Recargar la página para actualizar el estado
+                    location.reload();
+                } else {
+                    alert(data.message || 'Error al reclamar la recompensa');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al reclamar la recompensa');
+            }
+        }
+    </script>
 </body>
 </html>

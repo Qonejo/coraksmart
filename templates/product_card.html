@@ -31,7 +31,7 @@
 
 <div class="producto-item {% if completamente_agotado %}agotado{% endif %} {% if prod.get('promocion') %}promo-item{% endif %}">
     
-    <img src="{{ url_for('static', filename=prod.imagen) }}" alt="{{ prod.nombre }}">
+    <img src="{{ url_for('static', filename=prod.imagen) }}" alt="{{ prod.nombre }}" onclick="openProductGallery('{{ id }}', 0)">
     <div class="producto-nombre">{{ prod.nombre }}</div>
     
     {% if prod.bundle_items %}

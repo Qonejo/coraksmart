@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Medios - Panel Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .media-container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            border: 4px solid #28a745;
+            border-radius: 10px;
+        }
+        
+        .media-section {
+            background: #2a2a2a;
+            border: 2px solid #555;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .media-section h3 {
+            color: #28a745;
+            margin-bottom: 15px;
+            font-size: 12px;
+        }
+        
+        .current-logo {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .logo-preview {
+            max-width: 300px;
+            max-height: 150px;
+            border: 2px solid #28a745;
+            border-radius: 10px;
+            background: #333;
+            padding: 10px;
+        }
+        
+        .upload-area {
+            border: 2px dashed #555;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            background: #1a1a1a;
+            transition: all 0.3s ease;
+        }
+        
+        .upload-area:hover {
+            border-color: #28a745;
+            background: #222;
+        }
+        
+        .upload-area.dragover {
+            border-color: #28a745;
+            background: #004400;
+        }
+        
+        .upload-btn {
+            background: #28a745;
+            color: #fff;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 10px;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin: 10px;
+        }
+        
+        .upload-btn:hover {
+            background: #34ce57;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #333;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+            display: none;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #28a745, #34ce57);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .media-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .media-item {
+            background: #333;
+            border: 2px solid #555;
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            transition: border-color 0.3s;
+        }
+        
+        .media-item:hover {
+            border-color: #28a745;
+        }
+        
+        .media-thumbnail {
+            width: 100%;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        
+        .media-name {
+            font-size: 8px;
+            color: #ccc;
+            word-break: break-all;
+        }
+        
+        .delete-media {
+            background: #dc3545;
+            color: #fff;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 7px;
+            cursor: pointer;
+            margin-top: 5px;
+        }
+        
+        .back-btn {
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 8px 15px;
+            background: #333;
+            color: #28a745;
+            text-decoration: none;
+            border: 2px solid #28a745;
+            border-radius: 5px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 9px;
+            transition: all 0.3s ease;
+        }
+        
+        .back-btn:hover {
+            background: #28a745;
+            color: #000;
+        }
+        
+        @media (max-width: 768px) {
+            .media-container {
+                margin: 10px;
+                padding: 15px;
+            }
+            
+            .media-grid {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo-container">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="CorakSmart" style="height: 60px;">
+        </div>
+        <div class="user-info">
+            <span>🖼️ Gestión de Medios</span>
+        </div>
+    </header>
+
+    <div class="media-container">
+        <a href="{{ url_for('admin_view') }}" class="back-btn">← Volver al Panel</a>
+        
+        <h1 style="text-align: center; color: #28a745; margin-bottom: 30px;">🖼️ Gestión de Medios</h1>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="flash-message flash-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+        
+        <!-- Sección de Logo -->
+        <div class="media-section">
+            <h3>🏷️ Logotipo del Sitio</h3>
+            
+            <div class="current-logo">
+                <img src="{{ url_for('static', filename='logo.png') }}" 
+                     alt="Logo Actual" 
+                     class="logo-preview"
+                     id="current-logo-preview">
+            </div>
+            
+            <form method="POST" enctype="multipart/form-data" id="logo-form">
+                <input type="hidden" name="upload_type" value="logo">
+                <div class="upload-area" id="logo-upload-area">
+                    <div>📷 Arrastra una nueva imagen aquí o haz clic para seleccionar</div>
+                    <div style="font-size: 8px; color: #888; margin-top: 10px;">
+                        Formatos soportados: PNG, JPG, GIF (máx. 5MB)
+                    </div>
+                    <input type="file" 
+                           id="logo-input" 
+                           name="logo_file" 
+                           accept="image/*" 
+                           class="file-input">
+                    <button type="button" 
+                            class="upload-btn" 
+                            onclick="document.getElementById('logo-input').click()">
+                        📁 Seleccionar Archivo
+                    </button>
+                </div>
+                
+                <div class="progress-bar" id="logo-progress">
+                    <div class="progress-fill" id="logo-progress-fill"></div>
+                </div>
+                
+                <div style="text-align: center; margin-top: 15px;">
+                    <button type="submit" class="upload-btn" id="logo-submit" style="display: none;">
+                        💾 Actualizar Logo
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Sección de Barras de Progreso -->
+        <div class="media-section">
+            <h3>📊 Barras de Progreso de Aura</h3>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+                <div>
+                    <h4 style="color: #ccc; font-size: 10px;">Barra Vacía</h4>
+                    <img src="{{ url_for('static', filename='barva.png') }}" 
+                         alt="Barra Vacía" 
+                         style="width: 100%; max-width: 150px; border: 1px solid #555;"
+                         onerror="this.style.display='none'">
+                    <form method="POST" enctype="multipart/form-data" style="margin-top: 10px;">
+                        <input type="hidden" name="upload_type" value="progress_bar">
+                        <input type="hidden" name="bar_type" value="barva">
+                        <input type="file" name="progress_file" accept="image/*" style="font-size: 8px;">
+                        <button type="submit" class="upload-btn" style="font-size: 8px;">Actualizar</button>
+                    </form>
+                </div>
+                
+                <div>
+                    <h4 style="color: #ccc; font-size: 10px;">Barra Iniciada</h4>
+                    <img src="{{ url_for('static', filename='barinic.png') }}" 
+                         alt="Barra Iniciada" 
+                         style="width: 100%; max-width: 150px; border: 1px solid #555;"
+                         onerror="this.style.display='none'">
+                    <form method="POST" enctype="multipart/form-data" style="margin-top: 10px;">
+                        <input type="hidden" name="upload_type" value="progress_bar">
+                        <input type="hidden" name="bar_type" value="barinic">
+                        <input type="file" name="progress_file" accept="image/*" style="font-size: 8px;">
+                        <button type="submit" class="upload-btn" style="font-size: 8px;">Actualizar</button>
+                    </form>
+                </div>
+                
+                <div>
+                    <h4 style="color: #ccc; font-size: 10px;">Barra Completa</h4>
+                    <img src="{{ url_for('static', filename='barcom.png') }}" 
+                         alt="Barra Completa" 
+                         style="width: 100%; max-width: 150px; border: 1px solid #555;"
+                         onerror="this.style.display='none'">
+                    <form method="POST" enctype="multipart/form-data" style="margin-top: 10px;">
+                        <input type="hidden" name="upload_type" value="progress_bar">
+                        <input type="hidden" name="bar_type" value="barcom">
+                        <input type="file" name="progress_file" accept="image/*" style="font-size: 8px;">
+                        <button type="submit" class="upload-btn" style="font-size: 8px;">Actualizar</button>
+                    </form>
+                </div>
+                
+                <div>
+                    <h4 style="color: #ccc; font-size: 10px;">Orbe de Experiencia</h4>
+                    <img src="{{ url_for('static', filename='exp.png') }}" 
+                         alt="Orbe de Experiencia" 
+                         style="width: 50px; height: 50px; border: 1px solid #555;"
+                         onerror="this.style.display='none'">
+                    <form method="POST" enctype="multipart/form-data" style="margin-top: 10px;">
+                        <input type="hidden" name="upload_type" value="progress_bar">
+                        <input type="hidden" name="bar_type" value="exp">
+                        <input type="file" name="progress_file" accept="image/*" style="font-size: 8px;">
+                        <button type="submit" class="upload-btn" style="font-size: 8px;">Actualizar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sección de Archivos Actuales -->
+        <div class="media-section">
+            <h3>📁 Archivos en el Servidor</h3>
+            
+            <div class="media-grid">
+                {% for file in media_files %}
+                <div class="media-item">
+                    {% if file.endswith(('.png', '.jpg', '.jpeg', '.gif')) %}
+                        <img src="{{ url_for('static', filename=file) }}" 
+                             alt="{{ file }}" 
+                             class="media-thumbnail"
+                             onclick="openImageModal('{{ url_for('static', filename=file) }}')">
+                    {% else %}
+                        <div class="media-thumbnail" style="background: #444; display: flex; align-items: center; justify-content: center; color: #888;">
+                            📄
+                        </div>
+                    {% endif %}
+                    <div class="media-name">{{ file }}</div>
+                    <button class="delete-media" onclick="deleteFile('{{ file }}')">🗑️ Eliminar</button>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal para ver imágenes -->
+    <div id="image-modal" class="modal-hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10000; display: flex; justify-content: center; align-items: center;">
+        <span onclick="closeImageModal()" style="position: absolute; top: 20px; right: 30px; color: #fff; font-size: 40px; cursor: pointer;">×</span>
+        <img id="modal-image" style="max-width: 90%; max-height: 90%;">
+    </div>
+    
+    <script>
+        // Drag and drop para logo
+        const logoUploadArea = document.getElementById('logo-upload-area');
+        const logoInput = document.getElementById('logo-input');
+        const logoSubmit = document.getElementById('logo-submit');
+        const logoPreview = document.getElementById('current-logo-preview');
+        
+        logoUploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            logoUploadArea.classList.add('dragover');
+        });
+        
+        logoUploadArea.addEventListener('dragleave', () => {
+            logoUploadArea.classList.remove('dragover');
+        });
+        
+        logoUploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            logoUploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                logoInput.files = files;
+                previewLogo(files[0]);
+            }
+        });
+        
+        logoUploadArea.addEventListener('click', () => {
+            logoInput.click();
+        });
+        
+        logoInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                previewLogo(e.target.files[0]);
+            }
+        });
+        
+        function previewLogo(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                logoPreview.src = e.target.result;
+                logoSubmit.style.display = 'inline-block';
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        function openImageModal(src) {
+            document.getElementById('modal-image').src = src;
+            document.getElementById('image-modal').classList.remove('modal-hidden');
+        }
+        
+        function closeImageModal() {
+            document.getElementById('image-modal').classList.add('modal-hidden');
+        }
+        
+        function deleteFile(filename) {
+            if (confirm(`¿Estás seguro de eliminar ${filename}?`)) {
+                fetch('/admin/delete-media', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ filename: filename })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Error al eliminar el archivo: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    alert('Error al eliminar el archivo');
+                });
+            }
+        }
+        
+        // Cerrar modal con Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeImageModal();
+            }
+        });
+    </script>
+</body>
+</html>
