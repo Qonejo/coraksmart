@@ -1422,7 +1422,6 @@ def admin_aura_levels():
         guardar_aura_levels(AURA_LEVELS)
         
         # Recargar los niveles desde archivo para confirmar que se guardaron
-        global AURA_LEVELS
         AURA_LEVELS = procesar_aura_levels_loaded(cargar_aura_levels())
         
         flash("Niveles de aura actualizados correctamente", "success")
