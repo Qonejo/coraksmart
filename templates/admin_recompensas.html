@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Recompensas Pendientes - Panel Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        body { 
+            font-family: 'Press Start 2P', cursive; 
+            background-color: #222; 
+            color: #fff; 
+            padding: 20px; 
+            font-size: 10px;
+        }
+        h1 { 
+            border-bottom: 2px solid #fff; 
+            padding-bottom: 10px; 
+            text-align: center;
+        }
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-top: 20px; 
+            font-size: 9px; 
+        }
+        th, td { 
+            border: 1px solid #888; 
+            padding: 8px; 
+            text-align: left; 
+            vertical-align: middle; 
+        }
+        th { 
+            background-color: #444; 
+            color: #ffcc00;
+        }
+        .user-emoji {
+            font-size: 20px;
+            text-align: center;
+        }
+        .btn {
+            font-family: inherit; 
+            font-size: 8px; 
+            padding: 6px 10px; 
+            border: none; 
+            cursor: pointer; 
+            border-radius: 4px;
+            margin: 2px;
+        }
+        .btn-confirm { 
+            background-color: #28a745; 
+            color: white; 
+        }
+        .btn-reject { 
+            background-color: #dc3545; 
+            color: white; 
+        }
+        .btn-back {
+            background-color: #6c757d;
+            color: white;
+            text-decoration: none;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+        .status-pending {
+            background-color: #ffc107;
+            color: #000;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 8px;
+        }
+        .no-rewards {
+            text-align: center;
+            color: #888;
+            padding: 40px;
+            font-size: 12px;
+        }
+        .reward-code {
+            font-family: monospace;
+            background-color: #333;
+            padding: 4px 8px;
+            border-radius: 4px;
+            color: #ffcc00;
+        }
+    </style>
+</head>
+<body>
+    <a href="{{ url_for('admin_panel') }}" class="btn btn-back">← Volver al Panel Admin</a>
+    
+    <h1>🎁 Recompensas Pendientes</h1>
+    
+    {% if recompensas_pendientes %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Usuario</th>
+                    <th>Nivel</th>
+                    <th>Personaje</th>
+                    <th>Recompensa</th>
+                    <th>Código</th>
+                    <th>Fecha Generación</th>
+                    <th>Puntos Usuario</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for recompensa in recompensas_pendientes %}
+                <tr id="reward-{{ recompensa.user_emoji }}-{{ recompensa.level }}">
+                    <td class="user-emoji">{{ recompensa.user_emoji }}</td>
+                    <td>{{ recompensa.level }}</td>
+                    <td>{{ recompensa.level_name }}</td>
+                    <td>{{ recompensa.prize }}</td>
+                    <td class="reward-code">{{ recompensa.code }}</td>
+                    <td>{{ recompensa.generated_at }}</td>
+                    <td>{{ "{:,}".format(recompensa.user_points) }}</td>
+                    <td><span class="status-pending">⏳ Pendiente</span></td>
+                    <td>
+                        <button class="btn btn-confirm" 
+                                onclick="processReward('{{ recompensa.user_emoji }}', {{ recompensa.level }}, 'confirm')">
+                            ✅ Confirmar
+                        </button>
+                        <button class="btn btn-reject" 
+                                onclick="processReward('{{ recompensa.user_emoji }}', {{ recompensa.level }}, 'reject')">
+                            ❌ Rechazar
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="no-rewards">
+            <h2>📭 No hay recompensas pendientes</h2>
+            <p>Todas las recompensas han sido procesadas.</p>
+        </div>
+    {% endif %}
+    
+    <script>
+        async function processReward(userEmoji, level, action) {
+            const actionText = action === 'confirm' ? 'confirmar' : 'rechazar';
+            
+            if (!confirm(`¿Estás seguro de ${actionText} esta recompensa?`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/admin/recompensas', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        user_emoji: userEmoji,
+                        level: level,
+                        action: action
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert(data.message);
+                    // Remover la fila de la tabla
+                    const row = document.getElementById(`reward-${userEmoji}-${level}`);
+                    if (row) {
+                        row.remove();
+                    }
+                    
+                    // Si no hay más filas, mostrar mensaje de "no hay recompensas"
+                    const tbody = document.querySelector('tbody');
+                    if (tbody && tbody.children.length === 0) {
+                        location.reload();
+                    }
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al procesar la recompensa');
+            }
+        }
+    </script>
+</body>
+</html>

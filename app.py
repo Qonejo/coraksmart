@@ -30,10 +30,13 @@ USUARIOS_FILE = "usuarios.json"
 
 # --- CONFIGURACIÓN GLOBAL DE LA APLICACIÓN ---
 CONFIG = {
-    "horarios_atencion": "Lunes a Viernes: 9:00 AM - 6:00 PM",
-    "whatsapp_principal": "5215513361764",
-    "whatsapp_secundario": ""
+"horarios_atencion": "Lunes a Viernes: 9:00 AM - 6:00 PM",
+"whatsapp_principal": "5215513361764", 
+"whatsapp_secundario": ""
 }
+
+def cargar_configuracion():
+    return CONFIG
 
 # --- FUNCIONES DE PERSISTENCIA ---
 def cargar_productos():
@@ -57,7 +60,7 @@ def guardar_usuarios(usuarios):
 
 # --- SISTEMA DE AURA Y GENERADOR DE IDS ---
 AURA_LEVELS = [
-    {"level": 0, "points_needed": -float('inf'), "flame_color": "black",  "name": "Bandido", "prize": "Sin Rango", "character_size": 96},
+    {"level": 0, "points_needed": -float('inf'), "flame_color": "black",  "name": "Bandido", "prize": "No hay recompensas en este nivel", "character_size": 96},
     {"level": 1, "points_needed": 0,         "flame_color": "white",  "name": "Vampiro ojón", "prize": "1 Gomita gratis", "character_size": 96},
     {"level": 2, "points_needed": 7000,      "flame_color": "blue",   "name": "Avispa mutante", "prize": "5% descuento en tu próxima compra", "character_size": 96},
     {"level": 3, "points_needed": 9030,      "flame_color": "green",  "name": "Lombriz mounstro", "prize": "Salvia + 1", "character_size": 96},
@@ -778,6 +781,80 @@ def generate_reward_code():
         "code": codigo,
         "level": level
     })
+
+@app.route("/admin/recompensas", methods=["GET", "POST"])
+def admin_recompensas():
+    if not session.get("is_admin"):
+        return redirect(url_for("admin_login"))
+    
+    if request.method == "POST":
+        data = request.get_json()
+        user_emoji = data.get("user_emoji")
+        level = data.get("level")
+        action = data.get("action")  # "confirm" o "reject"
+        
+        if not all([user_emoji, level, action]):
+            return jsonify({"success": False, "message": "Datos incompletos"})
+        
+        usuarios = cargar_usuarios()
+        if user_emoji not in usuarios:
+            return jsonify({"success": False, "message": "Usuario no encontrado"})
+        
+        if "reward_codes" not in usuarios[user_emoji]:
+            return jsonify({"success": False, "message": "No hay códigos de recompensa para este usuario"})
+        
+        level_str = str(level)
+        if level_str not in usuarios[user_emoji]["reward_codes"]:
+            return jsonify({"success": False, "message": "Código de recompensa no encontrado"})
+        
+        if action == "confirm":
+            usuarios[user_emoji]["reward_codes"][level_str]["claimed"] = True
+            usuarios[user_emoji]["reward_codes"][level_str]["confirmed_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            
+            # Marcar nivel como reclamado en el progreso del usuario
+            if "progress_bar" not in usuarios[user_emoji]:
+                usuarios[user_emoji]["progress_bar"] = {}
+            if "claimed_levels" not in usuarios[user_emoji]["progress_bar"]:
+                usuarios[user_emoji]["progress_bar"]["claimed_levels"] = []
+            
+            if level not in usuarios[user_emoji]["progress_bar"]["claimed_levels"]:
+                usuarios[user_emoji]["progress_bar"]["claimed_levels"].append(level)
+            
+            message = "Recompensa confirmada exitosamente"
+        
+        elif action == "reject":
+            del usuarios[user_emoji]["reward_codes"][level_str]
+            message = "Código de recompensa rechazado"
+        
+        guardar_usuarios(usuarios)
+        return jsonify({"success": True, "message": message})
+    
+    # GET - Mostrar recompensas pendientes
+    usuarios = cargar_usuarios()
+    recompensas_pendientes = []
+    
+    for user_emoji, user_data in usuarios.items():
+        if "reward_codes" in user_data:
+            for level, reward_info in user_data["reward_codes"].items():
+                if not reward_info.get("claimed", False):
+                    level_info = next((l for l in AURA_LEVELS if l["level"] == int(level)), None)
+                    if level_info:
+                        recompensas_pendientes.append({
+                            "user_emoji": user_emoji,
+                            "level": int(level),
+                            "level_name": level_info["name"],
+                            "prize": level_info["prize"],
+                            "code": reward_info["code"],
+                            "generated_at": reward_info["generated_at"],
+                            "user_points": user_data.get("aura_points", 0)
+                        })
+    
+    # Ordenar por fecha de generación
+    recompensas_pendientes.sort(key=lambda x: x["generated_at"], reverse=True)
+    
+    return render_template("admin_recompensas.html", 
+                         recompensas_pendientes=recompensas_pendientes,
+                         config=cargar_configuracion())
 
 # --- RUTAS DE CONFIGURACIÓN ADMIN ---
 @app.route("/admin/configuracion", methods=["GET", "POST"])

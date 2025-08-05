@@ -192,16 +192,28 @@
         </div>
         
         <div class="niveles-lista">
-            {% for nivel in AURA_LEVELS[1:] %}
+            {% for nivel in AURA_LEVELS %}
                 <div class="nivel-item 
                     {% if aura_data.level_info.level == nivel.level %}current
                     {% elif aura_data.points >= nivel.points_needed %}completed
                     {% endif %}">
                     
-                    <img src="{{ url_for('static', filename='f' + nivel.level|string + '.gif') }}" 
-                         alt="{{ nivel.name }}" 
-                         class="character-icon {% if aura_data.level_info.level == nivel.level %}current{% endif %}"
-                         style="width: {{ nivel.character_size }}px; height: {{ nivel.character_size }}px;">
+                    {% if nivel.level == 0 %}
+                        <img src="{{ url_for('static', filename='f0.gif') }}" 
+                             alt="{{ nivel.name }}" 
+                             class="character-icon {% if aura_data.level_info.level == nivel.level %}current{% endif %}"
+                             style="width: {{ nivel.character_size }}px; height: {{ nivel.character_size }}px;">
+                    {% elif nivel.level == 1 %}
+                        <img src="{{ url_for('static', filename='f1c.gif') }}" 
+                             alt="{{ nivel.name }}" 
+                             class="character-icon {% if aura_data.level_info.level == nivel.level %}current{% endif %}"
+                             style="width: {{ nivel.character_size }}px; height: {{ nivel.character_size }}px;">
+                    {% else %}
+                        <img src="{{ url_for('static', filename='f' + nivel.level|string + '.gif') }}" 
+                             alt="{{ nivel.name }}" 
+                             class="character-icon {% if aura_data.level_info.level == nivel.level %}current{% endif %}"
+                             style="width: {{ nivel.character_size }}px; height: {{ nivel.character_size }}px;">
+                    {% endif %}
                     
                     <div class="nivel-info">
                         <div class="nivel-titulo">
@@ -220,7 +232,9 @@
                     </div>
                     
                     <div style="display: flex; flex-direction: column; gap: 10px; align-items: center;">
-                        {% if aura_data.points >= nivel.points_needed %}
+                        {% if nivel.level == 0 %}
+                            <div style="color: #666; font-size: 12px; text-align: center;">Sin recompensa</div>
+                        {% elif aura_data.points >= nivel.points_needed %}
                             {% if nivel.level not in (aura_data.progress_bar.get('claimed_levels', []) if aura_data.progress_bar else []) %}
                                 <button onclick="claimReward({{ nivel.level }}, '{{ nivel.prize }}')" 
                                         style="background: #ffcc00; color: #000; border: 2px solid #ff9900; padding: 8px 12px; border-radius: 5px; font-family: 'Press Start 2P', cursive; font-size: 8px; cursor: pointer;">

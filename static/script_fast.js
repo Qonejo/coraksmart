@@ -142,6 +142,19 @@ window.cerrarImagenModal = function() {
     
     currentModal.classList.remove('modal-visible');
     currentModal.classList.add('modal-hidden');
+    
+    // Limpiar elementos de galería dinámicos
+    const galleryCounter = document.getElementById('gallery-counter');
+    const prevBtn = document.getElementById('gallery-prev');
+    const nextBtn = document.getElementById('gallery-next');
+    
+    if (galleryCounter) galleryCounter.style.display = 'none';
+    if (prevBtn) prevBtn.style.display = 'none';
+    if (nextBtn) nextBtn.style.display = 'none';
+    
+    // Resetear variables de galería
+    currentGalleryProduct = '';
+    currentGalleryIndex = 0;
     currentModal = null;
     
     document.removeEventListener('keydown', cerrarModalConESC);
@@ -341,11 +354,17 @@ function openProductGallery(productId, imageIndex = 0) {
 function showGalleryImage() {
     const images = productGalleries[currentGalleryProduct];
     const modalImage = document.getElementById('modal-image');
+    const modal = document.getElementById('image-modal');
     
     if (images && images[currentGalleryIndex]) {
         modalImage.src = images[currentGalleryIndex];
-        document.getElementById('image-modal').classList.remove('modal-hidden');
+        modal.classList.remove('modal-hidden');
+        modal.classList.add('modal-visible');
+        currentModal = modal;
         updateGalleryInfo();
+        
+        // Cerrar con ESC
+        document.addEventListener('keydown', cerrarModalConESC);
     }
 }
 
