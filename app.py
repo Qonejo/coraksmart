@@ -673,6 +673,35 @@ def change_user_emoji():
         "message": "Avatar cambiado exitosamente"
     })
 
+# --- RUTA PARA ELIMINAR CUENTA DE USUARIO ---
+@app.route("/profile/delete-account", methods=["POST"])
+def delete_user_account():
+    if not session.get("logged_in_user_emoji"):
+        return jsonify({"success": False, "message": "No autorizado"})
+    
+    user_emoji = session["logged_in_user_emoji"]
+    usuarios = cargar_usuarios()
+    
+    if user_emoji not in usuarios:
+        return jsonify({"success": False, "message": "Usuario no encontrado"})
+    
+    # Eliminar todos los pedidos del usuario
+    pedidos = cargar_pedidos()
+    pedidos_filtrados = [p for p in pedidos if p.get("user_emoji") != user_emoji]
+    guardar_pedidos(pedidos_filtrados)
+    
+    # Eliminar usuario
+    del usuarios[user_emoji]
+    guardar_usuarios(usuarios)
+    
+    # Cerrar sesión
+    session.clear()
+    
+    return jsonify({
+        "success": True, 
+        "message": "Cuenta eliminada exitosamente"
+    })
+
 # --- RUTAS DE CONFIGURACIÓN ADMIN ---
 @app.route("/admin/configuracion", methods=["GET", "POST"])
 def admin_configuracion():
@@ -711,6 +740,38 @@ def admin_reset_user_password():
     
     flash(f"Contraseña reiniciada exitosamente para el usuario {user_emoji}", "success")
     return redirect(url_for("admin_configuracion"))
+
+@app.route("/admin/reset-user-account", methods=["POST"])
+def admin_reset_user_account():
+    if not session.get("logged_in"): return redirect(url_for("login"))
+    
+    user_emoji = request.form.get("user_emoji")
+    
+    if not user_emoji:
+        flash("Debe proporcionar el emoji del usuario", "error")
+        return redirect(url_for("admin_emojis"))
+    
+    usuarios = cargar_usuarios()
+    if user_emoji not in usuarios:
+        flash(f"No se encontró un usuario con el emoji: {user_emoji}", "error")
+        return redirect(url_for("admin_emojis"))
+    
+    # Reiniciar cuenta: mantener solo la contraseña, eliminar puntos de aura y datos
+    password_hash = usuarios[user_emoji]["password_hash"]
+    usuarios[user_emoji] = {
+        "password_hash": password_hash,
+        "aura_points": 0,
+        "claimed_levels": []
+    }
+    guardar_usuarios(usuarios)
+    
+    # Eliminar todos los pedidos del usuario
+    pedidos = cargar_pedidos()
+    pedidos_filtrados = [p for p in pedidos if p.get("user_emoji") != user_emoji]
+    guardar_pedidos(pedidos_filtrados)
+    
+    flash(f"Cuenta del usuario {user_emoji} reiniciada exitosamente", "success")
+    return redirect(url_for("admin_emojis"))
 
 # --- GESTIÓN DE EMOJIS EN ADMIN ---
 @app.route("/admin/emojis", methods=["GET", "POST"])
@@ -964,6 +1025,42 @@ def admin_completar_pedido(pedido_id):
     # Guardar cambios
     guardar_pedidos(pedidos)
     
+    return redirect(url_for("admin_view"))
+
+# --- RUTA PARA BORRAR PEDIDO INDIVIDUAL ---
+@app.route("/admin/delete-order/<pedido_id>", methods=["POST"])
+def admin_delete_order(pedido_id):
+    if not session.get("logged_in"): return redirect(url_for("login"))
+    
+    pedidos = cargar_pedidos()
+    usuarios = cargar_usuarios()
+    
+    # Buscar el pedido
+    pedido_encontrado = None
+    for i, pedido in enumerate(pedidos):
+        if pedido.get("id") == pedido_id:
+            pedido_encontrado = pedido
+            pedido_index = i
+            break
+    
+    if not pedido_encontrado:
+        flash(f"Pedido {pedido_id} no encontrado", "error")
+        return redirect(url_for("admin_view"))
+    
+    # Si el pedido estaba completado, quitar puntos de aura
+    if pedido_encontrado.get("completado") and pedido_encontrado.get("aura_otorgada", 0) > 0:
+        user_emoji = pedido_encontrado.get("user_emoji")
+        aura_otorgada = pedido_encontrado.get("aura_otorgada", 0)
+        
+        if user_emoji and user_emoji in usuarios:
+            usuarios[user_emoji]["aura_points"] = max(0, usuarios[user_emoji].get("aura_points", 0) - aura_otorgada)
+            guardar_usuarios(usuarios)
+    
+    # Eliminar el pedido
+    del pedidos[pedido_index]
+    guardar_pedidos(pedidos)
+    
+    flash(f"Pedido {pedido_id} eliminado exitosamente", "success")
     return redirect(url_for("admin_view"))
 
 @app.route("/admin/clear-orders", methods=["POST"])

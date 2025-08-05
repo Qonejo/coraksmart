@@ -64,22 +64,7 @@
                 <div class="aura-progress-fill" data-progress="{{ progress_percent }}"></div>
             </div>
             
-            <!-- Nueva barra de progreso visual con imágenes -->
-            {% if aura_data.progress_bar %}
-            <div class="visual-progress-bar">
-                <!-- Barra base -->
-                <img src="{{ url_for('static', filename=aura_data.progress_bar.bar_type) }}" alt="Progress Bar" class="progress-bar-base">
-                
-                <!-- Orbes de experiencia -->
-                {% if aura_data.progress_bar.exp_orbs > 0 %}
-                <div class="exp-orbs-container">
-                    {% for i in range(aura_data.progress_bar.exp_orbs) %}
-                        <img src="{{ url_for('static', filename='exp.png') }}" alt="Exp Orb" class="exp-orb" style="left: {{ 5 + (i * 12) }}px;">
-                    {% endfor %}
-                </div>
-                {% endif %}
-            </div>
-            {% endif %}
+            <!-- Barra de progreso visual removida por solicitud del usuario -->
         </div>
         {% endif %}
         
@@ -135,7 +120,7 @@ COMPRA
 
     <!-- Estructura del Modal de Imagen -->
     <div id="image-modal" class="modal-hidden">
-        <span id="close-modal" class="close-button" onclick="closeImageModal()">×</span>
+        <span id="close-modal" class="close-button" onclick="cerrarImagenModal()">×</span>
         <img id="modal-image" class="modal-content-image">
     </div>
     

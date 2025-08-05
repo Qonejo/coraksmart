@@ -114,6 +114,17 @@
         </tbody>
     </table>
     
+    <!-- Zona de peligro para eliminar cuenta -->
+    <div style="margin-top: 40px; padding: 20px; border: 2px solid #ff3333; border-radius: 10px; background: rgba(255, 51, 51, 0.1);">
+        <h3 style="color: #ff3333; margin-bottom: 15px;">⚠️ Zona de Peligro</h3>
+        <p style="font-size: 8px; color: #ccc; margin-bottom: 15px; line-height: 1.4;">
+            Al eliminar tu cuenta se perderán permanentemente todos tus datos: puntos de aura, historial de pedidos y configuraciones. Esta acción NO se puede deshacer.
+        </p>
+        <button onclick="confirmarEliminacionCuenta()" style="background: #ff3333; color: #fff; border: 2px solid #ff6666; padding: 10px 20px; border-radius: 5px; font-family: 'Press Start 2P', cursive; font-size: 8px; cursor: pointer;">
+            🗑️ Eliminar Mi Cuenta
+        </button>
+    </div>
+    
     <!-- Modal selector de emoji -->
     <div id="emoji-selector-modal" class="emoji-selector-modal" style="display: none;">
         <div class="emoji-selector-content">
@@ -232,6 +243,40 @@
                 closeEmojiSelector();
             }
         });
+        
+        // Función para eliminar cuenta
+        async function confirmarEliminacionCuenta() {
+            const confirmText = prompt('Para confirmar la eliminación de tu cuenta, escribe "ELIMINAR" (en mayúsculas):');
+            
+            if (confirmText !== 'ELIMINAR') {
+                if (confirmText !== null) {
+                    alert('Texto incorrecto. Eliminación cancelada.');
+                }
+                return;
+            }
+            
+            if (confirm('¿Estás COMPLETAMENTE SEGURO? Esta acción eliminará permanentemente tu cuenta y todos tus datos.')) {
+                try {
+                    const response = await fetch('/profile/delete-account', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        alert('Tu cuenta ha sido eliminada exitosamente.');
+                        window.location.href = '/entrar';
+                    } else {
+                        alert('Error: ' + result.message);
+                    }
+                } catch (error) {
+                    alert('Error al eliminar la cuenta');
+                }
+            }
+        }
     </script>
 </body>
 </html>

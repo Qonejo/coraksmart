@@ -332,6 +332,9 @@
                     <button class="user-btn reset" onclick="resetUserPassword('{{ user_emoji }}')">
                         🔑 Reiniciar Contraseña
                     </button>
+                    <button class="user-btn" onclick="resetUserAccount('{{ user_emoji }}')">
+                        🔄 Reiniciar Cuenta
+                    </button>
                     <button class="user-btn" onclick="viewUserDetails('{{ user_emoji }}')">
                         👁️ Ver Detalles
                     </button>
@@ -521,6 +524,29 @@
             .catch(error => {
                 alert('Error al reiniciar contraseña');
             });
+        }
+        
+        function resetUserAccount(userEmoji) {
+            if (confirm(`¿Estás seguro de reiniciar la cuenta de ${userEmoji}? Esto eliminará todos sus puntos de aura y pedidos.`)) {
+                if (confirm('¿COMPLETAMENTE SEGURO? Esta acción NO se puede deshacer.')) {
+                    fetch('/admin/reset-user-account', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: `user_emoji=${encodeURIComponent(userEmoji)}`
+                    })
+                    .then(response => {
+                        if (response.redirected) {
+                            alert('Cuenta reiniciada exitosamente');
+                            location.reload();
+                        }
+                    })
+                    .catch(error => {
+                        alert('Error al reiniciar cuenta');
+                    });
+                }
+            }
         }
         
         function viewUserDetails(userEmoji) {
