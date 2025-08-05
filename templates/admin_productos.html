@@ -259,6 +259,13 @@
         
         <h1 style="text-align: center; color: #6f42c1; margin-bottom: 30px;">📦 Gestión de Productos</h1>
         
+        <div style="text-align: center; margin-bottom: 30px;">
+            <a href="{{ url_for('admin_agregar_producto') }}" class="btn" style="background: #28a745; color: white; padding: 12px 20px; text-decoration: none; border-radius: 5px; font-family: 'Press Start 2P', cursive; font-size: 10px; margin-right: 10px;">
+                ➕ Agregar Nuevo Producto
+            </a>
+            <span style="color: #888; font-size: 9px;">Total productos: {{ productos|length }}</span>
+        </div>
+        
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 <div class="flash-messages">

@@ -573,7 +573,7 @@ def cargar_emoji_list():
             config = json.load(f)
             return config.get('available_emojis', [])
     except (FileNotFoundError, json.JSONDecodeError):
-        return ["😀", "🚀", "🌟", "🍕", "🤖", "👻", "👽", "👾", "🦊", "🧙", "🌮", "💎", "🌙", "🔮", "🧬", "🌵", "🎉", "🔥", "💯", "👑", "💡", "🎮", "🛰️", "🛸", "🗿", "🌴", "🧪", "✨", "🔑", "🗺️", "🐙", "🦋", "🐲", "🍩", "⚡", "🎯", "⚓", "🌈", "🌌", "🌠", "🎱", "🎰", "🕹️", "🏆", "💊", "🎁", "💌", "📈", "🗿"]
+        return ["😀", "🚀", "🌟", "🍕", "🤖", "👻", "👽", "👾", "🦊", "🧙", "🌮", "💎", "🌙", "🔮", "🧬", "🌵", "🎉", "🔥", "💯", "👑", "💡", "🎮", "🛰️", "🛸", "🗿", "🌴", "🧪", "✨", "🔑", "🗺️", "🐙", "🦋", "🐲", "🍩", "⚡", "🎯", "⚓", "🌈", "🌌", "🌠", "🎱", "🎰", "🕹️", "🏆", "💊", "🎁", "💌", "📈", "😎", "😂", "🤣", "😍", "🥰", "😘", "😋", "😜", "🤩", "🥳", "😇", "🤠", "🤡", "🥸", "🤓", "😈", "👹", "👺", "💀", "👽", "🤖", "🎃", "😺", "😸", "😹", "😻", "😼", "😽", "🙀", "😿", "😾", "🦄", "🐵", "🐶", "🐺", "🐱", "🦁", "🐯", "🦒", "🦓", "🐴", "🦏", "🐘", "🐭", "🐹", "🐰", "🐻", "🐼", "🐨", "🐷", "🐸", "🦆", "🐧", "🦅", "🦉", "🐍", "🐢", "🦎", "🐙", "🦑", "🦐", "🦀", "🐡", "🐠", "🐟", "🐬", "🐳", "🐋", "🦈", "🐊", "🐅", "🐆", "🦓", "🦍", "🦧", "🐪", "🐫", "🦙", "🦘", "🦥", "🦨", "🦔", "🐁", "🐀", "🦇", "🕷️", "🦟", "🦗", "🐛", "🦋", "🐌", "🐚", "🪱", "🪲", "🪳", "🪰", "🌸", "🌺", "🌻", "🌹", "🌷", "💐", "🌾", "🌿", "🍀", "🌱", "🌳", "🌲", "🌴", "🌵", "🌾", "☘️", "🍃", "🍂", "🍁", "🍄", "🌰", "🎄", "💮", "🏔️", "⛰️", "🌋", "🏞️", "🏜️", "🏖️", "🏝️", "🌅", "🌄", "🌠", "🌌", "🌉", "🌁"]
 
 def guardar_emoji_list(emoji_list):
     """Guardar lista de emojis en archivo"""
@@ -1401,17 +1401,30 @@ def admin_aura_levels():
             new_prize = request.form.get(f'prize_{level}')
             new_size = request.form.get(f'character_size_{level}')
             
-            if new_points is not None and level != 0:  # No cambiar nivel 0
-                level_info["points_needed"] = int(new_points)
-            if new_title is not None:
-                level_info["name"] = new_title  # Usar 'name' en lugar de 'title'
-            if new_prize is not None:
+            # Mejor validación para puntos
+            if new_points is not None and new_points.strip() != '' and level != 0:
+                try:
+                    level_info["points_needed"] = int(new_points)
+                except ValueError:
+                    flash(f"Error: Puntos inválidos para nivel {level}", "error")
+            
+            if new_title is not None and new_title.strip() != '':
+                level_info["name"] = new_title
+            if new_prize is not None and new_prize.strip() != '':
                 level_info["prize"] = new_prize
-            if new_size is not None:
-                level_info["character_size"] = int(new_size)
+            if new_size is not None and new_size.strip() != '':
+                try:
+                    level_info["character_size"] = int(new_size)
+                except ValueError:
+                    flash(f"Error: Tamaño inválido para nivel {level}", "error")
         
         # Guardar cambios permanentemente
         guardar_aura_levels(AURA_LEVELS)
+        
+        # Recargar los niveles desde archivo para confirmar que se guardaron
+        global AURA_LEVELS
+        AURA_LEVELS = procesar_aura_levels_loaded(cargar_aura_levels())
+        
         flash("Niveles de aura actualizados correctamente", "success")
         return redirect(url_for("admin_aura_levels"))
     
