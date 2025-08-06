@@ -40,12 +40,12 @@ def cargar_configuracion():
         return {
             "horarios_atencion": "Lunes a Viernes: 9:00 AM - 6:00 PM",
             "whatsapp_principal": "5215513361764", 
-            "whatsapp_secundario": "",
+            "whatsapp_secundario": "5215625877420",
             "whatsapp_1": "5215513361764",
             "whatsapp_2": "5215625877420",
             "whatsapp_3": "",
-            "whatsapp_1_nombre": "Principal",
-            "whatsapp_2_nombre": "Rub",
+            "whatsapp_1_nombre": "Corak",
+            "whatsapp_2_nombre": "Rubadub",
             "whatsapp_3_nombre": "Terciario"
         }
 
@@ -94,7 +94,7 @@ def cargar_aura_levels():
     except (FileNotFoundError, json.JSONDecodeError):
         return [
             {"level": 0, "points_needed": -float('inf'), "flame_color": "black",  "name": "Bandido", "prize": "No hay recompensas en este nivel", "character_size": 96},
-            {"level": 1, "points_needed": 0,         "flame_color": "white",  "name": "Vampiro ojón", "prize": "1 Gomita gratis", "character_size": 96},
+            {"level": 1, "points_needed": 5000,         "flame_color": "white",  "name": "Vampiro ojón", "prize": "1 Gomita gratis", "character_size": 96},
             {"level": 2, "points_needed": 7000,      "flame_color": "blue",   "name": "Avispa mutante", "prize": "5% descuento en tu próxima compra", "character_size": 96},
             {"level": 3, "points_needed": 9030,      "flame_color": "green",  "name": "Lombriz mounstro", "prize": "Salvia + 1", "character_size": 96},
             {"level": 4, "points_needed": 15270,     "flame_color": "yellow", "name": "Perrodragón", "prize": "10% descuento en tu próxima compra", "character_size": 96},
