@@ -263,10 +263,13 @@ def get_progress_bar_info(points, current_level_info, user_emoji):
     max_orbs = 8  # Máximo 8 orbes por barra para que no se desborde visualmente
     
     # Protección adicional contra división por cero y valores inválidos
-    if points_needed_in_level <= 0:
+    if points_needed_in_level <= 0 or max_orbs <= 0:
         orb_value = 240
     else:
         orb_value = max(240, points_needed_in_level / max_orbs)
+        # Protección contra valores infinitos o muy grandes
+        if not isinstance(orb_value, (int, float)) or orb_value == float('inf') or orb_value > 10000000:
+            orb_value = 240
     
     # Protección contra NaN
     if orb_value <= 0 or points_in_current_level < 0:
@@ -299,7 +302,7 @@ def get_progress_bar_info(points, current_level_info, user_emoji):
         "progress_percent": progress_percent,
         "points_in_level": points_in_current_level,
         "points_needed_for_next": points_needed_for_next,
-        "orb_value": int(orb_value)
+        "orb_value": int(orb_value) if isinstance(orb_value, (int, float)) and orb_value != float('inf') and orb_value < 10000000 else 240
     }
 
 def get_aura_points_for_product(product_id, price):
