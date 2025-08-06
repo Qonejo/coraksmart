@@ -357,7 +357,7 @@ function showGalleryImage() {
     const modal = document.getElementById('image-modal');
     
     if (images && images[currentGalleryIndex]) {
-        modalImage.src = '/static/' + images[currentGalleryIndex];
+        modalImage.src = images[currentGalleryIndex];
         modal.classList.remove('modal-hidden');
         modal.classList.add('modal-visible');
         currentModal = modal;

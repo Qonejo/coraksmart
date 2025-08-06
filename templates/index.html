@@ -153,17 +153,17 @@ COMPRA
     </div>
     
     <!-- Script optimizado -->
-    <script src="{{ url_for('static', filename='script_fast.js', v='1.1') }}"></script>
+    <script src="{{ url_for('static', filename='script_fast.js', v='1.2') }}"></script>
     
     <!-- Inicializar galerías de productos -->
     <script>
         // Configurar galerías de productos con imágenes (principales y adicionales)
         {% for id, prod in PRODUCTOS_ORDENADOS %}
         setProductGallery('{{ id }}', [
-            '{{ prod.imagen }}'
+            '{{ url_for('static', filename=prod.imagen) }}'
             {% if prod.get('imagenes_adicionales') %}
                 {% for img_index, img_name in prod.imagenes_adicionales.items() %}
-                    , '{{ img_name }}'
+                    , '{{ url_for('static', filename=img_name) }}'
                 {% endfor %}
             {% endif %}
         ]);
