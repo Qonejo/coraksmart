@@ -271,13 +271,19 @@ def get_progress_bar_info(points, current_level_info, user_emoji):
         if not isinstance(orb_value, (int, float)) or orb_value == float('inf') or orb_value > 10000000:
             orb_value = 240
     
-    # Protección contra NaN
-    if orb_value <= 0 or points_in_current_level < 0:
+    # Protección contra NaN e infinitos
+    if (orb_value <= 0 or points_in_current_level < 0 or 
+        orb_value == float('inf') or points_in_current_level == float('inf')):
         exp_orbs = 0
     else:
         try:
-            exp_orbs = min(max_orbs, int(points_in_current_level / orb_value))
-        except (ValueError, ZeroDivisionError):
+            division_result = points_in_current_level / orb_value
+            # Protección adicional contra infinitos en el resultado
+            if division_result == float('inf') or division_result != division_result:  # NaN check
+                exp_orbs = 0
+            else:
+                exp_orbs = min(max_orbs, int(division_result))
+        except (ValueError, ZeroDivisionError, OverflowError):
             exp_orbs = 0
     
     # Determinar tipo de barra
