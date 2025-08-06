@@ -283,11 +283,20 @@ def get_progress_bar_info(points, current_level_info, user_emoji):
     else:
         bar_type = "barva.png"
     
+    # Calcular porcentaje de progreso con protección contra división por cero
+    if points_needed_in_level <= 0:
+        progress_percent = 0
+    else:
+        try:
+            progress_percent = int((points_in_current_level / points_needed_in_level) * 100)
+        except (ValueError, ZeroDivisionError):
+            progress_percent = 0
+    
     return {
         "bar_type": bar_type,
         "exp_orbs": exp_orbs,
         "completed": False,
-        "progress_percent": int((points_in_current_level / points_needed_in_level) * 100),
+        "progress_percent": progress_percent,
         "points_in_level": points_in_current_level,
         "points_needed_for_next": points_needed_for_next,
         "orb_value": int(orb_value)
