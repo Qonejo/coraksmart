@@ -1710,6 +1710,63 @@ def admin_set_main_image():
 
     guardar_productos(productos)
     return jsonify({"success": True, "message": "Imagen principal actualizada."})
+
+@app.route("/admin/productos/toggle_promo", methods=["POST"])
+def admin_toggle_promo():
+    if not session.get("logged_in"):
+        return jsonify({"success": False, "message": "No autorizado"})
+
+    data = request.get_json()
+    product_id = data.get("product_id")
+    if not product_id:
+        return jsonify({"success": False, "message": "ID de producto no proporcionado"})
+
+    productos = cargar_productos()
+    if product_id not in productos:
+        return jsonify({"success": False, "message": "Producto no encontrado"})
+
+    # Toggle de la promoción
+    current_status = productos[product_id].get("promocion", False)
+    productos[product_id]["promocion"] = not current_status
+
+    guardar_productos(productos)
+
+    return jsonify({
+        "success": True,
+        "new_status": not current_status,
+        "message": f"Promoción {'activada' if not current_status else 'desactivada'}."
+    })
+
+@app.route("/admin/productos/save_bundle", methods=["POST"])
+def admin_save_bundle():
+    if not session.get("logged_in"):
+        return jsonify({"success": False, "message": "No autorizado"})
+
+    data = request.get_json()
+    product_id = data.get("product_id")
+    bundle_items = data.get("bundle_items") # Espera un diccionario: {"item_id": cantidad}
+    bundle_precio = data.get("bundle_precio")
+
+    if not product_id or bundle_items is None or bundle_precio is None:
+        return jsonify({"success": False, "message": "Datos incompletos."})
+
+    productos = cargar_productos()
+    if product_id not in productos:
+        return jsonify({"success": False, "message": "Producto no encontrado"})
+
+    # Actualizar o crear la información del bundle
+    productos[product_id]["bundle_items"] = bundle_items
+    productos[product_id]["bundle_precio"] = float(bundle_precio)
+
+    # Asegurarse de que no tenga precio/stock normal para evitar conflictos
+    if "precio" in productos[product_id]:
+        del productos[product_id]["precio"]
+    if "stock" in productos[product_id]:
+        del productos[product_id]["stock"]
+
+    guardar_productos(productos)
+
+    return jsonify({"success": True, "message": "Bundle guardado exitosamente."})
     
 def guardar_productos(productos):
     """Guardar productos en el archivo JSON"""
