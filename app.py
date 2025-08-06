@@ -1429,74 +1429,6 @@ def admin_aura_levels():
     
     return render_template("admin_aura_levels.html", levels=AURA_LEVELS)
 
-# --- RUTAS DE GESTIÓN DE MEDIOS ---
-@app.route("/admin/media", methods=["GET", "POST"])
-def admin_media():
-    if not session.get("logged_in"): return redirect(url_for("login"))
-    
-    if request.method == "POST":
-        upload_type = request.form.get('upload_type')
-        
-        if upload_type == 'logo':
-            logo_file = request.files.get('logo_file')
-            if logo_file and logo_file.filename:
-                # Hacer backup del logo actual
-                try:
-                    import shutil
-                    shutil.copy('static/logo.png', f'static/logo_backup_{datetime.now().strftime("%Y%m%d_%H%M%S")}.png')
-                except:
-                    pass
-                
-                # Guardar nuevo logo
-                logo_file.save(os.path.join('static', 'logo.png'))
-                flash("Logo actualizado correctamente", "success")
-                
-        elif upload_type == 'progress_bar':
-            bar_type = request.form.get('bar_type')
-            progress_file = request.files.get('progress_file')
-            
-            if progress_file and progress_file.filename and bar_type:
-                filename = f"{bar_type}.png"
-                progress_file.save(os.path.join('static', filename))
-                flash(f"Barra {bar_type} actualizada correctamente", "success")
-        
-        return redirect(url_for("admin_media"))
-    
-    # Obtener lista de archivos en static/
-    try:
-        media_files = [f for f in os.listdir('static') if os.path.isfile(os.path.join('static', f))]
-        media_files.sort()
-    except:
-        media_files = []
-    
-    return render_template("admin_media.html", media_files=media_files)
-
-@app.route("/admin/delete-media", methods=["POST"])
-def admin_delete_media():
-    if not session.get("logged_in"):
-        return jsonify({"success": False, "message": "No autorizado"})
-    
-    data = request.get_json()
-    filename = data.get('filename')
-    
-    if not filename:
-        return jsonify({"success": False, "message": "Nombre de archivo no especificado"})
-    
-    # Proteger archivos críticos
-    protected_files = ['logo.png', 'style.css', 'script_fast.js']
-    if filename in protected_files:
-        return jsonify({"success": False, "message": "No se puede eliminar este archivo crítico"})
-    
-    try:
-        file_path = os.path.join('static', filename)
-        if os.path.exists(file_path):
-            os.remove(file_path)
-            return jsonify({"success": True, "message": "Archivo eliminado correctamente"})
-        else:
-            return jsonify({"success": False, "message": "Archivo no encontrado"})
-    except Exception as e:
-        return jsonify({"success": False, "message": f"Error al eliminar: {str(e)}"})
-
 # --- RUTAS DE GESTIÓN DE PRODUCTOS ---
 @app.route("/admin/productos")
 def admin_productos():
@@ -1683,6 +1615,101 @@ def admin_delete_product(product_id):
         flash("Producto no encontrado.", "error")
 
     return redirect(url_for("admin_productos"))
+
+@app.route("/admin/productos/delete_image", methods=["POST"])
+def admin_delete_image():
+    if not session.get("logged_in"):
+        return jsonify({"success": False, "message": "No autorizado"})
+
+    data = request.get_json()
+    product_id = data.get("product_id")
+    image_name = data.get("image_name")
+
+    if not all([product_id, image_name]):
+        return jsonify({"success": False, "message": "Datos incompletos"})
+
+    productos = cargar_productos()
+    if product_id not in productos:
+        return jsonify({"success": False, "message": "Producto no encontrado"})
+
+    # Evitar que se elimine la imagen principal si es la única que queda
+    if productos[product_id].get("imagen") == image_name:
+        if not productos[product_id].get("imagenes_adicionales"):
+             return jsonify({"success": False, "message": "No se puede eliminar la única imagen del producto."})
+
+        # Si hay imagenes adicionales, la primera se vuelve la principal
+        new_main_image = list(productos[product_id]['imagenes_adicionales'].values())[0]
+        productos[product_id]['imagen'] = new_main_image
+        # Y la eliminamos de las adicionales
+
+        # Encontrar la key de la imagen
+        key_to_delete = None
+        for key, name in productos[product_id]['imagenes_adicionales'].items():
+            if name == new_main_image:
+                key_to_delete = key
+                break
+        if key_to_delete:
+            del productos[product_id]['imagenes_adicionales'][key_to_delete]
+
+    else:
+        # Eliminar de imagenes_adicionales
+        key_to_delete = None
+        for key, name in productos[product_id].get('imagenes_adicionales', {}).items():
+            if name == image_name:
+                key_to_delete = key
+                break
+        if key_to_delete:
+            del productos[product_id]['imagenes_adicionales'][key_to_delete]
+        else:
+            return jsonify({"success": False, "message": "Imagen no encontrada en las imágenes adicionales."})
+
+    guardar_productos(productos)
+
+    # Opcional: eliminar el archivo de imagen del servidor
+    try:
+        os.remove(os.path.join('static', image_name))
+    except OSError as e:
+        # No bloquear si el archivo no se encuentra
+        print(f"Error al eliminar el archivo de imagen: {e}")
+
+    return jsonify({"success": True, "message": "Imagen eliminada."})
+
+@app.route("/admin/productos/set_main_image", methods=["POST"])
+def admin_set_main_image():
+    if not session.get("logged_in"):
+        return jsonify({"success": False, "message": "No autorizado"})
+
+    data = request.get_json()
+    product_id = data.get("product_id")
+    new_main_image_name = data.get("image_name")
+
+    if not all([product_id, new_main_image_name]):
+        return jsonify({"success": False, "message": "Datos incompletos"})
+
+    productos = cargar_productos()
+    if product_id not in productos:
+        return jsonify({"success": False, "message": "Producto no encontrado"})
+
+    current_main_image = productos[product_id].get("imagen")
+
+    # La nueva imagen principal debe estar en las adicionales
+    key_to_move = None
+    for key, name in productos[product_id].get('imagenes_adicionales', {}).items():
+        if name == new_main_image_name:
+            key_to_move = key
+            break
+
+    if not key_to_move:
+        return jsonify({"success": False, "message": "La imagen seleccionada no es una imagen adicional."})
+
+    # Hacemos el intercambio
+    # La antigua principal pasa a ser adicional
+    productos[product_id]['imagenes_adicionales'][key_to_move] = current_main_image
+    # La nueva adicional se convierte en principal
+    productos[product_id]['imagen'] = new_main_image_name
+
+    guardar_productos(productos)
+    return jsonify({"success": True, "message": "Imagen principal actualizada."})
     
 def guardar_productos(productos):
     """Guardar productos en el archivo JSON"""

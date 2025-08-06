@@ -279,191 +279,175 @@
         {% for product_id, product in productos.items() %}
         <div class="product-card" data-product-id="{{ product_id }}">
             <div class="product-images">
-                <!-- Imagen principal -->
-                <img src="{{ url_for('static', filename=product.imagen) }}" 
-                     alt="{{ product.nombre }}" 
-                     class="main-image"
-                     onclick="openGalleryModal('{{ product_id }}', 0)"
-                     onerror="this.src='{{ url_for('static', filename='placeholder.png') }}'">
-                
-                <!-- Galería de imágenes adicionales -->
+                <img src="{{ url_for('static', filename=product.imagen) }}" alt="{{ product.nombre }}" class="main-image" onerror="this.src='{{ url_for('static', filename='placeholder.png') }}'">
                 <div class="image-gallery">
                     {% if product.get('imagenes_adicionales') %}
                         {% for img_index, img_name in product.imagenes_adicionales.items() %}
-                        <img src="{{ url_for('static', filename=img_name) }}" 
-                             alt="Imagen {{ img_index }}" 
-                             class="gallery-thumb"
-                             onclick="openGalleryModal('{{ product_id }}', {{ img_index }})"
-                             onerror="this.style.display='none'">
+                        <img src="{{ url_for('static', filename=img_name) }}" alt="Imagen {{ img_index }}" class="gallery-thumb" onerror="this.style.display='none'">
                         {% endfor %}
                     {% endif %}
-                    
-                    <!-- Botón para agregar más imágenes -->
-                    <button class="add-image-btn" onclick="addProductImage('{{ product_id }}')">+</button>
                 </div>
-                
-                <!-- Input oculto para subir imágenes -->
-                <input type="file" 
-                       id="image-input-{{ product_id }}" 
-                       accept="image/*" 
-                       multiple 
-                       style="display: none;"
-                       onchange="uploadProductImages('{{ product_id }}', this.files)">
             </div>
             
             <div class="product-info">
                 <div class="product-name">{{ product.nombre }}</div>
-                
                 <div class="product-details">
                     <strong>ID:</strong> {{ product_id }}<br>
                     <strong>Precio:</strong> ${{ product.precio if product.precio else 'N/A' }}<br>
-                    <strong>Stock:</strong> {{ product.stock if product.stock is defined else 'N/A' }}<br>
-                    <strong>Orden:</strong> {{ product.orden if product.orden else 'N/A' }}<br>
-                    {% if product.get('promocion') %}
-                        <strong style="color: #ffcc00;">🏷️ PROMOCIÓN</strong><br>
-                    {% endif %}
-                    {% if product.get('bundle_items') %}
-                        <strong style="color: #00ff00;">📦 BUNDLE</strong><br>
-                        <div style="font-size: 8px; margin-top: 5px;">
-                            {% for item_id, cantidad in product.bundle_items.items() %}
-                                • {{ cantidad }}x {{ item_id }}<br>
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-                    {% if product.get('variaciones') %}
-                        <strong style="color: #00ffff;">🔄 VARIACIONES</strong><br>
-                        <div style="font-size: 8px; margin-top: 5px;">
-                            {% for var_name, var_data in product.variaciones.items() %}
-                                • {{ var_name }}: ${{ var_data.precio }} (Stock: {{ var_data.stock }})<br>
-                            {% endfor %}
-                        </div>
-                    {% endif %}
+                    <strong>Stock:</strong> {{ product.stock if product.stock is defined else 'N/A' }}
                 </div>
             </div>
             
             <div class="product-actions">
-                <button class="action-btn" onclick="editProduct('{{ product_id }}')">✏️ Editar</button>
+                <a href="{{ url_for('admin_editar_producto', product_id=product_id) }}" class="action-btn">✏️ Editar Detalles</a>
+                <button class="action-btn" onclick="openImageManager('{{ product_id }}')">🖼️ Gestionar Imágenes</button>
                 <form id="delete-form-{{ product_id }}" action="{{ url_for('admin_delete_product', product_id=product_id) }}" method="POST" style="display: none;"></form>
-                <button class="action-btn delete" onclick="deleteProduct('{{ product_id }}')">🗑️ Eliminar</button>
+                <button class="action-btn delete" onclick="deleteProduct('{{ product_id }}')">🗑️ Eliminar Producto</button>
             </div>
         </div>
         {% endfor %}
         
         <div style="text-align: center; margin-top: 30px;">
-            <button class="action-btn" style="width: 200px; font-size: 10px;" onclick="addNewProduct()">
+            <a href="{{ url_for('admin_agregar_producto') }}" class="action-btn" style="width: 200px; font-size: 10px; display: inline-block; text-decoration: none;">
                 ➕ AGREGAR NUEVO PRODUCTO
-            </button>
+            </a>
         </div>
     </div>
-    
-    <!-- Modal de galería -->
-    <div id="gallery-modal" class="gallery-modal modal-hidden">
-        <div class="modal-content">
-            <button class="modal-close" onclick="closeGalleryModal()">×</button>
-            <button class="modal-nav prev" onclick="prevImage()">‹</button>
-            <img id="modal-gallery-image" class="modal-image" src="" alt="">
-            <button class="modal-nav next" onclick="nextImage()">›</button>
-            <div class="modal-info">
-                <span id="modal-image-info"></span>
+
+    <!-- Modal para gestionar imágenes -->
+    <div id="image-manager-modal" class="modal-hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10000; display: flex; justify-content: center; align-items: center;">
+        <div style="background: #222; border: 4px solid #6f42c1; border-radius: 10px; padding: 20px; max-width: 800px; width: 90%; max-height: 90vh; overflow-y: auto;">
+            <h3 id="image-manager-title" style="color: #6f42c1; margin-bottom: 20px;">Gestionar Imágenes</h3>
+            <div id="image-manager-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 15px;">
+                <!-- Las imágenes se cargarán aquí con JavaScript -->
             </div>
+            <div style="margin-top: 20px;">
+                <label for="image-upload-input" class="action-btn" style="display: block; text-align: center; cursor: pointer;">➕ Añadir Nuevas Imágenes</label>
+                <input type="file" id="image-upload-input" accept="image/*" multiple style="display: none;">
+            </div>
+            <button onclick="closeImageManager()" style="background: #dc3545; color: #fff; border: none; padding: 8px 15px; border-radius: 5px; font-size: 8px; cursor: pointer; margin-top: 20px;">Cerrar</button>
         </div>
     </div>
     
     <script>
-        let currentProductImages = {};
-        let currentImageIndex = 0;
-        let currentProductId = '';
-        
-        // Cargar todas las imágenes de productos
-        {% for product_id, product in productos.items() %}
-        currentProductImages['{{ product_id }}'] = [
-            '{{ product.imagen }}'
-            {% if product.get('imagenes_adicionales') %}
-                {% for img_index, img_name in product.imagenes_adicionales.items() %}
-                    , '{{ img_name }}'
-                {% endfor %}
-            {% endif %}
-        ];
-        {% endfor %}
-        
-        function openGalleryModal(productId, imageIndex) {
-            currentProductId = productId;
-            currentImageIndex = imageIndex;
-            
-            const images = currentProductImages[productId];
-            if (images && images[imageIndex]) {
-                document.getElementById('modal-gallery-image').src = "{{ url_for('static', filename='') }}" + images[imageIndex];
-                document.getElementById('modal-image-info').textContent = `${imageIndex + 1} de ${images.length}`;
-                document.getElementById('gallery-modal').classList.remove('modal-hidden');
-            }
-        }
-        
-        function closeGalleryModal() {
-            document.getElementById('gallery-modal').classList.add('modal-hidden');
-        }
-        
-        function prevImage() {
-            const images = currentProductImages[currentProductId];
-            if (images && images.length > 1) {
-                currentImageIndex = (currentImageIndex - 1 + images.length) % images.length;
-                document.getElementById('modal-gallery-image').src = "{{ url_for('static', filename='') }}" + images[currentImageIndex];
-                document.getElementById('modal-image-info').textContent = `${currentImageIndex + 1} de ${images.length}`;
-            }
-        }
-        
-        function nextImage() {
-            const images = currentProductImages[currentProductId];
-            if (images && images.length > 1) {
-                currentImageIndex = (currentImageIndex + 1) % images.length;
-                document.getElementById('modal-gallery-image').src = "{{ url_for('static', filename='') }}" + images[currentImageIndex];
-                document.getElementById('modal-image-info').textContent = `${currentImageIndex + 1} de ${images.length}`;
-            }
-        }
-        
-        function addProductImage(productId) {
-            document.getElementById(`image-input-${productId}`).click();
-        }
-        
-        function uploadProductImages(productId, files) {
-            if (files.length === 0) return;
-            
-            const formData = new FormData();
-            formData.append('product_id', productId);
-            
-            for (let i = 0; i < files.length; i++) {
-                formData.append('images', files[i]);
-            }
-            
-            fetch('/admin/upload-product-images', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('Imágenes subidas correctamente');
-                    location.reload();
-                } else {
-                    alert('Error al subir imágenes: ' + data.message);
-                }
-            })
-            .catch(error => {
-                alert('Error al subir imágenes');
-            });
-        }
-        
-        function editProduct(productId) {
-            window.location.href = '/admin/editar-producto/' + productId;
-        }
-        
+        let currentManagedProduct = '';
+
         function deleteProduct(productId) {
-            if (confirm(`¿Estás seguro de eliminar el producto ${productId}?`)) {
+            if (confirm(`¿Estás seguro de eliminar el producto ${productId}? Esta acción no se puede deshacer.`)) {
                 document.getElementById(`delete-form-${productId}`).submit();
             }
         }
-        
-        function addNewProduct() {
-            window.location.href = "{{ url_for('admin_agregar_producto') }}";
+
+        function openImageManager(productId) {
+            currentManagedProduct = productId;
+            const modal = document.getElementById('image-manager-modal');
+            const grid = document.getElementById('image-manager-grid');
+            const title = document.getElementById('image-manager-title');
+
+            title.textContent = `Gestionar Imágenes para: ${productId}`;
+            grid.innerHTML = 'Cargando...'; // Muestra un mensaje de carga
+
+            // Obtener datos del producto (necesitamos la lista de imágenes)
+            const productData = {{ productos|tojson }};
+            const product = productData[productId];
+
+            if (!product) {
+                grid.innerHTML = 'Error: Producto no encontrado.';
+                modal.classList.remove('modal-hidden');
+                return;
+            }
+
+            let imagesHTML = '';
+            const mainImage = product.imagen;
+            const additionalImages = product.imagenes_adicionales || {};
+
+            // Añadir imagen principal
+            imagesHTML += createImageCard(mainImage, productId, true);
+
+            // Añadir imágenes adicionales
+            for (const key in additionalImages) {
+                imagesHTML += createImageCard(additionalImages[key], productId, false);
+            }
+
+            grid.innerHTML = imagesHTML;
+            modal.classList.remove('modal-hidden');
+
+            // Configurar el input de subida
+            const uploadInput = document.getElementById('image-upload-input');
+            uploadInput.onchange = function(event) {
+                uploadNewImages(productId, event.target.files);
+            };
+        }
+
+        function createImageCard(imageName, productId, isMain) {
+            return `
+                <div class="image-card" style="background: #333; padding: 10px; border-radius: 5px; text-align: center; position: relative;">
+                    <img src="/static/${imageName}" style="width: 100%; height: 80px; object-fit: cover; border-radius: 4px;">
+                    ${isMain ? '<div style="position: absolute; top: 5px; right: 5px; background: #6f42c1; color: white; font-size: 7px; padding: 2px 4px; border-radius: 3px;">PRINCIPAL</div>' : ''}
+                    <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 5px;">
+                        ${!isMain ? `<button class="action-btn" style="font-size: 7px;" onclick="setAsMainImage('${productId}', '${imageName}')">⭐ Principal</button>` : ''}
+                        <button class="action-btn delete" style="font-size: 7px;" onclick="deleteProductImage('${productId}', '${imageName}')">🗑️ Eliminar</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function closeImageManager() {
+            document.getElementById('image-manager-modal').classList.add('modal-hidden');
+            currentManagedProduct = '';
+        }
+
+        async function uploadNewImages(productId, files) {
+            if (files.length === 0) return;
+            const formData = new FormData();
+            formData.append('product_id', productId);
+            for (let i = 0; i < files.length; i++) {
+                formData.append('images', files[i]);
+            }
+
+            const response = await fetch('/admin/upload-product-images', {
+                method: 'POST',
+                body: formData
+            });
+            const result = await response.json();
+            if (result.success) {
+                alert(result.message);
+                location.reload(); // Recargar para ver los cambios
+            } else {
+                alert('Error: ' + result.message);
+            }
+        }
+
+        async function deleteProductImage(productId, imageName) {
+            if (!confirm(`¿Seguro que quieres eliminar la imagen ${imageName}?`)) return;
+
+            const response = await fetch('/admin/productos/delete_image', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ product_id: productId, image_name: imageName })
+            });
+            const result = await response.json();
+            if (result.success) {
+                alert(result.message);
+                location.reload();
+            } else {
+                alert('Error: ' + result.message);
+            }
+        }
+
+        async function setAsMainImage(productId, imageName) {
+            const response = await fetch('/admin/productos/set_main_image', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ product_id: productId, image_name: imageName })
+            });
+            const result = await response.json();
+            if (result.success) {
+                alert(result.message);
+                location.reload();
+            } else {
+                alert('Error: ' + result.message);
+            }
         }
         
         // Cerrar modal con Escape
