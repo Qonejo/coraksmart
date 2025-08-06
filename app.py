@@ -42,10 +42,10 @@ def cargar_configuracion():
             "whatsapp_principal": "5215513361764", 
             "whatsapp_secundario": "",
             "whatsapp_1": "5215513361764",
-            "whatsapp_2": "",
+            "whatsapp_2": "5215625877420",
             "whatsapp_3": "",
             "whatsapp_1_nombre": "Principal",
-            "whatsapp_2_nombre": "Secundario",
+            "whatsapp_2_nombre": "Rub",
             "whatsapp_3_nombre": "Terciario"
         }
 

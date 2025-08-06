@@ -161,11 +161,11 @@ COMPRA
         {% for id, prod in PRODUCTOS_ORDENADOS %}
         setProductGallery('{{ id }}', [
             '{{ prod.imagen }}'
-            {% if prod.get('imagenes_adicionales') %}
-                {% for img_index, img_name in prod.imagenes_adicionales.items() %}
+            {%- if prod.get('imagenes_adicionales') -%}
+                {%- for img_index, img_name in prod.imagenes_adicionales.items() -%}
                     , '{{ img_name }}'
-                {% endfor %}
-            {% endif %}
+                {%- endfor -%}
+            {%- endif -%}
         ]);
         {% endfor %}
     </script>
@@ -173,7 +173,7 @@ COMPRA
     <!-- Script para el sistema de nivel -->
     <script>
         // Verificar si el usuario subió de nivel
-        {% if aura_data.progress_bar and aura_data.progress_bar.get('level_up') %}
+        {%- if aura_data.progress_bar and aura_data.progress_bar.get('level_up') %}
         window.addEventListener('load', function() {
             showLevelUpModal(
                 {{ aura_data.level_info.level }}, 
@@ -181,7 +181,7 @@ COMPRA
                 "{{ aura_data.level_info.character_gif }}"
             );
         });
-        {% endif %}
+        {%- endif %}
         
         function showLevelUpModal(level, reward, characterGif) {
             document.getElementById('level-character').src = "{{ url_for('static', filename='') }}" + characterGif;
