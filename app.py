@@ -1599,7 +1599,7 @@ def admin_agregar_producto():
             counter += 1
         
         # Crear producto
-        productos[product_id] = {
+        nuevo_producto = {
             "nombre": nombre,
             "descripcion": descripcion,
             "precio": precio,
@@ -1608,6 +1608,11 @@ def admin_agregar_producto():
             "whatsapp_asignado": whatsapp_asignado,
             "orden": max([p.get("orden", 0) for p in productos.values()], default=0) + 1
         }
+
+        if 'promocion' in request.form:
+            nuevo_producto['promocion'] = True
+
+        productos[product_id] = nuevo_producto
         
         guardar_productos(productos)
         flash(f"Producto '{nombre}' agregado exitosamente.", "success")
@@ -1625,15 +1630,61 @@ def admin_editar_producto(product_id):
         return redirect(url_for("admin_productos"))
     
     if request.method == "POST":
-        # Actualizar datos del producto
+        # Actualizar datos básicos
         productos[product_id]["nombre"] = request.form.get("nombre")
         productos[product_id]["descripcion"] = request.form.get("descripcion", "")
-        productos[product_id]["precio"] = float(request.form.get("precio"))
         productos[product_id]["whatsapp_asignado"] = request.form.get("whatsapp_asignado", "1")
+
+        product_type = request.form.get('product_type')
+
+        if product_type == 'simple':
+            # Guardar como producto simple
+            productos[product_id]['precio'] = float(request.form.get('precio', 0))
+            productos[product_id]['stock'] = int(request.form.get('stock', 0))
+            if 'variaciones' in productos[product_id]:
+                del productos[product_id]['variaciones']
         
-        if not productos[product_id].get("bundle_items"):  # Solo actualizar stock si no es bundle
-            productos[product_id]["stock"] = int(request.form.get("stock"))
-        
+        elif product_type == 'variable':
+            # Guardar como producto con variaciones
+            new_variations = {}
+            form_data = request.form.to_dict()
+            variations_by_index = {}
+
+            for key, value in form_data.items():
+                if 'variation-' in key:
+                    parts = key.split('-')
+                    v_type = parts[1]
+                    v_index = parts[2]
+                    if v_index not in variations_by_index:
+                        variations_by_index[v_index] = {}
+                    variations_by_index[v_index][v_type] = value
+
+            for index, var_data in variations_by_index.items():
+                name = var_data.get('name')
+                price_str = var_data.get('price')
+                stock_str = var_data.get('stock')
+                if name and price_str and stock_str:
+                    try:
+                        new_variations[name] = {
+                            'precio': float(price_str),
+                            'stock': int(stock_str)
+                        }
+                    except (ValueError, TypeError):
+                        continue
+
+            productos[product_id]['variaciones'] = new_variations
+            if 'precio' in productos[product_id]:
+                del productos[product_id]['precio']
+            if 'stock' in productos[product_id]:
+                del productos[product_id]['stock']
+
+        # Handle promotion checkbox
+        if 'promocion' in request.form:
+            productos[product_id]['promocion'] = True
+        else:
+            if 'promocion' in productos[product_id]:
+                del productos[product_id]['promocion']
+
         # Manejar nueva imagen si se subió
         imagen = request.files.get("imagen")
         if imagen and imagen.filename:
@@ -1646,6 +1697,20 @@ def admin_editar_producto(product_id):
         return redirect(url_for("admin_productos"))
     
     return render_template("edit_product.html", producto=productos[product_id], product_id=product_id, config=CONFIG)
+
+@app.route("/admin/eliminar-producto/<product_id>", methods=["POST"])
+def admin_eliminar_producto(product_id):
+    if not session.get("logged_in"):
+        return jsonify({"success": False, "message": "No autorizado"}), 401
+
+    productos = cargar_productos()
+
+    if product_id in productos:
+        del productos[product_id]
+        guardar_productos(productos)
+        return jsonify({"success": True, "message": "Producto eliminado exitosamente"})
+    else:
+        return jsonify({"success": False, "message": "Producto no encontrado"}), 404
 
 @app.route("/admin/upload-logo", methods=["POST"])
 def admin_upload_logo():
