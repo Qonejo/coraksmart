@@ -865,8 +865,12 @@ def procesar_pedido():
         "nombre": CONFIG.get(f'whatsapp_{whatsapp_id}_nombre', 'Principal')
     }
     
-    flash(f"¡Pedido realizado con éxito! Podrás ganar {aura_total} puntos de Aura cuando sea confirmado.", "success")
-    return redirect(whatsapp_link)
+    # En lugar de redirigir, devolver JSON para que el frontend maneje la lógica
+    return jsonify({
+        "success": True,
+        "message": f"¡Pedido realizado con éxito! Podrás ganar {aura_total} puntos de Aura cuando sea confirmado.",
+        "whatsapp_link": whatsapp_link
+    })
 
 # --- RUTA PARA RECLAMAR RECOMPENSAS ---
 @app.route("/reclamar_recompensa", methods=["POST"])

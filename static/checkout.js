@@ -309,3 +309,42 @@ function validateForm() {
         submitBtn.style.color = '#666';
     }
 }
+
+document.getElementById('checkout-form').addEventListener('submit', async function(e) {
+    e.preventDefault(); // Prevenir el envío tradicional del formulario
+
+    const submitBtn = document.getElementById('submit-btn');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Procesando...';
+
+    const form = e.target;
+    const formData = new FormData(form);
+
+    try {
+        const response = await fetch(form.action, {
+            method: 'POST',
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            // 1. Abrir el enlace de WhatsApp en una nueva pestaña
+            window.open(data.whatsapp_link, '_blank');
+
+            // 2. Mostrar un mensaje de éxito y redirigir la página original
+            alert(data.message);
+            window.location.href = '/'; // Redirigir a la página de inicio
+
+        } else {
+            alert('Error al procesar el pedido: ' + (data.message || 'Ocurrió un error.'));
+            submitBtn.disabled = false;
+            validateForm(); // Re-evaluar el estado del botón
+        }
+    } catch (error) {
+        console.error('Error en el fetch:', error);
+        alert('Error de conexión al procesar el pedido. Por favor, intenta de nuevo.');
+        submitBtn.disabled = false;
+        validateForm(); // Re-evaluar el estado del botón
+    }
+});
