@@ -1116,15 +1116,14 @@ def admin_configuracion():
         config = cargar_configuracion()
         
         # Actualizar configuración
-        config["horarios_atencion"] = request.form.get("horarios_atencion", config.get("horarios_atencion", ""))
-        config["whatsapp_principal"] = request.form.get("whatsapp_principal", config.get("whatsapp_principal", ""))
-        config["whatsapp_secundario"] = request.form.get("whatsapp_secundario", config.get("whatsapp_secundario", ""))
-        config["whatsapp_1"] = request.form.get("whatsapp_1", config.get("whatsapp_1", ""))
-        config["whatsapp_2"] = request.form.get("whatsapp_2", config.get("whatsapp_2", ""))
-        config["whatsapp_3"] = request.form.get("whatsapp_3", config.get("whatsapp_3", ""))
-        config["whatsapp_1_nombre"] = request.form.get("whatsapp_1_nombre", config.get("whatsapp_1_nombre", ""))
-        config["whatsapp_2_nombre"] = request.form.get("whatsapp_2_nombre", config.get("whatsapp_2_nombre", ""))
-        config["whatsapp_3_nombre"] = request.form.get("whatsapp_3_nombre", config.get("whatsapp_3_nombre", ""))
+        keys_to_update = [
+            "horarios_atencion", "whatsapp_principal", "whatsapp_secundario",
+            "whatsapp_1", "whatsapp_2", "whatsapp_3",
+            "whatsapp_1_nombre", "whatsapp_2_nombre", "whatsapp_3_nombre"
+        ]
+        for key in keys_to_update:
+            if key in request.form:
+                config[key] = request.form.get(key)
         
         # Guardar configuración en archivo
         guardar_configuracion(config)
