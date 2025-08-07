@@ -31,17 +31,52 @@
             <textarea name="descripcion" id="descripcion" rows="4">{{ producto.get('descripcion', '') }}</textarea>
         </p>
 
-        <!-- Solo mostramos precio/stock para productos simples. La gestión de variaciones se haría aquí en el futuro. -->
-        {% if not producto.variaciones %}
+        <div class="form-section">
+            <label>Tipo de Producto:</label>
+            <select id="product-type-selector" name="product_type" style="width: auto;">
+                <option value="simple" {% if not producto.variaciones %}selected{% endif %}>Simple (un solo precio/stock)</option>
+                <option value="variable" {% if producto.variaciones %}selected{% endif %}>Con Variaciones (diferentes precios/stocks)</option>
+            </select>
+        </div>
+
+        <!-- Campos para producto simple -->
+        <div id="simple-product-fields" class="form-section" {% if producto.variaciones %}style="display: none;"{% endif %}>
+            <label>Producto Simple:</label>
+            <p>
+                <label for="precio">Precio:</label>
+                <input type="number" name="precio" id="precio" step="0.01" value="{{ producto.precio if producto.precio is defined else '' }}">
+            </p>
+            <p>
+                <label for="stock">Stock:</label>
+                <input type="number" name="stock" id="stock" value="{{ producto.stock if producto.stock is defined else '' }}">
+            </p>
+        </div>
+
+        <!-- Campos para producto con variaciones -->
+        <div id="variable-product-fields" class="form-section" {% if not producto.variaciones %}style="display: none;"{% endif %}>
+            <label>Variaciones:</label>
+            <div id="variations-container">
+                {% if producto.variaciones %}
+                    {% for name, data in producto.variaciones.items() %}
+                    <div class="variation-row">
+                        <input type="hidden" name="variation-key-{{ loop.index }}" value="{{ name }}">
+                        <input type="text" name="variation-name-{{ loop.index }}" placeholder="Nombre Variación (ej. 28gr)" value="{{ name }}">
+                        <input type="number" name="variation-price-{{ loop.index }}" placeholder="Precio" step="0.01" value="{{ data.precio }}">
+                        <input type="number" name="variation-stock-{{ loop.index }}" placeholder="Stock" value="{{ data.stock }}">
+                        <button type="button" class="btn-remove-variation" onclick="this.parentElement.remove()">Eliminar</button>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+            <button type="button" class="btn-add-variation" onclick="addVariation()">+ Agregar Variación</button>
+        </div>
+
         <p>
-            <label for="precio">Precio:</label>
-            <input type="number" name="precio" id="precio" step="0.01" value="{{ producto.precio }}" required>
+            <label for="promocion" style="display: flex; align-items: center; gap: 10px;">
+                <input type="checkbox" name="promocion" id="promocion" value="true" {% if producto.get('promocion') %}checked{% endif %} style="width: auto;">
+                Marcar como Promoción 🏷️
+            </label>
         </p>
-        <p>
-            <label for="stock">Stock:</label>
-            <input type="number" name="stock" id="stock" value="{{ producto.stock }}" required>
-        </p>
-        {% endif %}
 
         <p>
             Imagen Actual: <img src="{{ url_for('static', filename=producto.imagen) }}" style="max-width: 100px;"><br><br>
@@ -59,5 +94,34 @@
         <button type="submit">Guardar Cambios</button>
         <a href="{{ url_for('admin_view') }}" class="btn">Cancelar</a>
     </form>
+
+    <script>
+        document.getElementById('product-type-selector').addEventListener('change', function() {
+            if (this.value === 'simple') {
+                document.getElementById('simple-product-fields').style.display = 'block';
+                document.getElementById('variable-product-fields').style.display = 'none';
+            } else {
+                document.getElementById('simple-product-fields').style.display = 'none';
+                document.getElementById('variable-product-fields').style.display = 'block';
+            }
+        });
+
+        let variationCounter = {{ (producto.variaciones|length if producto.variaciones else 0) + 1 }};
+        function addVariation() {
+            const container = document.getElementById('variations-container');
+            const newRow = document.createElement('div');
+            newRow.className = 'variation-row';
+            // Use "new" as a key for brand new variations. The backend will handle this.
+            newRow.innerHTML = `
+                <input type="hidden" name="variation-key-${variationCounter}" value="new-${variationCounter}">
+                <input type="text" name="variation-name-${variationCounter}" placeholder="Nombre Variación (ej. 28gr)" value="">
+                <input type="number" name="variation-price-${variationCounter}" placeholder="Precio" step="0.01" value="">
+                <input type="number" name="variation-stock-${variationCounter}" placeholder="Stock" value="">
+                <button type="button" class="btn-remove-variation" onclick="this.parentElement.remove()">Eliminar</button>
+            `;
+            container.appendChild(newRow);
+            variationCounter++;
+        }
+    </script>
 </body>
 </html>

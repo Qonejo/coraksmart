@@ -453,24 +453,42 @@
         }
         
         function editProduct(productId) {
-            // Implementar modal de edición o redirigir a página de edición
-            alert(`Función de edición para ${productId} - Por implementar`);
+            window.location.href = `/admin/editar-producto/${productId}`;
         }
         
         function manageImages(productId) {
-            alert(`Gestión de imágenes para ${productId} - Por implementar`);
+            alert(`Función de gestión de imágenes para '${productId}' aún no implementada.`);
         }
-        
-        function deleteProduct(productId) {
-            if (confirm(`¿Estás seguro de eliminar el producto ${productId}?`)) {
-                // Implementar eliminación
-                alert(`Eliminación de ${productId} - Por implementar`);
+
+        async function deleteProduct(productId) {
+            if (confirm(`¿Estás seguro de que quieres eliminar el producto '${productId}'? Esta acción no se puede deshacer.`)) {
+                try {
+                    const response = await fetch(`/admin/eliminar-producto/${productId}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        alert(data.message);
+                        // Eliminar la tarjeta del producto de la vista
+                        const card = document.querySelector(`.product-card[data-product-id="${productId}"]`);
+                        if (card) {
+                            card.remove();
+                        }
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                } catch (error) {
+                    console.error('Error al eliminar producto:', error);
+                    alert('Ocurrió un error de red.');
+                }
             }
         }
         
         function addNewProduct() {
-            // Implementar modal o página para agregar producto
-            alert('Agregar nuevo producto - Por implementar');
+            window.location.href = "{{ url_for('admin_agregar_producto') }}";
         }
         
         // Cerrar modal con Escape
