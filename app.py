@@ -865,8 +865,12 @@ def procesar_pedido():
         "nombre": CONFIG.get(f'whatsapp_{whatsapp_id}_nombre', 'Principal')
     }
     
-    flash(f"¡Pedido realizado con éxito! Podrás ganar {aura_total} puntos de Aura cuando sea confirmado.", "success")
-    return redirect(whatsapp_link)
+    # En lugar de redirigir, devolver JSON para que el frontend maneje la lógica
+    return jsonify({
+        "success": True,
+        "message": f"¡Pedido realizado con éxito! Podrás ganar {aura_total} puntos de Aura cuando sea confirmado.",
+        "whatsapp_link": whatsapp_link
+    })
 
 # --- RUTA PARA RECLAMAR RECOMPENSAS ---
 @app.route("/reclamar_recompensa", methods=["POST"])
@@ -1135,7 +1139,8 @@ def admin_configuracion():
         flash("Configuración actualizada con éxito.", "success")
         return redirect(url_for("admin_configuracion"))
     
-    return render_template("admin_config.html", config=CONFIG)
+    # Always load fresh config for rendering to avoid stale data in multi-worker setups
+    return render_template("admin_config.html", config=cargar_configuracion())
 
 @app.route("/admin/reset-password", methods=["POST"])
 def admin_reset_user_password():
