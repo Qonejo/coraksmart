@@ -94,13 +94,13 @@ def cargar_aura_levels():
     except (FileNotFoundError, json.JSONDecodeError):
         return [
             {"level": 0, "points_needed": -float('inf'), "flame_color": "black",  "name": "Bandido", "prize": "No hay recompensas en este nivel", "character_size": 96},
-            {"level": 1, "points_needed": 5000,         "flame_color": "white",  "name": "Vampiro ojón", "prize": "1 Gomita gratis", "character_size": 96},
-            {"level": 2, "points_needed": 7000,      "flame_color": "blue",   "name": "Avispa mutante", "prize": "5% descuento en tu próxima compra", "character_size": 96},
-            {"level": 3, "points_needed": 9030,      "flame_color": "green",  "name": "Lombriz mounstro", "prize": "Salvia + 1", "character_size": 96},
-            {"level": 4, "points_needed": 15270,     "flame_color": "yellow", "name": "Perrodragón", "prize": "10% descuento en tu próxima compra", "character_size": 96},
-            {"level": 5, "points_needed": 19820,     "flame_color": "orange", "name": "Brujo runero", "prize": "1 Olla", "character_size": 96},
-            {"level": 6, "points_needed": 24000,     "flame_color": "red",    "name": "Obelisco runa", "prize": "15% descuento en tu próxima compra", "character_size": 96},
-            {"level": 7, "points_needed": 33000,     "flame_color": "purple", "name": "Entidad", "prize": "1 Brownie + 1 Gomita + Media olla + 5% descuento en tu próxima compra", "character_size": 96}
+            {"level": 1, "points_needed": 9000,         "flame_color": "white",  "name": "Vampiro ojón", "prize": "1 Gomita gratis", "character_size": 96},
+            {"level": 2, "points_needed": 16000,      "flame_color": "blue",   "name": "Avispa mutante", "prize": "5% descuento en tu próxima compra", "character_size": 96},
+            {"level": 3, "points_needed": 21000,      "flame_color": "green",  "name": "Lombriz mounstro", "prize": "Salvia + 1", "character_size": 96},
+            {"level": 4, "points_needed": 30000,     "flame_color": "yellow", "name": "Perrodragón", "prize": "10% descuento en tu próxima compra", "character_size": 96},
+            {"level": 5, "points_needed": 39000,     "flame_color": "orange", "name": "Brujo runero", "prize": "1 Olla", "character_size": 96},
+            {"level": 6, "points_needed": 52000,     "flame_color": "red",    "name": "Obelisco runa", "prize": "15% descuento en tu próxima compra", "character_size": 96},
+            {"level": 7, "points_needed": 66000,     "flame_color": "purple", "name": "Entidad", "prize": "1 Brownie + 1 Gomita + Media olla + 5% descuento en tu próxima compra", "character_size": 96}
         ]
 
 def guardar_aura_levels(levels):
