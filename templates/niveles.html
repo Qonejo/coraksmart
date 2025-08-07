@@ -209,7 +209,7 @@
                              class="character-icon {% if aura_data.level_info.level == nivel.level %}current{% endif %}"
                              style="width: {{ nivel.character_size }}px; height: {{ nivel.character_size }}px;">
                     {% else %}
-                        <img src="{{ url_for('static', filename='f' + nivel.level|string + '.gif') }}" 
+                        <img src="{{ url_for('static', filename='f' ~ nivel.level ~ '.gif') }}"
                              alt="{{ nivel.name }}" 
                              class="character-icon {% if aura_data.level_info.level == nivel.level %}current{% endif %}"
                              style="width: {{ nivel.character_size }}px; height: {{ nivel.character_size }}px;">
