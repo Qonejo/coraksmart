@@ -7,29 +7,23 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Press Start 2P', cursive; background-color: #222; color: #fff; padding: 20px; }
+        body { font-family: 'Press Start 2P', cursive; background-color: #222; color: #fff; padding: 20px; font-size: 10px; }
         h1, h2 { border-bottom: 2px solid #fff; padding-bottom: 10px; }
-        h3.user-order-header { font-size: 1.5em; color: #ffcc00; border: none; margin-top: 0; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.8em; }
         th, td { border: 1px solid #888; padding: 10px; text-align: left; vertical-align: middle; }
         th { background-color: #444; }
-        img { max-width: 50px; height: auto; vertical-align: middle; margin-right: 10px; }
-        input[type="number"], input[type="checkbox"] { width: auto; padding: 5px; font-family: inherit; }
-        button, .btn { font-family: inherit; font-size: 0.8em; padding: 8px 12px; border: none; cursor: pointer; text-decoration: none; display: inline-block; border-radius: 4px; }
+        .btn { font-family: inherit; font-size: 0.8em; padding: 8px 12px; border: none; cursor: pointer; text-decoration: none; display: inline-block; border-radius: 4px; }
         .logout { float: right; text-decoration: none; color: #ffcc00; }
         .success-message { background-color: #28a745; color: white; padding: 10px; margin-bottom: 20px; border-radius: 5px; }
-        .variation-row td { background-color: #3a3a3a; padding-left: 30px; }
-        .pedido-completado { background-color: #1a4325; color: #a3ffc3; }
-        .pedido-completado td { border-color: #28a745; }
+
+        /* Estilos para la nueva tabla combinada */
+        .item-completado { background-color: #1a4325; color: #a3ffc3; }
+        .item-completado td { border-color: #28a745; }
+        .item-recompensa td { background-color: #3e3b1f; }
         .actions-cell form { display: inline; margin-left: 5px; }
-        .btn-add { background-color: #28a745; color: white; font-size: 1em; margin: 0 10px 20px 0; }
-        .btn-bundle { background-color: #fd7e14; color: white; font-size: 1em; margin-bottom: 20px; }
-        .btn-update-stock { background-color: #17a2b8; color: white; font-size: 1em; margin-top: 15px; }
-        .btn-edit { background-color: #007bff; color: white; }
         .btn-delete { background-color: #dc3545; color: white; }
-        .promo-cell { text-align: center; }
-        .user-order-section { margin-top: 40px; border: 2px solid #555; padding: 15px; border-radius: 8px; }
-        
+        .item-type-icon { font-size: 1.5em; text-align: center; }
+
         /* Estilos para el menú de navegación en columnas */
         a[href*="admin"]:hover { 
             transform: translateY(-2px); 
@@ -51,9 +45,6 @@
         <a href="{{ url_for('admin_aura_levels') }}" style="background: #ff6600; color: white; padding: 15px; text-decoration: none; border-radius: 8px; text-align: center; font-size: 12px; transition: all 0.3s; display: block;">
             🔥<br>Niveles Aura
         </a>
-        <a href="{{ url_for('admin_recompensas') }}" style="background: #ffd700; color: black; padding: 15px; text-decoration: none; border-radius: 8px; text-align: center; font-size: 12px; transition: all 0.3s; display: block;">
-            🎁<br>Recompensas
-        </a>
         <a href="{{ url_for('admin_media') }}" style="background: #28a745; color: white; padding: 15px; text-decoration: none; border-radius: 8px; text-align: center; font-size: 12px; transition: all 0.3s; display: block;">
             🖼️<br>Medios
         </a>
@@ -73,130 +64,125 @@
       {% endfor %}
     {% endwith %}
 
-    <h2>Gestionar Productos e Inventario</h2>
-    <a href="{{ url_for('admin_productos') }}"><button class="btn-add">📦 Gestión de Productos</button></a>
-    <a href="{{ url_for('admin_agregar_producto') }}"><button class="btn-add">➕ Agregar Producto</button></a>
+    <h2>Historial General</h2>
 
-    <!-- Tabla de vista de productos simplificada -->
-    <table>
-        <thead>
-            <tr>
-                <th>Producto</th>
-                <th>Stock Actual</th>
-                <th>Promoción</th>
-                <th>WhatsApp</th>
-                <th>Acciones</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for id, prod in PRODUCTOS_ORDENADOS %}
-                {% if prod.variaciones %}
-                    <tr>
-                        <td><img src="{{ url_for('static', filename=prod.imagen) }}"><strong>{{ prod.nombre }}</strong></td>
-                        <td><em>(Ver variaciones)</em></td>
-                        <td class="promo-cell">
-                            <input type="checkbox" {% if prod.get('promocion') %}checked{% endif %} disabled>
-                        </td>
-                        <td>{{ config.get('whatsapp_' + (prod.get('whatsapp_asignado', '1')) + '_nombre', 'Principal') }}</td>
-                        <td class="actions-cell">
-                            <a href="{{ url_for('admin_productos') }}" class="btn btn-edit">Gestionar</a>
-                            <a href="{{ url_for('admin_editar_producto', product_id=id) }}" class="btn btn-edit">✏️ Editar</a>
-                        </td>
-                    </tr>
-                    {% for var_id, var_data in prod.variaciones.items() %}
-                        <tr class="variation-row">
-                            <td style="padding-left: 40px;">- {{ var_id }}</td>
-                            <td>{{ var_data.stock }}</td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                        </tr>
-                    {% endfor %}
-                {% else %}
-                    <tr>
-                        <td><img src="{{ url_for('static', filename=prod.get('imagen', 'default.png')) }}">{{ prod.get('nombre', 'Nombre no encontrado') }}</td>
-                        <td>{{ prod.get('stock', 'N/A') }}</td>
-                        <td class="promo-cell">
-                            <input type="checkbox" {% if prod.get('promocion') %}checked{% endif %} disabled>
-                        </td>
-                        <td>{{ config.get('whatsapp_' + (prod.get('whatsapp_asignado', '1')) + '_nombre', 'Principal') }}</td>
-                        <td class="actions-cell">
-                            <a href="{{ url_for('admin_productos') }}" class="btn btn-edit">Gestionar</a>
-                            <a href="{{ url_for('admin_editar_producto', product_id=id) }}" class="btn btn-edit">✏️ Editar</a>
-                        </td>
-                    </tr>
-                {% endif %}
-            {% endfor %}
-        </tbody>
-    </table>
-
-    <h2>Historial de Pedidos</h2>
-
-    {% if not PEDIDOS_AGRUPADOS %}
-        <p>No hay pedidos todavía.</p>
+    {% if not historial %}
+        <p>No hay pedidos ni recompensas pendientes.</p>
     {% else %}
-        {% for emoji, pedidos_del_usuario in PEDIDOS_AGRUPADOS.items() %}
-            <div class="user-order-section">
-                <h3 class="user-order-header">Pedidos de: {{ emoji }}</h3>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>ID Pedido</th>
-                            <th>Fecha y Hora</th>
-                            <th>Detalle</th>
-                            <th>Total</th>
-                            <th>Aura</th>
-                            <th>Completado</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for pedido in pedidos_del_usuario %}
-                        <tr class="{% if pedido.completado %}pedido-completado{% endif %}">
-                            <td>{{ pedido.id }}</td>
-                            <td>{{ pedido.timestamp }}</td>
-                            <td>
-                                <ul>
-                                {% for prod_id, cantidad in pedido.detalle.items() %}
-                                    {% set parts = prod_id.split('-', 1) %}
-                                    {% set base_id = parts[0] %}
-                                    {% set variation_id = parts[1] if parts|length > 1 else none %}
-                                    {% set product_data = PRODUCTOS.get(base_id, {}) %}
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 5%;">Tipo</th>
+                    <th style="width: 5%;">Usuario</th>
+                    <th style="width: 20%;">Fecha</th>
+                    <th style="width: 40%;">Detalle</th>
+                    <th style="width: 10%;">Total</th>
+                    <th style="width: 10%;">Estado</th>
+                    <th style="width: 10%;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in historial %}
+                <tr id="item-{{ item.id }}" class="
+                    {% if item.status %}item-completado{% endif %}
+                    {% if item.type == 'recompensa' %}item-recompensa{% endif %}">
 
-                                    {% if variation_id and product_data.variaciones %}
-                                        <li>{{ cantidad }}x {{ product_data.get('nombre', 'Desconocido') }} ({{ variation_id }})</li>
-                                    {% else %}
-                                        <li>{{ cantidad }}x {{ product_data.get('nombre', 'Producto Desconocido') }}</li>
-                                    {% endif %}
-                                {% endfor %}
-                                </ul>
-                            </td>
-                            <td>${{ "%.2f"|format(pedido.total) }}</td>
-                            <td>
-                                {% if pedido.get('aura_otorgada') %}
-                                    <span style="color: #00ff00;">✅ {{ pedido.aura_otorgada }} pts</span>
-                                {% elif pedido.get('aura_potencial') %}
-                                    <span style="color: #ffcc00;">⏳ {{ pedido.aura_potencial }} pts</span>
-                                {% else %}
-                                    <span style="color: #888;">-- pts</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                <form action="{{ url_for('admin_completar_pedido', pedido_id=pedido.id) }}" method="POST" style="margin:0;">
-                                    <input type="checkbox" onchange="this.form.submit()" {% if pedido.completado %}checked{% endif %}>
-                                </form>
-                            </td>
-                            <td>
-                                <form action="{{ url_for('admin_delete_order', pedido_id=pedido.id) }}" method="POST" style="margin:0;" onsubmit="return confirm('¿Estás seguro de eliminar este pedido?')">
-                                    <button type="submit" class="btn btn-delete" style="font-size: 8px; padding: 4px 8px;">🗑️</button>
-                                </form>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        {% endfor %}
+                    <td class="item-type-icon">
+                        {% if item.type == 'pedido' %}🛒
+                        {% else %}🎁
+                        {% endif %}
+                    </td>
+
+                    <td>{{ item.user_emoji }}</td>
+                    <td>{{ item.timestamp_str }}</td>
+                    <td>{{ item.details }}</td>
+
+                    <td>
+                        {% if item.type == 'pedido' %}
+                            ${{ "%.2f"|format(item.total) }}
+                        {% else %}
+                            --
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        {% if item.type == 'pedido' %}
+                            <form action="{{ url_for('admin_completar_pedido', pedido_id=item.id) }}" method="POST" style="margin:0;">
+                                <input type="checkbox" onchange="this.form.submit()" {% if item.status %}checked{% endif %} title="Marcar pedido como completado/pendiente">
+                            </form>
+                        {% else %}
+                             <input type="checkbox" onchange="processReward('{{ item.data.user_emoji }}', {{ item.data.level }}, 'confirm')" title="Confirmar entrega de recompensa">
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        {% if item.type == 'pedido' %}
+                            <form action="{{ url_for('admin_delete_order', pedido_id=item.id) }}" method="POST" style="margin:0;" onsubmit="return confirm('¿Estás seguro de eliminar este pedido?')">
+                                <button type="submit" class="btn btn-delete" style="font-size: 8px; padding: 4px 8px;">🗑️</button>
+                            </form>
+                        {% else %}
+                            <button class="btn btn-delete" style="font-size: 8px; padding: 4px 8px;" onclick="processReward('{{ item.data.user_emoji }}', {{ item.data.level }}, 'reject')" title="Rechazar recompensa">
+                                🗑️
+                            </button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     {% endif %}
+
+    <script>
+        async function processReward(userEmoji, level, action) {
+            const actionText = action === 'confirm' ? 'confirmar la entrega de' : 'rechazar';
+
+            if (!confirm(`¿Estás seguro de ${actionText} esta recompensa?`)) {
+                // Si el usuario cancela, y es un checkbox de confirmación, desmarcarlo
+                if (action === 'confirm') {
+                    event.target.checked = false;
+                }
+                return;
+            }
+
+            try {
+                const response = await fetch('/admin/recompensas', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        user_emoji: userEmoji,
+                        level: level,
+                        action: action
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert(data.message);
+                    // Remover la fila de la tabla para que no quede en la vista
+                    const row = document.getElementById(`item-${userEmoji}-${level}`);
+                    if (row) {
+                        row.style.transition = 'opacity 0.5s ease';
+                        row.style.opacity = '0';
+                        setTimeout(() => row.remove(), 500);
+                    }
+                } else {
+                    alert('Error: ' + data.message);
+                    // Si falló la confirmación, desmarcar el checkbox
+                    if (action === 'confirm') {
+                        event.target.checked = false;
+                    }
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al procesar la recompensa');
+                if (action === 'confirm') {
+                    event.target.checked = false;
+                }
+            }
+        }
+    </script>
 </body>
 </html>

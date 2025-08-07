@@ -552,19 +552,132 @@ def perfil_usuario():
     pedidos_del_usuario = [p for p in todos_los_pedidos if p.get("user_emoji") == user_emoji]
     return render_template("perfil.html", user_emoji=user_emoji, pedidos=reversed(pedidos_del_usuario), PRODUCTOS=cargar_productos(), aura_data=aura_data, AURA_LEVELS=AURA_LEVELS)
 
+# --- HELPER PARA HISTORIAL COMBINADO ---
+def parse_pedido_timestamp(ts_str):
+    """Intenta parsear los diferentes formatos de timestamp usados en la aplicación."""
+    # Formato 1: "30 de July, 2025 a las 19:19"
+    # Formato 2: "2025-07-30 19:30:00"
+    if " a las " in ts_str:
+        try:
+            # Normalizar el string
+            ts_str_normalized = ts_str.replace(' a las ', ' ').replace(' de ', ' ')
+            # Mapear meses en español si es necesario
+            month_map = {
+                'enero': 'January', 'febrero': 'February', 'marzo': 'March', 'abril': 'April',
+                'mayo': 'May', 'junio': 'June', 'julio': 'July', 'agosto': 'August',
+                'septiembre': 'September', 'octubre': 'October', 'noviembre': 'November', 'diciembre': 'December'
+            }
+            for es, en in month_map.items():
+                ts_str_normalized = ts_str_normalized.lower().replace(es, en)
+
+            # Asumimos que el mes está en inglés y capitalizado
+            return datetime.strptime(ts_str_normalized, '%d %B, %Y %H:%M')
+        except (ValueError, TypeError):
+            pass # Falla y prueba el siguiente formato
+
+    # Formato 2 y fallback
+    try:
+        return datetime.fromisoformat(ts_str)
+    except (ValueError, TypeError):
+        # Si todo falla, devolver una fecha por defecto para evitar crashes
+        return datetime.fromtimestamp(0)
+
+
+def get_combined_history():
+    """Crea una lista unificada y cronológica de pedidos y recompensas pendientes."""
+    pedidos = cargar_pedidos()
+    usuarios = cargar_usuarios()
+    productos = cargar_productos()
+    aura_levels = AURA_LEVELS
+
+    combined_history = []
+
+    # 1. Procesar Pedidos
+    for pedido in pedidos:
+        timestamp_str = pedido.get("timestamp")
+        if not timestamp_str or not isinstance(timestamp_str, str):
+            continue
+
+        timestamp_dt = parse_pedido_timestamp(timestamp_str)
+
+        # Crear resumen del detalle
+        detalle_summary_parts = []
+        if isinstance(pedido.get('detalle'), dict):
+            for prod_id, cantidad in pedido['detalle'].items():
+                base_id = prod_id.split('-')[0]
+                prod_info = productos.get(base_id, {})
+                nombre = prod_info.get('nombre', prod_id)
+                detalle_summary_parts.append(f"{cantidad}x {nombre}")
+        detalle_summary = ", ".join(detalle_summary_parts)
+
+        combined_history.append({
+            'type': 'pedido',
+            'id': pedido.get('id'),
+            'user_emoji': pedido.get('user_emoji', '👤'),
+            'timestamp_str': timestamp_str,
+            'timestamp_dt': timestamp_dt,
+            'details': detalle_summary or "Detalle no disponible",
+            'total': pedido.get('total', 0),
+            'status': pedido.get('completado', False),
+            'data': pedido
+        })
+
+    # 2. Procesar Recompensas Pendientes
+    for user_emoji, user_data in usuarios.items():
+        if "reward_codes" in user_data:
+            for level_str, reward_info in user_data["reward_codes"].items():
+                if not reward_info.get("claimed", False):
+                    level = int(level_str)
+                    level_info = next((l for l in aura_levels if l["level"] == level), None)
+                    if not level_info: continue
+
+                    timestamp_str = reward_info.get("generated_at")
+                    if not timestamp_str or not isinstance(timestamp_str, str): continue
+
+                    try:
+                        timestamp_dt = datetime.fromisoformat(timestamp_str)
+                    except ValueError:
+                        continue
+
+                    combined_history.append({
+                        'type': 'recompensa',
+                        'id': f"{user_emoji}-{level}",
+                        'user_emoji': user_emoji,
+                        'timestamp_str': timestamp_str,
+                        'timestamp_dt': timestamp_dt,
+                        'details': f"Nivel {level}: {level_info['prize']}",
+                        'total': 0,
+                        'status': False,
+                        'data': {
+                            'level': level,
+                            'user_emoji': user_emoji,
+                            'prize': level_info['prize'],
+                            'code': reward_info.get('code', 'N/A')
+                        }
+                    })
+
+    # 3. Ordenar la lista combinada
+    combined_history.sort(key=lambda x: x['timestamp_dt'], reverse=True)
+
+    return combined_history
+
+
 @app.route("/admin")
 def admin_view():
     if not session.get("logged_in"): return redirect(url_for("login"))
-    pedidos = cargar_pedidos()
+
+    # Usar la nueva función para obtener el historial combinado
+    historial_combinado = get_combined_history()
+
+    # Cargar datos adicionales que la plantilla pueda necesitar
     productos_dict = cargar_productos()
     productos_ordenados_admin = sorted(productos_dict.items(), key=lambda item: item[1].get('orden', 999))
-    pedidos_agrupados = {}
-    for pedido in reversed(pedidos):
-        emoji_key = pedido.get("user_emoji", "Pedidos Antiguos / Sin Usuario")
-        if emoji_key not in pedidos_agrupados:
-            pedidos_agrupados[emoji_key] = []
-        pedidos_agrupados[emoji_key].append(pedido)
-    return render_template("admin.html", PEDIDOS_AGRUPADOS=pedidos_agrupados, PRODUCTOS_ORDENADOS=productos_ordenados_admin, PRODUCTOS=productos_dict, config=CONFIG)
+
+    return render_template("admin.html",
+                           historial=historial_combinado,
+                           PRODUCTOS_ORDENADOS=productos_ordenados_admin,
+                           PRODUCTOS=productos_dict,
+                           config=CONFIG)
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
