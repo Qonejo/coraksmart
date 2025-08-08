@@ -81,7 +81,19 @@ def cargar_usuarios():
         with open(USUARIOS_FILE, 'r', encoding='utf-8') as f: return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError): return {}
 def guardar_usuarios(usuarios):
-    with open(USUARIOS_FILE, 'w', encoding='utf-8') as f: json.dump(usuarios, f, indent=4)
+    """Guardar usuarios en archivo con manejo de errores."""
+    try:
+        with open(USUARIOS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(usuarios, f, indent=4, ensure_ascii=False)
+        return True
+    except (IOError, OSError) as e:
+        print(f"FATAL: No se pudo guardar el archivo de usuarios '{USUARIOS_FILE}'. Error: {e}")
+        # Intentar flashear un mensaje si estamos en un contexto de request
+        try:
+            flash(f"Error CRÍTICO: No se pudo guardar la base de datos de usuarios. Contacta al administrador.", "error")
+        except RuntimeError:
+            print("Error: No se pudo flashear mensaje porque no hay un contexto de request activo.")
+        return False
 
 # --- SISTEMA DE AURA Y GENERADOR DE IDS ---
 AURA_LEVELS_FILE = "aura_levels.json"
@@ -732,31 +744,28 @@ def emoji_access():
 
     usuarios = cargar_usuarios()
 
-    # Case 1: User exists
     if emoji in usuarios:
         user_data = usuarios[emoji]
         password_hash = user_data.get("password_hash")
 
-        # Subcase 1.1: Password has been reset by admin (is None)
         if password_hash is None:
-            # The password sent from the form is the NEW password
             new_hash = generate_password_hash(password)
             user_data["password_hash"] = new_hash
-            # Ensure other fields are present
             user_data.setdefault("aura_points", 0)
             user_data.setdefault("claimed_levels", [])
-            guardar_usuarios(usuarios)
-            session["logged_in_user_emoji"] = emoji
-            return jsonify({"success": True, "message": "¡Nueva contraseña creada con éxito!"})
 
-        # Subcase 1.2: Normal login check
+            if guardar_usuarios(usuarios):
+                session["logged_in_user_emoji"] = emoji
+                return jsonify({"success": True, "message": "¡Nueva contraseña creada con éxito!"})
+            else:
+                return jsonify({"success": False, "message": "Error del servidor al guardar la nueva contraseña."})
+
         if check_password_hash(password_hash, password):
             session["logged_in_user_emoji"] = emoji
             return jsonify({"success": True})
         else:
             return jsonify({"success": False, "message": "Contraseña incorrecta."})
 
-    # Case 2: New user registration
     else:
         if len(usuarios) >= 50:
             return jsonify({"success": False, "message": "Todas las vacantes están ocupadas."})
@@ -766,9 +775,11 @@ def emoji_access():
             "aura_points": 0,
             "claimed_levels": []
         }
-        guardar_usuarios(usuarios)
-        session["logged_in_user_emoji"] = emoji
-        return jsonify({"success": True, "message": "¡Avatar registrado con éxito!"})
+        if guardar_usuarios(usuarios):
+            session["logged_in_user_emoji"] = emoji
+            return jsonify({"success": True, "message": "¡Avatar registrado con éxito!"})
+        else:
+            return jsonify({"success": False, "message": "Error del servidor al registrar el usuario."})
 
 # --- PÁGINA DE NIVELES DE AURA ---
 @app.route("/niveles")
@@ -928,13 +939,14 @@ def reclamar_recompensa():
     if current_level not in user_data["claimed_levels"]:
         user_data["claimed_levels"].append(current_level)
         usuarios[user_emoji] = user_data
-        guardar_usuarios(usuarios)
-        
-        return jsonify({
-            "success": True, 
-            "message": "¡Recompensa reclamada con éxito!",
-            "level": current_level
-        })
+        if guardar_usuarios(usuarios):
+            return jsonify({
+                "success": True,
+                "message": "¡Recompensa reclamada con éxito!",
+                "level": current_level
+            })
+        else:
+            return jsonify({"success": False, "message": "Error del servidor al guardar los datos."})
     else:
         return jsonify({
             "success": False, 
@@ -980,13 +992,19 @@ def change_user_emoji():
     guardar_pedidos(pedidos)
     
     # Guardar cambios y actualizar sesión
-    guardar_usuarios(usuarios)
-    session["logged_in_user_emoji"] = new_emoji
-    
-    return jsonify({
-        "success": True, 
-        "message": "Avatar cambiado exitosamente"
-    })
+    if guardar_usuarios(usuarios):
+        session["logged_in_user_emoji"] = new_emoji
+        return jsonify({
+            "success": True,
+            "message": "Avatar cambiado exitosamente"
+        })
+    else:
+        # Revertir cambio en pedidos si falla
+        for pedido in pedidos:
+            if pedido.get("user_emoji") == new_emoji:
+                pedido["user_emoji"] = current_emoji
+        guardar_pedidos(pedidos)
+        return jsonify({"success": False, "message": "Error del servidor al cambiar el emoji."})
 
 # --- RUTA PARA ELIMINAR CUENTA DE USUARIO ---
 @app.route("/profile/delete-account", methods=["POST"])
@@ -1006,16 +1024,19 @@ def delete_user_account():
     guardar_pedidos(pedidos_filtrados)
     
     # Eliminar usuario
-    del usuarios[user_emoji]
-    guardar_usuarios(usuarios)
-    
-    # Cerrar sesión
-    session.clear()
-    
-    return jsonify({
-        "success": True, 
-        "message": "Cuenta eliminada exitosamente"
-    })
+    original_user_data = usuarios.pop(user_emoji)
+    if guardar_usuarios(usuarios):
+        # Cerrar sesión
+        session.clear()
+        return jsonify({
+            "success": True,
+            "message": "Cuenta eliminada exitosamente"
+        })
+    else:
+        # Revertir si falla
+        usuarios[user_emoji] = original_user_data
+        guardar_usuarios(usuarios) # Intentar guardar de nuevo, aunque podría fallar otra vez
+        return jsonify({"success": False, "message": "Error del servidor al eliminar la cuenta."})
 
 # --- RUTA PARA GENERAR CÓDIGOS DE RECOMPENSA ---
 @app.route("/generate-reward-code", methods=["POST"])
@@ -1054,13 +1075,14 @@ def generate_reward_code():
         "claimed": False
     }
     
-    guardar_usuarios(usuarios)
-    
-    return jsonify({
-        "success": True,
-        "code": codigo,
-        "level": level
-    })
+    if guardar_usuarios(usuarios):
+        return jsonify({
+            "success": True,
+            "code": codigo,
+            "level": level
+        })
+    else:
+        return jsonify({"success": False, "message": "Error del servidor al guardar el código."})
 
 @app.route("/admin/recompensas", methods=["GET", "POST"])
 def admin_recompensas():
@@ -1106,8 +1128,10 @@ def admin_recompensas():
             del usuarios[user_emoji]["reward_codes"][level_str]
             message = "Código de recompensa rechazado"
         
-        guardar_usuarios(usuarios)
-        return jsonify({"success": True, "message": message})
+        if guardar_usuarios(usuarios):
+            return jsonify({"success": True, "message": message})
+        else:
+            return jsonify({"success": False, "message": "Error del servidor al actualizar la recompensa."})
     
     # GET - Mostrar recompensas pendientes
     usuarios = cargar_usuarios()
@@ -1171,9 +1195,9 @@ def admin_configuracion():
                 else:
                     default_password = "1234"
                     usuarios[user_emoji]["password_hash"] = generate_password_hash(default_password)
-                    guardar_usuarios(usuarios)
-                    flash(f"La contraseña para el usuario {user_emoji} ha sido reiniciada a '{default_password}'.", "success")
-        
+                    if guardar_usuarios(usuarios):
+                        flash(f"La contraseña para el usuario {user_emoji} ha sido reiniciada a '{default_password}'.", "success")
+
         elif action == "clear_orders":
             import shutil
             backup_filename = f"pedidos_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
@@ -1188,17 +1212,15 @@ def admin_configuracion():
             usuarios = cargar_usuarios()
 
             for user_emoji in usuarios:
-                # Set password hash to None (will be null in JSON)
                 usuarios[user_emoji]["password_hash"] = None
                 usuarios[user_emoji]["aura_points"] = 0
-
                 if "claimed_levels" in usuarios[user_emoji]:
                     usuarios[user_emoji]["claimed_levels"] = []
                 if "reward_codes" in usuarios[user_emoji]:
                     del usuarios[user_emoji]["reward_codes"]
 
-            guardar_usuarios(usuarios)
-            flash("TODOS los usuarios han sido reseteados. Deberán crear una nueva contraseña al iniciar sesión.", "success")
+            if guardar_usuarios(usuarios):
+                flash("TODOS los usuarios han sido reseteados. Deberán crear una nueva contraseña al iniciar sesión.", "success")
 
         return redirect(url_for("admin_configuracion"))
     
@@ -1226,8 +1248,12 @@ def admin_reset_user_account():
         "aura_points": 0,
         "claimed_levels": []
     }
-    guardar_usuarios(usuarios)
-    
+    if guardar_usuarios(usuarios):
+        flash(f"Cuenta del usuario {user_emoji} reiniciada exitosamente (datos de usuario)", "success")
+    else:
+        flash(f"Error al guardar los datos reiniciados del usuario {user_emoji}", "error")
+        return redirect(url_for("admin_emojis"))
+
     # Eliminar todos los pedidos del usuario
     pedidos = cargar_pedidos()
     pedidos_filtrados = [p for p in pedidos if p.get("user_emoji") != user_emoji]
@@ -1314,9 +1340,17 @@ def admin_change_user_emoji():
             pedido["user_emoji"] = new_emoji
     guardar_pedidos(pedidos)
     
-    guardar_usuarios(usuarios)
-    
-    flash(f"Usuario movido de {current_emoji} a {new_emoji} exitosamente", "success")
+    if guardar_usuarios(usuarios):
+        flash(f"Usuario movido de {current_emoji} a {new_emoji} exitosamente", "success")
+    else:
+        # Revertir todo si falla
+        del usuarios[new_emoji]
+        usuarios[current_emoji] = user_data
+        for pedido in pedidos:
+            if pedido.get("user_emoji") == new_emoji:
+                pedido["user_emoji"] = current_emoji
+        guardar_pedidos(pedidos)
+        flash(f"Error de servidor al mover el usuario. Se revirtieron los cambios.", "error")
     return redirect(url_for("admin_emojis"))
 
 # --- API PARA GESTIÓN DE EMOJIS ---
@@ -1463,13 +1497,18 @@ def admin_completar_pedido(pedido_id):
                 aura_total += puntos_por_item * cant
             
             # Otorgar puntos al usuario
-            usuarios[user_emoji]["aura_points"] = usuarios[user_emoji].get("aura_points", 0) + aura_total
-            guardar_usuarios(usuarios)
+            original_points = usuarios[user_emoji].get("aura_points", 0)
+            usuarios[user_emoji]["aura_points"] = original_points + aura_total
             
-            # Actualizar el pedido con los puntos otorgados
-            pedido_encontrado["aura_otorgada"] = aura_total
-            
-            flash(f"Pedido {pedido_id} completado. Se otorgaron {aura_total} puntos de aura al usuario {user_emoji}", "success")
+            if guardar_usuarios(usuarios):
+                # Actualizar el pedido con los puntos otorgados
+                pedido_encontrado["aura_otorgada"] = aura_total
+                flash(f"Pedido {pedido_id} completado. Se otorgaron {aura_total} puntos de aura al usuario {user_emoji}", "success")
+            else:
+                # Revertir si falla
+                usuarios[user_emoji]["aura_points"] = original_points
+                flash(f"Error al otorgar puntos de aura para el pedido {pedido_id}. El estado del pedido no fue cambiado.", "error")
+                pedido_encontrado["completado"] = was_completed # Revertir estado
         else:
             flash(f"Pedido {pedido_id} completado (usuario no encontrado para otorgar aura)", "warning")
     
@@ -1479,13 +1518,18 @@ def admin_completar_pedido(pedido_id):
         aura_otorgada = pedido_encontrado.get("aura_otorgada", 0)
         
         if user_emoji and user_emoji in usuarios and aura_otorgada > 0:
-            usuarios[user_emoji]["aura_points"] = max(0, usuarios[user_emoji].get("aura_points", 0) - aura_otorgada)
-            guardar_usuarios(usuarios)
+            original_points = usuarios[user_emoji].get("aura_points", 0)
+            usuarios[user_emoji]["aura_points"] = max(0, original_points - aura_otorgada)
             
-            # Quitar la marca de aura otorgada
-            pedido_encontrado.pop("aura_otorgada", None)
-            
-            flash(f"Pedido {pedido_id} marcado como no completado. Se quitaron {aura_otorgada} puntos de aura", "warning")
+            if guardar_usuarios(usuarios):
+                # Quitar la marca de aura otorgada
+                pedido_encontrado.pop("aura_otorgada", None)
+                flash(f"Pedido {pedido_id} marcado como no completado. Se quitaron {aura_otorgada} puntos de aura", "warning")
+            else:
+                # Revertir si falla
+                usuarios[user_emoji]["aura_points"] = original_points
+                flash(f"Error al quitar puntos de aura para el pedido {pedido_id}. El estado del pedido no fue cambiado.", "error")
+                pedido_encontrado["completado"] = was_completed # Revertir estado
         else:
             flash(f"Pedido {pedido_id} marcado como no completado", "info")
     
@@ -1520,8 +1564,13 @@ def admin_delete_order(pedido_id):
         aura_otorgada = pedido_encontrado.get("aura_otorgada", 0)
         
         if user_emoji and user_emoji in usuarios:
-            usuarios[user_emoji]["aura_points"] = max(0, usuarios[user_emoji].get("aura_points", 0) - aura_otorgada)
-            guardar_usuarios(usuarios)
+            original_points = usuarios[user_emoji].get("aura_points", 0)
+            usuarios[user_emoji]["aura_points"] = max(0, original_points - aura_otorgada)
+            if not guardar_usuarios(usuarios):
+                # Si falla, revertimos y mostramos error
+                usuarios[user_emoji]["aura_points"] = original_points
+                flash(f"Error al revertir puntos de aura del pedido {pedido_id} antes de borrarlo. El pedido no fue eliminado.", "error")
+                return redirect(url_for("admin_view"))
     
     # Eliminar el pedido
     del pedidos[pedido_index]
