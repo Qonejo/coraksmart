@@ -54,7 +54,7 @@
         },
         "total": 60,
         "completado": true,
-        "user_emoji": "\ud83c\udf2e"
+        "user_emoji": "🌮"
     },
     {
         "id": "C1G25-UJW-Q4-BYQ",
@@ -65,6 +65,124 @@
         },
         "total": 1390.0,
         "completado": true,
-        "user_emoji": "\ud83d\ude00"
+        "user_emoji": "😀"
+    },
+    {
+        "id": "HH25-AX1K-D4-JBM",
+        "user_emoji": "😀",
+        "timestamp": "2025-08-08 00:49:10",
+        "detalle": {
+            "gomitas": 1
+        },
+        "detalle_completo": {
+            "gomitas": {
+                "nombre": "Gomita",
+                "precio": 60.0,
+                "cantidad": 1,
+                "subtotal": 60.0
+            }
+        },
+        "total": 60.0,
+        "aura_ganada": 240,
+        "delivery_info": {
+            "day": "martes",
+            "time": "11:30",
+            "station": "123",
+            "instructions": "",
+            "phone": ""
+        },
+        "completado": false
+    },
+    {
+        "id": "HH25-AY1G-E4-UCZ",
+        "user_emoji": "😀",
+        "timestamp": "2025-08-08 00:50:06",
+        "detalle": {
+            "besos": 1
+        },
+        "detalle_completo": {
+            "besos": {
+                "nombre": "Besos",
+                "precio": 1050.0,
+                "cantidad": 1,
+                "subtotal": 1050.0
+            }
+        },
+        "total": 1050.0,
+        "aura_ganada": 3150,
+        "delivery_info": {
+            "day": "hoy",
+            "time": "11:00",
+            "station": "2",
+            "instructions": "",
+            "phone": ""
+        },
+        "completado": false
+    },
+    {
+        "id": "HH25-AY1M1-F4-96Z",
+        "user_emoji": "😀",
+        "timestamp": "2025-08-08 00:50:38",
+        "detalle": {
+            "besos": 1,
+            "boutiq_switch": 1
+        },
+        "detalle_completo": {
+            "besos": {
+                "nombre": "Besos",
+                "precio": 1050.0,
+                "cantidad": 1,
+                "subtotal": 1050.0
+            },
+            "boutiq_switch": {
+                "nombre": "Boutiq Switch",
+                "precio": 1000.0,
+                "cantidad": 1,
+                "subtotal": 1000.0
+            }
+        },
+        "total": 2050.0,
+        "aura_ganada": 6150,
+        "delivery_info": {
+            "day": "manana",
+            "time": "15:00",
+            "station": "2",
+            "instructions": "",
+            "phone": ""
+        },
+        "completado": false
+    },
+    {
+        "id": "HH25-AZ1M-G4-4C1",
+        "user_emoji": "😀",
+        "timestamp": "2025-08-08 00:51:12",
+        "detalle": {
+            "Caps": 1,
+            "besos": 1
+        },
+        "detalle_completo": {
+            "Caps": {
+                "nombre": "Cápsulas concen. x10",
+                "precio": 450,
+                "cantidad": 1,
+                "subtotal": 450
+            },
+            "besos": {
+                "nombre": "Besos",
+                "precio": 1050.0,
+                "cantidad": 1,
+                "subtotal": 1050.0
+            }
+        },
+        "total": 1500.0,
+        "aura_ganada": 5625,
+        "delivery_info": {
+            "day": "hoy",
+            "time": "14:00",
+            "station": "Colegio Militar (🚇 Línea 2 (Azul) - Cuatro Caminos ↔ Tasqueña)",
+            "instructions": "",
+            "phone": ""
+        },
+        "completado": false
     }
 ]

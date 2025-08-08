@@ -1,7 +1,7 @@
 {
     "gomita__brownie": {
         "nombre": "Gomita + Brownie",
-        "descripcion": "<span class='amarillo'>\u00a1El pack de inicio perfecto!</span>",
+        "descripcion": "<span class='amarillo'>¡El pack de inicio perfecto!</span>",
         "imagen": "promoa.png",
         "bundle_precio": 190.0,
         "bundle_items": {
@@ -9,7 +9,8 @@
             "brow": 1
         },
         "promocion": true,
-        "orden": 1
+        "orden": 1,
+        "whatsapp_asignado": "1"
     },
     "gomitas": {
         "nombre": "Gomita",
@@ -17,17 +18,19 @@
         "imagen": "gomitas.png",
         "stock": 12,
         "aura_multiplier": 4,
-        "descripcion": "<span class='amarillo'>Un cl\u00e1sico reconstituyente. \u00a1Restaura </span><span class='verde'>250mg THC</span><span class='amarillo'>!</span>",
-        "orden": 4
+        "descripcion": "<span class='amarillo'>Un clásico reconstituyente. ¡Restaura </span><span class='verde'>250mg THC</span><span class='amarillo'>!</span>",
+        "orden": 4,
+        "whatsapp_asignado": "1"
     },
     "pelon": {
-        "nombre": "Pel\u00f3n pone rico",
+        "nombre": "Pelón pone rico",
         "precio": 60,
         "imagen": "pelon.png",
         "aura_multiplier": 4.5,
         "stock": 27,
-        "descripcion": "<span class='amarillo'>Un cl\u00e1sico reconstituyente. \u00a1Restaura </span><span class='verde'>10 HP</span><span class='amarillo'>!</span>",
-        "orden": 3
+        "descripcion": "<span class='amarillo'>Un clásico reconstituyente. ¡Restaura </span><span class='verde'>10 HP</span><span class='amarillo'>!</span>",
+        "orden": 3,
+        "whatsapp_asignado": "1"
     },
     "brow": {
         "nombre": "Brownies",
@@ -35,22 +38,24 @@
         "imagen": "brow.png",
         "aura_multiplier": 5.5,
         "stock": 12,
-        "descripcion": "<span class='amarillo'>Un cl\u00e1sico reconstituyente. \u00a1Restaura </span><span class='verde'>10 HP</span><span class='amarillo'>!</span>",
-        "orden": 2
+        "descripcion": "<span class='amarillo'>Un clásico reconstituyente. ¡Restaura </span><span class='verde'>10 HP</span><span class='amarillo'>!</span>",
+        "orden": 2,
+        "whatsapp_asignado": "1"
     },
     "Caps": {
-        "nombre": "C\u00e1psulas concen. x10",
+        "nombre": "Cápsulas concen. x10",
         "precio": 450,
         "imagen": "caps.png",
         "aura_multiplier": 5.5,
         "stock": 9,
-        "descripcion": "<span class='amarillo'>Un cl\u00e1sico reconstituyente. \u00a1Restaura </span><span class='verde'>10 HP</span><span class='amarillo'>!</span>",
-        "orden": 6
+        "descripcion": "<span class='amarillo'>Un clásico reconstituyente. ¡Restaura </span><span class='verde'>10 HP</span><span class='amarillo'>!</span>",
+        "orden": 6,
+        "whatsapp_asignado": "1"
     },
     "Oll2": {
         "nombre": "Regular comercial",
         "imagen": "Oll2.png",
-        "descripcion": "<span class='amarillo'>Un cl\u00e1sico reconstituyente. \u00a1Restaura </span><span class='verde'>10 HP</span><span class='amarillo'>!</span>",
+        "descripcion": "<span class='amarillo'>Un clásico reconstituyente. ¡Restaura </span><span class='verde'>10 HP</span><span class='amarillo'>!</span>",
         "aura_multiplier": 5,
         "variaciones": {
             "28 gr": {
@@ -62,12 +67,13 @@
                 "stock": 100
             }
         },
-        "orden": 5
+        "orden": 5,
+        "whatsapp_asignado": "1"
     },
     "Oll3": {
         "nombre": "Hibrida Sinaloa",
         "imagen": "Oll3.png",
-        "descripcion": "<span class='amarillo'>Un cl\u00e1sico reconstituyente. \u00a1Restaura </span><span class='verde'>10 HP</span><span class='amarillo'>!</span>",
+        "descripcion": "<span class='amarillo'>Un clásico reconstituyente. ¡Restaura </span><span class='verde'>10 HP</span><span class='amarillo'>!</span>",
         "aura_multiplier": 5,
         "variaciones": {
             "28 gr": {
@@ -79,13 +85,14 @@
                 "stock": 0
             }
         },
-        "orden": 7
+        "orden": 7,
+        "whatsapp_asignado": "1"
     },
     "Oll4": {
         "nombre": "Hybrido, Bubba Kush",
         "imagen": "Oll4.png",
-        "descripcion": "<span class='amarillo'>Un cl\u00e1sico reconstituyente. \u00a1Restaura </span><span class='verde'>10 HP</span><span class='amarillo'>!</span>",
-        "aura_multiplier": 5, 
+        "descripcion": "<span class='amarillo'>Un clásico reconstituyente. ¡Restaura </span><span class='verde'>10 HP</span><span class='amarillo'>!</span>",
+        "aura_multiplier": 5,
         "variaciones": {
             "28 gr": {
                 "precio": 400,
@@ -96,7 +103,8 @@
                 "stock": 100
             }
         },
-        "orden": 8
+        "orden": 8,
+        "whatsapp_asignado": "1"
     },
     "ner": {
         "nombre": "Nerds bites",
@@ -104,17 +112,19 @@
         "imagen": "ner.png",
         "aura_multiplier": 5,
         "stock": 27,
-        "descripcion": "<span class='amarillo'>Un cl\u00e1sico reconstituyente. \u00a1Restaura </span><span class='verde'>10 HP</span><span class='amarillo'>!</span>",
-        "orden": 9
+        "descripcion": "<span class='amarillo'>Un clásico reconstituyente. ¡Restaura </span><span class='verde'>10 HP</span><span class='amarillo'>!</span>",
+        "orden": 9,
+        "whatsapp_asignado": "1"
     },
     "goter": {
         "nombre": "Gotero 60 ml",
         "precio": 500,
         "imagen": "goter.png",
-        "aura_multiplier": 6, 
+        "aura_multiplier": 6,
         "stock": 5,
-        "descripcion": "<span class='amarillo'>Un cl\u00e1sico reconstituyente. \u00a1Restaura </span><span class='verde'>10 HP</span><span class='amarillo'>!</span>",
-        "orden": 10
+        "descripcion": "<span class='amarillo'>Un clásico reconstituyente. ¡Restaura </span><span class='verde'>10 HP</span><span class='amarillo'>!</span>",
+        "orden": 10,
+        "whatsapp_asignado": "1"
     },
     "ruffles": {
         "nombre": "Ruffles de queso",
@@ -122,8 +132,9 @@
         "imagen": "ruffles.png",
         "aura_multiplier": 6,
         "stock": 4,
-        "descripcion": "<span class='amarillo'>Un cl\u00e1sico reconstituyente. \u00a1Restaura </span><span class='verde'>10 HP</span><span class='amarillo'>!</span>",
-        "orden": 11
+        "descripcion": "<span class='amarillo'>Un clásico reconstituyente. ¡Restaura </span><span class='verde'>10 HP</span><span class='amarillo'>!</span>",
+        "orden": 11,
+        "whatsapp_asignado": "1"
     },
     "salv": {
         "nombre": "Salvia 10X 1g",
@@ -131,8 +142,9 @@
         "imagen": "salv.png",
         "aura_multiplier": 6,
         "stock": 10,
-        "descripcion": "<span class='amarillo'>Un cl\u00e1sico reconstituyente. \u00a1Restaura </span><span class='verde'>10 HP</span><span class='amarillo'>!</span>",
-        "orden": 12
+        "descripcion": "<span class='amarillo'>Un clásico reconstituyente. ¡Restaura </span><span class='verde'>10 HP</span><span class='amarillo'>!</span>",
+        "orden": 12,
+        "whatsapp_asignado": "1"
     },
     "galle": {
         "nombre": "Galletas Oreo",
@@ -140,8 +152,9 @@
         "imagen": "galle.png",
         "aura_multiplier": 5,
         "stock": 10,
-        "descripcion": "<span class='amarillo'>Un cl\u00e1sico reconstituyente. \u00a1Restaura </span><span class='verde'>10 HP</span><span class='amarillo'>!</span>",
-        "orden": 13
+        "descripcion": "<span class='amarillo'>Un clásico reconstituyente. ¡Restaura </span><span class='verde'>10 HP</span><span class='amarillo'>!</span>",
+        "orden": 13,
+        "whatsapp_asignado": "1"
     },
     "barrita": {
         "nombre": "Barrita de chocolate",
@@ -149,8 +162,9 @@
         "imagen": "barrita.png",
         "aura_multiplier": 5.5,
         "stock": 0,
-        "descripcion": "<span class='amarillo'>Un cl\u00e1sico reconstituyente. \u00a1Restaura </span><span class='verde'>10 HP</span><span class='amarillo'>!</span>",
-        "orden": 14
+        "descripcion": "<span class='amarillo'>Un clásico reconstituyente. ¡Restaura </span><span class='verde'>10 HP</span><span class='amarillo'>!</span>",
+        "orden": 14,
+        "whatsapp_asignado": "1"
     },
     "bombon": {
         "nombre": "Bombones",
@@ -158,8 +172,9 @@
         "imagen": "bombon.png",
         "aura_multiplier": 5,
         "stock": 0,
-        "descripcion": "<span class='amarillo'>Un cl\u00e1sico reconstituyente. \u00a1Restaura </span><span class='verde'>10 HP</span><span class='amarillo'>!</span>",
-        "orden": 15
+        "descripcion": "<span class='amarillo'>Un clásico reconstituyente. ¡Restaura </span><span class='verde'>10 HP</span><span class='amarillo'>!</span>",
+        "orden": 15,
+        "whatsapp_asignado": "1"
     },
     "nerdsrope": {
         "nombre": "Nerds rope",
@@ -167,8 +182,9 @@
         "imagen": "nerdsropea.png",
         "aura_multiplier": 5.5,
         "stock": 4,
-        "descripcion": "<span class='amarillo'>Un cl\u00e1sico reconstituyente. \u00a1Restaura </span><span class='verde'>10 HP</span><span class='amarillo'>!</span>",
-        "orden": 15
+        "descripcion": "<span class='amarillo'>Un clásico reconstituyente. ¡Restaura </span><span class='verde'>10 HP</span><span class='amarillo'>!</span>",
+        "orden": 15,
+        "whatsapp_asignado": "1"
     },
     "buzzbar_vape": {
         "nombre": "BuzzBar Vape",
@@ -177,7 +193,8 @@
         "aura_multiplier": 3,
         "stock": 10,
         "precio": 1200.0,
-        "orden": 17
+        "orden": 17,
+        "whatsapp_asignado": "1"
     },
     "buzzbar_vape_1": {
         "nombre": "BuzzBar Vape",
@@ -186,7 +203,8 @@
         "aura_multiplier": 3,
         "stock": 10,
         "precio": 1200.0,
-        "orden": 18
+        "orden": 18,
+        "whatsapp_asignado": "1"
     },
     "b_preheat": {
         "nombre": "B Preheat",
@@ -195,7 +213,8 @@
         "aura_multiplier": 3.5,
         "stock": 10,
         "precio": 1000.0,
-        "orden": 19
+        "orden": 19,
+        "whatsapp_asignado": "1"
     },
     "choise_labs": {
         "nombre": "Choise Labs",
@@ -204,7 +223,8 @@
         "aura_multiplier": 3.5,
         "stock": 10,
         "precio": 1000.0,
-        "orden": 20
+        "orden": 20,
+        "whatsapp_asignado": "1"
     },
     "whole_melt_extracts": {
         "nombre": "Whole Melt extracts",
@@ -213,7 +233,8 @@
         "aura_multiplier": 3.5,
         "stock": 9,
         "precio": 1000.0,
-        "orden": 21
+        "orden": 21,
+        "whatsapp_asignado": "1"
     },
     "boutiq_switch": {
         "nombre": "Boutiq Switch",
@@ -222,7 +243,8 @@
         "aura_multiplier": 3.5,
         "stock": 10,
         "precio": 1000.0,
-        "orden": 22
+        "orden": 22,
+        "whatsapp_asignado": "1"
     },
     "besos": {
         "nombre": "Besos",
@@ -231,6 +253,10 @@
         "aura_multiplier": 3.5,
         "stock": 7,
         "precio": 1050.0,
-        "orden": 22
+        "orden": 22,
+        "whatsapp_asignado": "3",
+        "imagenes_adicionales": {
+            "1": "besos_img_1.jpg"
+        }
     }
 }
