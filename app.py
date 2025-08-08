@@ -347,6 +347,18 @@ def determinar_whatsapp_destino(carrito, productos):
     whatsapp_numero = whatsapp_map.get(max_whatsapp) or CONFIG.get('whatsapp_principal')
     return whatsapp_numero, max_whatsapp
 
+from flask import abort
+
+@app.get("/__initdb")
+def __initdb():
+    token_env = os.environ.get("INIT_DB_TOKEN")
+    token_req = request.args.get("token")
+    if not token_env or token_req != token_env:
+        return abort(403)
+    with app.app_context():
+        db.create_all()
+    return "OK: tablas creadas"
+
 # --- MAIN VIEWS ---
 @app.route("/entrar")
 def entrar():
