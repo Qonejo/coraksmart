@@ -729,17 +729,43 @@ def emoji_access():
     password = data.get("password")
     if not emoji or not password or emoji not in EMOJI_LIST:
         return jsonify({"success": False, "message": "Datos inválidos."})
+
     usuarios = cargar_usuarios()
+
+    # Case 1: User exists
     if emoji in usuarios:
-        if check_password_hash(usuarios[emoji]["password_hash"], password):
+        user_data = usuarios[emoji]
+        password_hash = user_data.get("password_hash")
+
+        # Subcase 1.1: Password has been reset by admin (is None)
+        if password_hash is None:
+            # The password sent from the form is the NEW password
+            new_hash = generate_password_hash(password)
+            user_data["password_hash"] = new_hash
+            # Ensure other fields are present
+            user_data.setdefault("aura_points", 0)
+            user_data.setdefault("claimed_levels", [])
+            guardar_usuarios(usuarios)
+            session["logged_in_user_emoji"] = emoji
+            return jsonify({"success": True, "message": "¡Nueva contraseña creada con éxito!"})
+
+        # Subcase 1.2: Normal login check
+        if check_password_hash(password_hash, password):
             session["logged_in_user_emoji"] = emoji
             return jsonify({"success": True})
         else:
             return jsonify({"success": False, "message": "Contraseña incorrecta."})
+
+    # Case 2: New user registration
     else:
         if len(usuarios) >= 50:
             return jsonify({"success": False, "message": "Todas las vacantes están ocupadas."})
-        usuarios[emoji] = {"password_hash": generate_password_hash(password), "aura_points": 0}
+
+        usuarios[emoji] = {
+            "password_hash": generate_password_hash(password),
+            "aura_points": 0,
+            "claimed_levels": []
+        }
         guardar_usuarios(usuarios)
         session["logged_in_user_emoji"] = emoji
         return jsonify({"success": True, "message": "¡Avatar registrado con éxito!"})
@@ -1160,22 +1186,19 @@ def admin_configuracion():
 
         elif action == "reset_all_users":
             usuarios = cargar_usuarios()
-            default_password = "1234"
-            hashed_password = generate_password_hash(default_password)
 
             for user_emoji in usuarios:
-                # Mantener la estructura de datos, pero reiniciar valores
-                usuarios[user_emoji]["password_hash"] = hashed_password
+                # Set password hash to None (will be null in JSON)
+                usuarios[user_emoji]["password_hash"] = None
                 usuarios[user_emoji]["aura_points"] = 0
 
-                # Usar .get para evitar errores si la clave no existe
                 if "claimed_levels" in usuarios[user_emoji]:
                     usuarios[user_emoji]["claimed_levels"] = []
                 if "reward_codes" in usuarios[user_emoji]:
                     del usuarios[user_emoji]["reward_codes"]
 
             guardar_usuarios(usuarios)
-            flash("TODOS los usuarios han sido reseteados. Sus contraseñas ahora son '1234'.", "success")
+            flash("TODOS los usuarios han sido reseteados. Deberán crear una nueva contraseña al iniciar sesión.", "success")
 
         return redirect(url_for("admin_configuracion"))
     
