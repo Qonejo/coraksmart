@@ -1665,17 +1665,23 @@ def admin_aura_levels():
             new_prize = request.form.get(f'prize_{level}')
             new_size = request.form.get(f'character_size_{level}')
             
-            # Mejor validación para puntos
-            if new_points is not None and new_points.strip() != '' and level != 0:
-                try:
-                    level_info["points_needed"] = int(new_points)
-                except ValueError:
-                    flash(f"Error: Puntos inválidos para nivel {level}", "error")
+            # Validación para puntos (permite actualizar todos los niveles excepto nivel 0)
+            if new_points is not None and new_points.strip() != '':
+                if level != 0:  # Solo para niveles que no sean 0
+                    try:
+                        level_info["points_needed"] = int(new_points)
+                    except ValueError:
+                        flash(f"Error: Puntos inválidos para nivel {level}", "error")
             
+            # Actualizar título/nombre del nivel
             if new_title is not None and new_title.strip() != '':
                 level_info["name"] = new_title
+            
+            # Actualizar premio/recompensa
             if new_prize is not None and new_prize.strip() != '':
                 level_info["prize"] = new_prize
+            
+            # Actualizar tamaño del personaje
             if new_size is not None and new_size.strip() != '':
                 try:
                     level_info["character_size"] = int(new_size)
