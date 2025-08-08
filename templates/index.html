@@ -160,10 +160,10 @@ COMPRA
         // Configurar galerías de productos con imágenes (principales y adicionales)
         {% for id, prod in PRODUCTOS_ORDENADOS %}
         setProductGallery('{{ id }}', [
-            '{{ prod.imagen }}'
+            '{{ url_for("static", filename=prod.imagen) }}'
             {%- if prod.get('imagenes_adicionales') -%}
                 {%- for img_index, img_name in prod.imagenes_adicionales.items() -%}
-                    , '{{ img_name }}'
+                    , '{{ url_for("static", filename=img_name) }}'
                 {%- endfor -%}
             {%- endif -%}
         ]);

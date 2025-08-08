@@ -394,10 +394,10 @@
         // Cargar todas las imágenes de productos
         {% for product_id, product in productos.items() %}
         currentProductImages['{{ product_id }}'] = [
-            '{{ product.imagen }}'
+            '{{ url_for("static", filename=product.imagen) }}'
             {% if product.get('imagenes_adicionales') %}
                 {% for img_index, img_name in product.imagenes_adicionales.items() %}
-                    , '{{ img_name }}'
+                    , '{{ url_for("static", filename=img_name) }}'
                 {% endfor %}
             {% endif %}
         ];

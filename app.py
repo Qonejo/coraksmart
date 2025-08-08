@@ -1938,10 +1938,7 @@ def admin_upload_product_images():
     except Exception as e:
         return jsonify({"success": False, "message": f"Error al subir imágenes: {str(e)}"})
     
-def guardar_productos(productos):
-    """Guardar productos en el archivo JSON"""
-    with open(PRODUCTOS_FILE, 'w', encoding='utf-8') as f:
-        json.dump(productos, f, indent=4, ensure_ascii=False)
+
 
 # --- API PARA CARRITO ---
 def _get_cart_data():
