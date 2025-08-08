@@ -50,9 +50,18 @@ def cargar_configuracion():
         }
 
 def guardar_configuracion(config):
-    """Guardar configuración en archivo"""
-    with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
-        json.dump(config, f, indent=4, ensure_ascii=False)
+    """Guardar configuración en archivo con manejo de errores."""
+    try:
+        with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
+            json.dump(config, f, indent=4, ensure_ascii=False)
+        return True
+    except (IOError, OSError) as e:
+        print(f"FATAL: No se pudo guardar el archivo de configuración '{CONFIG_FILE}'. Error: {e}")
+        try:
+            flash(f"Error CRÍTICO: No se pudo guardar la configuración. Contacta al administrador.", "error")
+        except RuntimeError:
+            print("Error: No se pudo flashear mensaje porque no hay un contexto de request activo.")
+        return False
 
 # Cargar configuración al iniciar
 CONFIG = cargar_configuracion()
@@ -69,13 +78,35 @@ def cargar_productos():
             return productos
     except (FileNotFoundError, json.JSONDecodeError): return {}
 def guardar_productos(productos):
-    with open(PRODUCTOS_FILE, 'w', encoding='utf-8') as f: json.dump(productos, f, indent=4)
+    """Guardar productos en archivo con manejo de errores."""
+    try:
+        with open(PRODUCTOS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(productos, f, indent=4, ensure_ascii=False)
+        return True
+    except (IOError, OSError) as e:
+        print(f"FATAL: No se pudo guardar el archivo de productos '{PRODUCTOS_FILE}'. Error: {e}")
+        try:
+            flash(f"Error CRÍTICO: No se pudo guardar la base de datos de productos. Contacta al administrador.", "error")
+        except RuntimeError:
+            print("Error: No se pudo flashear mensaje porque no hay un contexto de request activo.")
+        return False
 def cargar_pedidos():
     try:
         with open(PEDIDOS_FILE, 'r', encoding='utf-8') as f: return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError): return []
 def guardar_pedidos(pedidos):
-    with open(PEDIDOS_FILE, 'w', encoding='utf-8') as f: json.dump(pedidos, f, indent=4)
+    """Guardar pedidos en archivo con manejo de errores."""
+    try:
+        with open(PEDIDOS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(pedidos, f, indent=4, ensure_ascii=False)
+        return True
+    except (IOError, OSError) as e:
+        print(f"FATAL: No se pudo guardar el archivo de pedidos '{PEDIDOS_FILE}'. Error: {e}")
+        try:
+            flash(f"Error CRÍTICO: No se pudo guardar la base de datos de pedidos. Contacta al administrador.", "error")
+        except RuntimeError:
+            print("Error: No se pudo flashear mensaje porque no hay un contexto de request activo.")
+        return False
 def cargar_usuarios():
     try:
         with open(USUARIOS_FILE, 'r', encoding='utf-8') as f: return json.load(f)
@@ -116,17 +147,25 @@ def cargar_aura_levels():
         ]
 
 def guardar_aura_levels(levels):
-    """Guardar niveles de aura en archivo"""
-    # Convertir -inf a string para JSON
+    """Guardar niveles de aura en archivo con manejo de errores."""
     levels_for_json = []
     for level in levels:
         level_copy = level.copy()
-        if level_copy["points_needed"] == -float('inf'):
+        if level_copy.get("points_needed") == -float('inf'):
             level_copy["points_needed"] = "negative_infinity"
         levels_for_json.append(level_copy)
     
-    with open(AURA_LEVELS_FILE, 'w', encoding='utf-8') as f:
-        json.dump(levels_for_json, f, indent=4, ensure_ascii=False)
+    try:
+        with open(AURA_LEVELS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(levels_for_json, f, indent=4, ensure_ascii=False)
+        return True
+    except (IOError, OSError) as e:
+        print(f"FATAL: No se pudo guardar el archivo de niveles de aura '{AURA_LEVELS_FILE}'. Error: {e}")
+        try:
+            flash(f"Error CRÍTICO: No se pudo guardar la configuración de niveles de aura. Contacta al administrador.", "error")
+        except RuntimeError:
+            print("Error: No se pudo flashear mensaje porque no hay un contexto de request activo.")
+        return False
 
 def procesar_aura_levels_loaded(levels):
     """Procesar niveles cargados para convertir string infinity a float"""
@@ -719,10 +758,19 @@ def cargar_emoji_list():
         return ["😀", "🚀", "🌟", "🍕", "🤖", "👻", "👽", "👾", "🦊", "🧙", "🌮", "💎", "🌙", "🔮", "🧬", "🌵", "🎉", "🔥", "💯", "👑", "💡", "🎮", "🛰️", "🛸", "🗿", "🌴", "🧪", "✨", "🔑", "🗺️", "🐙", "🦋", "🐲", "🍩", "⚡", "🎯", "⚓", "🌈", "🌌", "🌠", "🎱", "🎰", "🕹️", "🏆", "💊", "🎁", "💌", "📈", "😎", "😂", "🤣", "😍", "🥰", "😘", "😋", "😜", "🤩", "🥳", "😇", "🤠", "🤡", "🥸", "🤓", "😈", "👹", "👺", "💀", "👽", "🤖", "🎃", "😺", "😸", "😹", "😻", "😼", "😽", "🙀", "😿", "😾", "🦄", "🐵", "🐶", "🐺", "🐱", "🦁", "🐯", "🦒", "🦓", "🐴", "🦏", "🐘", "🐭", "🐹", "🐰", "🐻", "🐼", "🐨", "🐷", "🐸", "🦆", "🐧", "🦅", "🦉", "🐍", "🐢", "🦎", "🐙", "🦑", "🦐", "🦀", "🐡", "🐠", "🐟", "🐬", "🐳", "🐋", "🦈", "🐊", "🐅", "🐆", "🦓", "🦍", "🦧", "🐪", "🐫", "🦙", "🦘", "🦥", "🦨", "🦔", "🐁", "🐀", "🦇", "🕷️", "🦟", "🦗", "🐛", "🦋", "🐌", "🐚", "🪱", "🪲", "🪳", "🪰", "🌸", "🌺", "🌻", "🌹", "🌷", "💐", "🌾", "🌿", "🍀", "🌱", "🌳", "🌲", "🌴", "🌵", "🌾", "☘️", "🍃", "🍂", "🍁", "🍄", "🌰", "🎄", "💮", "🏔️", "⛰️", "🌋", "🏞️", "🏜️", "🏖️", "🏝️", "🌅", "🌄", "🌠", "🌌", "🌉", "🌁"]
 
 def guardar_emoji_list(emoji_list):
-    """Guardar lista de emojis en archivo"""
+    """Guardar lista de emojis en archivo con manejo de errores."""
     config = {"available_emojis": emoji_list}
-    with open('emoji_config.json', 'w', encoding='utf-8') as f:
-        json.dump(config, f, indent=4, ensure_ascii=False)
+    try:
+        with open('emoji_config.json', 'w', encoding='utf-8') as f:
+            json.dump(config, f, indent=4, ensure_ascii=False)
+        return True
+    except (IOError, OSError) as e:
+        print(f"FATAL: No se pudo guardar el archivo de emojis 'emoji_config.json'. Error: {e}")
+        try:
+            flash(f"Error CRÍTICO: No se pudo guardar la lista de emojis. Contacta al administrador.", "error")
+        except RuntimeError:
+            print("Error: No se pudo flashear mensaje porque no hay un contexto de request activo.")
+        return False
 
 # Inicializar lista de emojis
 EMOJI_LIST = cargar_emoji_list()
@@ -736,17 +784,6 @@ def get_emojis():
 
 @app.route("/api/emoji-access", methods=["POST"])
 def emoji_access():
-    """
-    Handles user login, password reset, and registration via emoji and password.
-    
-    Accepts a JSON payload with an emoji and password. If the emoji corresponds to an existing user:
-    - If the password hash is `None` (reset by admin), the submitted password is set as the new password and the user is logged in.
-    - If a password hash exists, verifies the password for login.
-    If the emoji is not registered and user slots are available, creates a new user with the provided password and initializes their data.
-    
-    Returns:
-        JSON response indicating success or failure, with an appropriate message.
-    """
     data = request.get_json()
     emoji = data.get("emoji")
     password = data.get("password")
@@ -890,7 +927,8 @@ def procesar_pedido():
     # Guardar pedido
     todos_los_pedidos = cargar_pedidos()
     todos_los_pedidos.append(pedido)
-    guardar_pedidos(todos_los_pedidos)
+    if not guardar_pedidos(todos_los_pedidos):
+        return jsonify({"success": False, "message": "Error crítico del servidor al intentar guardar tu pedido. Por favor, inténtalo de nuevo."}), 500
     
     # NO otorgar puntos de aura aquí - se otorgarán cuando el admin complete el pedido
     # Guardar información de aura potencial en el pedido para referencia
@@ -1174,11 +1212,6 @@ def admin_recompensas():
 # --- RUTAS DE CONFIGURACIÓN ADMIN ---
 @app.route("/admin/configuracion", methods=["GET", "POST"])
 def admin_configuracion():
-    """
-    Handles the admin configuration page, allowing updates to app settings, user password resets, order clearing, and global user resets.
-    
-    Supports saving configuration changes, resetting individual user passwords, clearing all orders with backup, and resetting all users (passwords set to require creation on next login, aura points reset, and claimed rewards cleared). Only accessible to logged-in admins.
-    """
     if not session.get("logged_in"): return redirect(url_for("login"))
     
     if request.method == "POST":
@@ -1195,10 +1228,11 @@ def admin_configuracion():
                 if key in request.form:
                     config[key] = request.form.get(key)
 
-            guardar_configuracion(config)
-            global CONFIG
-            CONFIG = config
-            flash("Configuración actualizada con éxito.", "success")
+            if guardar_configuracion(config):
+                global CONFIG
+                CONFIG = config
+                flash("Configuración actualizada con éxito.", "success")
+            # Error is flashed inside guardar_configuracion
 
         elif action == "reset_password":
             user_emoji = request.form.get("reset_user_emoji")
@@ -1292,22 +1326,26 @@ def admin_emojis():
             new_emoji = request.form.get("new_emoji")
             if new_emoji and new_emoji not in EMOJI_LIST:
                 EMOJI_LIST.append(new_emoji)
-                guardar_emoji_list(EMOJI_LIST)
-                flash(f"Emoji {new_emoji} agregado exitosamente", "success")
+                if guardar_emoji_list(EMOJI_LIST):
+                    flash(f"Emoji {new_emoji} agregado exitosamente", "success")
+                else:
+                    EMOJI_LIST.pop() # Revertir
             else:
                 flash("Emoji ya existe o es inválido", "error")
                 
         elif action == "remove_emoji":
             emoji_to_remove = request.form.get("emoji_to_remove")
             if emoji_to_remove in EMOJI_LIST:
-                # Verificar que no esté en uso
                 usuarios = cargar_usuarios()
                 if emoji_to_remove in usuarios:
                     flash(f"No se puede eliminar {emoji_to_remove} porque está en uso", "error")
                 else:
+                    original_list = EMOJI_LIST[:]
                     EMOJI_LIST.remove(emoji_to_remove)
-                    guardar_emoji_list(EMOJI_LIST)
-                    flash(f"Emoji {emoji_to_remove} eliminado exitosamente", "success")
+                    if guardar_emoji_list(EMOJI_LIST):
+                        flash(f"Emoji {emoji_to_remove} eliminado exitosamente", "success")
+                    else:
+                        EMOJI_LIST = original_list
             else:
                 flash("Emoji no encontrado", "error")
         
@@ -1391,9 +1429,11 @@ def admin_api_add_emoji():
         return jsonify({"success": False, "message": "Se ha alcanzado el límite máximo de 200 emojis"})
     
     EMOJI_LIST.append(emoji)
-    guardar_emoji_list(EMOJI_LIST)
-    
-    return jsonify({"success": True, "message": f"Emoji {emoji} agregado exitosamente. Total: {len(EMOJI_LIST)}/200"})
+    if guardar_emoji_list(EMOJI_LIST):
+        return jsonify({"success": True, "message": f"Emoji {emoji} agregado exitosamente. Total: {len(EMOJI_LIST)}/200"})
+    else:
+        EMOJI_LIST.pop() # Revertir
+        return jsonify({"success": False, "message": "Error del servidor al guardar la lista de emojis."}), 500
 
 @app.route("/admin/emojis/remove", methods=["POST"])
 def admin_api_remove_emoji():
@@ -1411,15 +1451,17 @@ def admin_api_remove_emoji():
     if emoji not in EMOJI_LIST:
         return jsonify({"success": False, "message": "Emoji no encontrado en la lista"})
     
-    # Verificar que no esté en uso
     usuarios = cargar_usuarios()
     if emoji in usuarios:
         return jsonify({"success": False, "message": f"No se puede eliminar {emoji} porque está en uso"})
     
+    original_list = EMOJI_LIST[:]
     EMOJI_LIST.remove(emoji)
-    guardar_emoji_list(EMOJI_LIST)
-    
-    return jsonify({"success": True, "message": f"Emoji {emoji} eliminado exitosamente"})
+    if guardar_emoji_list(EMOJI_LIST):
+        return jsonify({"success": True, "message": f"Emoji {emoji} eliminado exitosamente"})
+    else:
+        EMOJI_LIST = original_list
+        return jsonify({"success": False, "message": "Error del servidor al guardar la lista de emojis."}), 500
 
 @app.route("/admin/users/change-emoji", methods=["POST"])
 def admin_api_change_user_emoji():
@@ -1550,7 +1592,8 @@ def admin_completar_pedido(pedido_id):
             flash(f"Pedido {pedido_id} marcado como no completado", "info")
     
     # Guardar cambios
-    guardar_pedidos(pedidos)
+    if not guardar_pedidos(pedidos):
+        flash("Error CRÍTICO al guardar el estado del pedido. Los cambios pueden no haberse aplicado.", "error")
     
     return redirect(url_for("admin_view"))
 
@@ -1590,9 +1633,11 @@ def admin_delete_order(pedido_id):
     
     # Eliminar el pedido
     del pedidos[pedido_index]
-    guardar_pedidos(pedidos)
-    
-    flash(f"Pedido {pedido_id} eliminado exitosamente", "success")
+    if guardar_pedidos(pedidos):
+        flash(f"Pedido {pedido_id} eliminado exitosamente", "success")
+    else:
+        # No se puede revertir la eliminación fácilmente, pero al menos se notifica el error.
+        flash(f"Error CRÍTICO al guardar la lista de pedidos después de eliminar el pedido {pedido_id}. El archivo puede estar corrupto.", "error")
     return redirect(url_for("admin_view"))
 
 
@@ -1638,12 +1683,12 @@ def admin_aura_levels():
                     flash(f"Error: Tamaño inválido para nivel {level}", "error")
         
         # Guardar cambios permanentemente
-        guardar_aura_levels(AURA_LEVELS)
+        if guardar_aura_levels(AURA_LEVELS):
+            # Recargar los niveles desde archivo para confirmar que se guardaron
+            AURA_LEVELS = procesar_aura_levels_loaded(cargar_aura_levels())
+            flash("Niveles de aura actualizados correctamente", "success")
+        # Error se flashea dentro de la función guardar
         
-        # Recargar los niveles desde archivo para confirmar que se guardaron
-        AURA_LEVELS = procesar_aura_levels_loaded(cargar_aura_levels())
-        
-        flash("Niveles de aura actualizados correctamente", "success")
         return redirect(url_for("admin_aura_levels"))
     
     return render_template("admin_aura_levels.html", levels=AURA_LEVELS)
@@ -1699,11 +1744,13 @@ def admin_agregar_producto():
 
         if 'promocion' in request.form:
             nuevo_producto['promocion'] = True
-
-        productos[product_id] = nuevo_producto
         
-        guardar_productos(productos)
-        flash(f"Producto '{nombre}' agregado exitosamente.", "success")
+        productos[product_id] = nuevo_producto
+
+        if guardar_productos(productos):
+            flash(f"Producto '{nombre}' agregado exitosamente.", "success")
+        else:
+            flash(f"Error al guardar el nuevo producto. Por favor, inténtalo de nuevo.", "error")
         return redirect(url_for("admin_productos"))
     
     return render_template("add_product.html", config=CONFIG)
@@ -1780,8 +1827,10 @@ def admin_editar_producto(product_id):
             imagen.save(os.path.join("static", imagen_filename))
             productos[product_id]["imagen"] = imagen_filename
         
-        guardar_productos(productos)
-        flash(f"Producto '{productos[product_id]['nombre']}' actualizado exitosamente.", "success")
+        if guardar_productos(productos):
+            flash(f"Producto '{productos[product_id]['nombre']}' actualizado exitosamente.", "success")
+        else:
+            flash(f"Error al guardar los cambios en el producto.", "error")
         return redirect(url_for("admin_productos"))
     
     return render_template("edit_product.html", producto=productos[product_id], product_id=product_id, config=CONFIG)
@@ -1794,9 +1843,13 @@ def admin_eliminar_producto(product_id):
     productos = cargar_productos()
 
     if product_id in productos:
+        original_productos = productos.copy()
         del productos[product_id]
-        guardar_productos(productos)
-        return jsonify({"success": True, "message": "Producto eliminado exitosamente"})
+        if guardar_productos(productos):
+            return jsonify({"success": True, "message": "Producto eliminado exitosamente"})
+        else:
+            guardar_productos(original_productos) # Reintentar guardar el original
+            return jsonify({"success": False, "message": "Error del servidor al eliminar el producto."}), 500
     else:
         return jsonify({"success": False, "message": "Producto no encontrado"}), 404
 
@@ -2061,7 +2114,9 @@ def comprar():
             productos[base_id]["variaciones"][variation_id]["stock"] -= cant
         elif "stock" in prod_data:
             productos[base_id]["stock"] -= cant
-    guardar_productos(productos)
+    if not guardar_productos(productos):
+        flash("Error CRÍTICO al actualizar el stock de productos. La compra no fue procesada.", "error")
+        return redirect(url_for("index"))
     
     cart_data = _get_cart_data()
     total_general = cart_data["total"]
@@ -2073,7 +2128,11 @@ def comprar():
         "user_emoji": session.get("logged_in_user_emoji"), "puntos_ganados": puntos_aura_ganados
     }
     libro_de_pedidos.append(nuevo_pedido)
-    guardar_pedidos(libro_de_pedidos)
+    if not guardar_pedidos(libro_de_pedidos):
+        flash("Error CRÍTICO al guardar el pedido. Por favor, contacta al administrador para verificar tu compra.", "error")
+        # Revertir el stock si el guardado del pedido falla
+        guardar_productos(cargar_productos()) # Recargar el estado anterior a la compra
+        return redirect(url_for("index"))
     mensaje_partes = [f"*Â¡Que onda Corak! ocupo:* ðŸ›ï¸\n\n*Pedido #{nuevo_id_pedido}*\nResumen:"]
     for cart_id, cant in carrito.items():
         nombre_item = cart_data["productos_detalle"].get(cart_id, {}).get("nombre", "Item")

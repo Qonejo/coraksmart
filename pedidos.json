@@ -47,16 +47,6 @@
         "completado": true
     },
     {
-        "id": "C1G25-TTC1-N4-L7H",
-        "timestamp": "29 de July, 2025 a las 19:19",
-        "detalle": {
-            "nerdsrope": 1
-        },
-        "total": 150,
-        "completado": true,
-        "user_emoji": "\ud83d\udcc8"
-    },
-    {
         "id": "C1G25-UAE-O4-N0A",
         "timestamp": "29 de July, 2025 a las 20:00",
         "detalle": {
@@ -65,16 +55,6 @@
         "total": 60,
         "completado": true,
         "user_emoji": "\ud83c\udf2e"
-    },
-    {
-        "id": "C1G25-UGE-P4-06Q",
-        "timestamp": "29 de July, 2025 a las 20:06",
-        "detalle": {
-            "ner": 3
-        },
-        "total": 360,
-        "completado": true,
-        "user_emoji": "\ud83d\udcc8"
     },
     {
         "id": "C1G25-UJW-Q4-BYQ",
@@ -86,89 +66,5 @@
         "total": 1390.0,
         "completado": true,
         "user_emoji": "\ud83d\ude00"
-    },
-    {
-        "id": "C1G25-ULH-R4-UYU",
-        "timestamp": "29 de July, 2025 a las 20:11",
-        "detalle": {
-            "pack_bienvenida": 5
-        },
-        "total": 950,
-        "completado": true,
-        "user_emoji": "\ud83d\udcc8"
-    },
-    {
-        "id": "D1G25-EU1S-S4-XC8",
-        "timestamp": "30 de July, 2025 a las 04:46",
-        "detalle": {
-            "Caps": 1,
-            "brow": 1
-        },
-        "total": 600,
-        "completado": true,
-        "user_emoji": "\ud83d\udcc8"
-    },
-    {
-        "id": "D1G25-FHP-T4-7LD",
-        "timestamp": "30 de July, 2025 a las 05:07",
-        "detalle": {
-            "ruffles": 1
-        },
-        "total": 180,
-        "completado": false,
-        "user_emoji": "\ud83d\uddff"
-    },
-    {
-        "id": "D1G25-FZV1-U4-A9S",
-        "timestamp": "30 de July, 2025 a las 05:25",
-        "detalle": {
-            "gomita__brownie": 3
-        },
-        "total": 570.0,
-        "completado": false,
-        "user_emoji": "\ud83d\udc8c"
-    },
-    {
-        "id": "D1G25-VCP1-V4-G1P",
-        "timestamp": "30 de July, 2025 a las 21:02",
-        "detalle": {
-            "Oll2-28 gr": 2,
-            "gomita__brownie": 1
-        },
-        "total": 750.0,
-        "completado": false,
-        "user_emoji": "\ud83d\udc8c"
-    },
-    {
-        "id": "D1G25-WUG2-W4-S65",
-        "timestamp": "30 de July, 2025 a las 22:20",
-        "detalle": {
-            "besos": 1,
-            "whole_melt_extracts": 1
-        },
-        "total": 2050.0,
-        "completado": false,
-        "user_emoji": "\ud83d\udc8c"
-    },
-    {
-        "id": "D1G25-WB1U1-X4-P9T",
-        "timestamp": "30 de July, 2025 a las 22:27",
-        "detalle": {
-            "pelon": 1
-        },
-        "total": 60,
-        "completado": false,
-        "user_emoji": "\ud83d\udc7d"
-    },
-    {
-        "id": "D1G25-XD1T-Y4-OAK",
-        "timestamp": "30 de July, 2025 a las 23:29",
-        "detalle": {
-            "gomitas": 1,
-            "pelon": 1
-        },
-        "total": 120.0,
-        "completado": false,
-        "user_emoji": "\ud83c\udf55"
     }
 ]
