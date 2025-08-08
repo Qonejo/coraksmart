@@ -1158,6 +1158,25 @@ def admin_configuracion():
             guardar_pedidos([])
             flash(f"TODOS los pedidos han sido eliminados. Se creó una copia de respaldo: {backup_filename}", "success")
 
+        elif action == "reset_all_users":
+            usuarios = cargar_usuarios()
+            default_password = "1234"
+            hashed_password = generate_password_hash(default_password)
+
+            for user_emoji in usuarios:
+                # Mantener la estructura de datos, pero reiniciar valores
+                usuarios[user_emoji]["password_hash"] = hashed_password
+                usuarios[user_emoji]["aura_points"] = 0
+
+                # Usar .get para evitar errores si la clave no existe
+                if "claimed_levels" in usuarios[user_emoji]:
+                    usuarios[user_emoji]["claimed_levels"] = []
+                if "reward_codes" in usuarios[user_emoji]:
+                    del usuarios[user_emoji]["reward_codes"]
+
+            guardar_usuarios(usuarios)
+            flash("TODOS los usuarios han sido reseteados. Sus contraseñas ahora son '1234'.", "success")
+
         return redirect(url_for("admin_configuracion"))
     
     return render_template("admin_config.html", config=cargar_configuracion())
