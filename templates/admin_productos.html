@@ -94,6 +94,30 @@
             color: #ccc;
             line-height: 1.4;
         }
+
+        .product-meta {
+            font-size: 9px;
+            color: #888;
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .product-tags {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            font-size: 8px;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-family: 'Press Start 2P', cursive;
+        }
+        .tag.promotion { background-color: #ffc107; color: #000; }
+        .tag.bundle { background-color: #28a745; color: #fff; }
+        .tag.variable { background-color: #17a2b8; color: #fff; }
         
         .product-actions {
             display: flex;
@@ -314,36 +338,29 @@
             <div class="product-info">
                 <div class="product-name">{{ product.nombre }}</div>
                 
+                <div class="product-meta">
+                    <span>ID: {{ product_id }}</span>
+                    <span>Orden: {{ product.orden if product.orden else 'N/A' }}</span>
+                </div>
+
                 <div class="product-details">
-                    <strong>ID:</strong> {{ product_id }}<br>
-                    <strong>Precio:</strong> ${{ product.precio if product.precio else 'N/A' }}<br>
-                    <strong>Stock:</strong> {{ product.stock if product.stock is defined else 'N/A' }}<br>
-                    <strong>Orden:</strong> {{ product.orden if product.orden else 'N/A' }}<br>
-                    {% if product.get('promocion') %}
-                        <strong style="color: #ffcc00;">🏷️ PROMOCIÓN</strong><br>
-                    {% endif %}
-                    {% if product.get('bundle_items') %}
-                        <strong style="color: #00ff00;">📦 BUNDLE</strong><br>
-                        <div style="font-size: 8px; margin-top: 5px;">
-                            {% for item_id, cantidad in product.bundle_items.items() %}
-                                • {{ cantidad }}x {{ item_id }}<br>
-                            {% endfor %}
-                        </div>
-                    {% endif %}
                     {% if product.get('variaciones') %}
-                        <strong style="color: #00ffff;">🔄 VARIACIONES</strong><br>
-                        <div style="font-size: 8px; margin-top: 5px;">
-                            {% for var_name, var_data in product.variaciones.items() %}
-                                • {{ var_name }}: ${{ var_data.precio }} (Stock: {{ var_data.stock }})<br>
-                            {% endfor %}
-                        </div>
+                        <span>Múltiples precios/stocks</span>
+                    {% else %}
+                        <span><strong>Precio:</strong> ${{ product.precio if product.precio else 'N/A' }}</span>
+                        <span><strong>Stock:</strong> {{ product.stock if product.stock is defined else 'N/A' }}</span>
                     {% endif %}
+                </div>
+
+                <div class="product-tags">
+                    {% if product.get('promocion') %}<span class="tag promotion">Promo</span>{% endif %}
+                    {% if product.get('bundle_items') %}<span class="tag bundle">Bundle</span>{% endif %}
+                    {% if product.get('variaciones') %}<span class="tag variable">Variable</span>{% endif %}
                 </div>
             </div>
             
             <div class="product-actions">
-                <button class="action-btn" onclick="editProduct('{{ product_id }}')">✏️ Editar</button>
-                <button class="action-btn" onclick="manageImages('{{ product_id }}')">🖼️ Imágenes</button>
+                <button class="action-btn" onclick="editProduct('{{ product_id }}')">✏️ Editar / Ver Detalles</button>
                 <button class="action-btn delete" onclick="deleteProduct('{{ product_id }}')">🗑️ Eliminar</button>
             </div>
         </div>
@@ -453,24 +470,42 @@
         }
         
         function editProduct(productId) {
-            // Implementar modal de edición o redirigir a página de edición
-            alert(`Función de edición para ${productId} - Por implementar`);
+            window.location.href = `/admin/editar-producto/${productId}`;
         }
         
         function manageImages(productId) {
-            alert(`Gestión de imágenes para ${productId} - Por implementar`);
+            alert(`Función de gestión de imágenes para '${productId}' aún no implementada.`);
         }
-        
-        function deleteProduct(productId) {
-            if (confirm(`¿Estás seguro de eliminar el producto ${productId}?`)) {
-                // Implementar eliminación
-                alert(`Eliminación de ${productId} - Por implementar`);
+
+        async function deleteProduct(productId) {
+            if (confirm(`¿Estás seguro de que quieres eliminar el producto '${productId}'? Esta acción no se puede deshacer.`)) {
+                try {
+                    const response = await fetch(`/admin/eliminar-producto/${productId}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        alert(data.message);
+                        // Eliminar la tarjeta del producto de la vista
+                        const card = document.querySelector(`.product-card[data-product-id="${productId}"]`);
+                        if (card) {
+                            card.remove();
+                        }
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                } catch (error) {
+                    console.error('Error al eliminar producto:', error);
+                    alert('Ocurrió un error de red.');
+                }
             }
         }
         
         function addNewProduct() {
-            // Implementar modal o página para agregar producto
-            alert('Agregar nuevo producto - Por implementar');
+            window.location.href = "{{ url_for('admin_agregar_producto') }}";
         }
         
         // Cerrar modal con Escape

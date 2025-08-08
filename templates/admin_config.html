@@ -5,302 +5,105 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Configuración - Panel Admin</title>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
-        .config-container {
-            max-width: 600px;
-            margin: 20px auto;
-            padding: 20px;
-            background: #1a1a1a;
-            border: 4px solid #00ff00;
-            border-radius: 10px;
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        .form-group label {
-            display: block;
-            color: #00ff00;
-            margin-bottom: 8px;
-            font-size: 12px;
-        }
-        
-        .form-group input,
-        .form-group textarea {
-            width: 100%;
-            padding: 10px;
-            background: #333;
-            border: 2px solid #555;
-            color: #fff;
-            border-radius: 5px;
-            font-family: 'Press Start 2P', cursive;
-            font-size: 10px;
-            box-sizing: border-box;
-        }
-        
-        .form-group input:focus,
-        .form-group textarea:focus {
-            border-color: #00ff00;
-            outline: none;
-        }
-        
-        .form-group textarea {
-            height: 80px;
-            resize: vertical;
-        }
-        
-        .submit-btn {
-            background: #003300;
-            color: #00ff00;
-            border: 2px solid #00ff00;
-            padding: 12px 20px;
-            border-radius: 5px;
-            font-family: 'Press Start 2P', cursive;
-            font-size: 10px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        
-        .submit-btn:hover {
-            background: #00ff00;
-            color: #000;
-        }
-        
-        .back-btn {
-            display: inline-block;
-            margin-bottom: 20px;
-            padding: 8px 15px;
-            background: #333;
-            color: #00ff00;
-            text-decoration: none;
-            border: 2px solid #00ff00;
-            border-radius: 5px;
-            font-family: 'Press Start 2P', cursive;
-            font-size: 9px;
-            transition: all 0.3s ease;
-        }
-        
-        .back-btn:hover {
-            background: #00ff00;
-            color: #000;
-        }
-        
-        .help-text {
-            font-size: 8px;
-            color: #888;
-            margin-top: 5px;
-            line-height: 1.4;
-        }
-        
-        @media (max-width: 768px) {
-            .config-container {
-                margin: 10px;
-                padding: 15px;
-            }
-        }
+        body { font-family: 'Press Start 2P', cursive; background-color: #222; color: #fff; padding: 20px; }
+        h1, h2, h3 { border-bottom: 2px solid #fff; padding-bottom: 10px; }
+        .config-container { max-width: 600px; margin: 20px auto; padding: 20px; background: #1a1a1a; border: 4px solid #00ff00; border-radius: 10px; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; color: #00ff00; margin-bottom: 8px; font-size: 12px; }
+        .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 10px; background: #333; border: 2px solid #555; color: #fff; border-radius: 5px; font-family: 'Press Start 2P', cursive; font-size: 10px; box-sizing: border-box; }
+        .form-group input:focus, .form-group textarea:focus { border-color: #00ff00; outline: none; }
+        .form-group textarea { height: 80px; resize: vertical; }
+        .submit-btn { background: #003300; color: #00ff00; border: 2px solid #00ff00; padding: 12px 20px; border-radius: 5px; font-family: 'Press Start 2P', cursive; font-size: 10px; cursor: pointer; transition: all 0.3s ease; }
+        .submit-btn:hover { background: #00ff00; color: #000; }
+        .back-btn { display: inline-block; margin-bottom: 20px; padding: 8px 15px; background: #333; color: #00ff00; text-decoration: none; border: 2px solid #00ff00; border-radius: 5px; font-family: 'Press Start 2P', cursive; font-size: 9px; transition: all 0.3s ease; }
+        .back-btn:hover { background: #00ff00; color: #000; }
+        .help-text { font-size: 8px; color: #888; margin-top: 5px; line-height: 1.4; }
+        .section-divider { margin-top: 40px; padding-top: 20px; border-top: 2px solid #333; }
     </style>
 </head>
 <body>
     <header>
-        <div class="logo-container">
-            <img src="{{ url_for('static', filename='logo.png') }}" alt="CorakSmart" style="height: 60px;">
-        </div>
-        <div class="user-info">
-            <span>👑 Admin Panel</span>
-        </div>
+        <div class="logo-container"><img src="{{ url_for('static', filename='logo.png') }}" alt="CorakSmart" style="height: 60px;"></div>
+        <div class="user-info"><span>👑 Admin Panel</span></div>
     </header>
 
     <div class="config-container">
         <a href="{{ url_for('admin_view') }}" class="back-btn">← Volver al Panel</a>
-        
-        <h1 style="text-align: center; color: #00ff00; margin-bottom: 30px;">⚙️ Configuración</h1>
+        <h1 style="text-align: center; color: #00ff00; margin-bottom: 30px;">⚙️ Configuración General</h1>
         
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
-                <div class="flash-messages">
-                    {% for category, message in messages %}
-                        <div class="flash-message flash-{{ category }}">{{ message }}</div>
-                    {% endfor %}
-                </div>
+                {% for category, message in messages %}
+                <div class="flash-message flash-{{ category }}" style="padding: 10px; margin-bottom: 15px; border-radius: 5px; background: {% if category == 'success' %}#28a745{% else %}#dc3545{% endif %}; color: white;">{{ message }}</div>
+                {% endfor %}
             {% endif %}
         {% endwith %}
         
-        <form method="POST">
+        <form method="POST" action="{{ url_for('admin_configuracion') }}">
+
+            <!-- Configuración General -->
             <div class="form-group">
                 <label for="horarios_atencion">📅 Horarios de Atención:</label>
                 <textarea id="horarios_atencion" name="horarios_atencion" placeholder="Ej: Lunes a Viernes: 9:00 AM - 6:00 PM">{{ config.horarios_atencion }}</textarea>
-                <div class="help-text">
-                    Este texto se mostrará en la información de contacto y pedidos.
-                </div>
             </div>
             
             <div class="form-group">
                 <label for="whatsapp_principal">📱 WhatsApp Principal:</label>
-                <input type="text" id="whatsapp_principal" name="whatsapp_principal" 
-                       value="{{ config.whatsapp_principal }}" 
-                       placeholder="521234567890">
-                <div class="help-text">
-                    Número de WhatsApp donde se recibirán los pedidos (formato: 521234567890).
-                </div>
+                <input type="text" id="whatsapp_principal" name="whatsapp_principal" value="{{ config.whatsapp_principal }}" placeholder="521234567890">
             </div>
             
             <div class="form-group">
                 <label for="whatsapp_secundario">📱 WhatsApp Secundario (Opcional):</label>
-                <input type="text" id="whatsapp_secundario" name="whatsapp_secundario" 
-                       value="{{ config.whatsapp_secundario }}" 
-                       placeholder="521234567890">
-                <div class="help-text">
-                    Número de WhatsApp alternativo para recibir pedidos. Déjalo vacío si no necesitas uno.
-                </div>
+                <input type="text" id="whatsapp_secundario" name="whatsapp_secundario" value="{{ config.whatsapp_secundario }}" placeholder="521234567890">
             </div>
             
             <h3 style="color: #ffcc00; margin: 30px 0 20px 0; border-bottom: 2px solid #ffcc00; padding-bottom: 10px;">📱 Configuración WhatsApp por Producto</h3>
             
-            <div class="form-group">
-                <label for="whatsapp_1">📱 WhatsApp 1:</label>
-                <input type="text" id="whatsapp_1" name="whatsapp_1" 
-                       value="{{ config.whatsapp_1 }}" 
-                       placeholder="521234567890">
-            </div>
-            
-            <div class="form-group">
-                <label for="whatsapp_1_nombre">🏷️ Nombre WhatsApp 1:</label>
-                <input type="text" id="whatsapp_1_nombre" name="whatsapp_1_nombre" 
-                       value="{{ config.whatsapp_1_nombre }}" 
-                       placeholder="Principal">
-            </div>
-            
-            <div class="form-group">
-                <label for="whatsapp_2">📱 WhatsApp 2:</label>
-                <input type="text" id="whatsapp_2" name="whatsapp_2" 
-                       value="{{ config.whatsapp_2 }}" 
-                       placeholder="521234567890">
-            </div>
-            
-            <div class="form-group">
-                <label for="whatsapp_2_nombre">🏷️ Nombre WhatsApp 2:</label>
-                <input type="text" id="whatsapp_2_nombre" name="whatsapp_2_nombre" 
-                       value="{{ config.whatsapp_2_nombre }}" 
-                       placeholder="Secundario">
-            </div>
-            
-            <div class="form-group">
-                <label for="whatsapp_3">📱 WhatsApp 3:</label>
-                <input type="text" id="whatsapp_3" name="whatsapp_3" 
-                       value="{{ config.whatsapp_3 }}" 
-                       placeholder="521234567890">
-            </div>
-            
-            <div class="form-group">
-                <label for="whatsapp_3_nombre">🏷️ Nombre WhatsApp 3:</label>
-                <input type="text" id="whatsapp_3_nombre" name="whatsapp_3_nombre" 
-                       value="{{ config.whatsapp_3_nombre }}" 
-                       placeholder="Terciario">
-                <div class="help-text">
-                    Configura hasta 3 números de WhatsApp diferentes. Luego podrás asignar cada producto a uno de estos números.
-                </div>
-            </div>
+            <div class="form-group"><label for="whatsapp_1">📱 WhatsApp 1:</label><input type="text" id="whatsapp_1" name="whatsapp_1" value="{{ config.whatsapp_1 }}" placeholder="521234567890"></div>
+            <div class="form-group"><label for="whatsapp_1_nombre">🏷️ Nombre WhatsApp 1:</label><input type="text" id="whatsapp_1_nombre" name="whatsapp_1_nombre" value="{{ config.whatsapp_1_nombre }}" placeholder="Principal"></div>
+            <div class="form-group"><label for="whatsapp_2">📱 WhatsApp 2:</label><input type="text" id="whatsapp_2" name="whatsapp_2" value="{{ config.whatsapp_2 }}" placeholder="521234567890"></div>
+            <div class="form-group"><label for="whatsapp_2_nombre">🏷️ Nombre WhatsApp 2:</label><input type="text" id="whatsapp_2_nombre" name="whatsapp_2_nombre" value="{{ config.whatsapp_2_nombre }}" placeholder="Secundario"></div>
+            <div class="form-group"><label for="whatsapp_3">📱 WhatsApp 3:</label><input type="text" id="whatsapp_3" name="whatsapp_3" value="{{ config.whatsapp_3 }}" placeholder="521234567890"></div>
+            <div class="form-group"><label for="whatsapp_3_nombre">🏷️ Nombre WhatsApp 3:</label><input type="text" id="whatsapp_3_nombre" name="whatsapp_3_nombre" value="{{ config.whatsapp_3_nombre }}" placeholder="Terciario"></div>
             
             <div style="text-align: center; margin-top: 30px;">
-                <button type="submit" class="submit-btn">💾 Guardar Configuración</button>
+                <button type="submit" name="action" value="save_config" class="submit-btn">💾 Guardar Configuración</button>
+            </div>
+
+            <!-- Acciones Administrativas -->
+            <div class="section-divider">
+                <h3 style="color: #ff6666; margin-bottom: 15px;">⚠️ Acciones Administrativas</h3>
+                
+                <div style="display: flex; flex-direction: column; gap: 20px;">
+                    <!-- Reiniciar Contraseña -->
+                    <div class="form-group">
+                        <label style="color: #ff6666; font-size: 10px;">🔑 Reiniciar Contraseña de Usuario:</label>
+                        <input type="text" name="reset_user_emoji" placeholder="Emoji del usuario (ej: 😀)">
+                        <div class="help-text">La contraseña se reiniciará a un valor por defecto ('1234').</div>
+                        <button type="submit" name="action" value="reset_password" onclick="return confirm('¿Estás seguro de reiniciar la contraseña de este usuario?')" class="submit-btn" style="background: #ff3333; border-color: #ff6666; color: #fff; margin-top: 10px;">🔄 Reiniciar Contraseña</button>
+                    </div>
+
+                    <!-- Borrar Pedidos -->
+                    <div class="form-group">
+                        <label style="color: #ff6666; font-size: 10px;">🗑️ Borrar Todos los Pedidos:</label>
+                        <div style="background: #2a1a1a; padding: 10px; border: 2px solid #ff3333; border-radius: 5px; font-size: 8px; color: #ff6666;">
+                            ⚠️ ADVERTENCIA: Esta acción es permanente e irreversible.
+                        </div>
+                        <button type="submit" name="action" value="clear_orders" onclick="return confirm('¿ESTÁS COMPLETAMENTE SEGURO? Esta acción eliminará TODOS los pedidos y NO SE PUEDE DESHACER.')" class="submit-btn" style="background: #aa0000; border-color: #ff3333; color: #fff; margin-top: 10px;">💥 BORRAR TODOS LOS PEDIDOS</button>
+                    </div>
+
+                    <!-- Resetear todos los usuarios -->
+                    <div class="form-group">
+                        <label style="color: #ff6666; font-size: 10px;">🔄 Resetear Todos los Usuarios y Contraseñas:</label>
+                        <div style="background: #2a1a1a; padding: 10px; border: 2px solid #ff3333; border-radius: 5px; font-size: 8px; color: #ff6666;">
+                            ⚠️ ADVERTENCIA: Esta acción reiniciará los puntos, niveles y contraseñas (el usuario deberá crear una nueva al iniciar sesión) de TODOS los usuarios. Es irreversible.
+                        </div>
+                        <button type="submit" name="action" value="reset_all_users" onclick="return confirm('¿ESTÁS COMPLETAMENTE SEGURO? Esta acción reiniciará a TODOS los usuarios y sus contraseñas. NO SE PUEDE DESHACER.')" class="submit-btn" style="background: #aa0000; border-color: #ff3333; color: #fff; margin-top: 10px;">💥 RESETEAR TODOS LOS USUARIOS</button>
+                    </div>
+                </div>
             </div>
         </form>
-        
-        <!-- Sección para cambiar logo -->
-        <div style="margin-top: 40px; padding-top: 20px; border-top: 2px solid #333;">
-            <h3 style="color: #ffcc00; margin-bottom: 15px;">🖼️ Cambiar Logo</h3>
-            <div style="background: #2a2a2a; padding: 15px; border-radius: 5px;">
-                <p style="font-size: 9px; color: #ccc; margin-bottom: 15px;">
-                    Logo actual:
-                </p>
-                <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo actual" 
-                     style="max-height: 80px; margin-bottom: 15px; border: 2px solid #555;">
-                
-                <form id="logoForm" enctype="multipart/form-data" style="margin-top: 15px;">
-                    <div class="form-group" style="margin-bottom: 15px;">
-                        <label for="logo" style="color: #ffcc00; font-size: 10px;">Subir nuevo logo:</label>
-                        <input type="file" id="logo" name="logo" accept="image/*" 
-                               style="width: 100%; padding: 8px; background: #333; border: 2px solid #555; color: #fff; border-radius: 5px; font-family: 'Press Start 2P', cursive; font-size: 8px;">
-                        <div class="help-text">
-                            Formatos aceptados: PNG, JPG, JPEG, GIF. Se reemplazará el logo actual.
-                        </div>
-                    </div>
-                    <button type="submit" style="background: #ffcc00; color: #000; border: 2px solid #ff9900; padding: 8px 15px; border-radius: 5px; font-family: 'Press Start 2P', cursive; font-size: 9px; cursor: pointer;">
-                        📤 Subir Logo
-                    </button>
-                </form>
-            </div>
-        </div>
-        
-        <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #333;">
-            <h3 style="color: #ff6666; margin-bottom: 15px;">⚠️ Acciones Administrativas</h3>
-            
-            <div style="display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px;">
-                <form method="POST" action="{{ url_for('admin_reset_user_password') }}" style="display: flex; flex-direction: column; gap: 10px;">
-                    <label style="color: #ff6666; font-size: 10px;">🔑 Reiniciar Contraseña de Usuario:</label>
-                    <input type="text" name="user_emoji" placeholder="Emoji del usuario (ej: 😀)" style="padding: 8px; background: #333; border: 2px solid #555; color: #fff; border-radius: 5px; font-family: 'Press Start 2P', cursive; font-size: 10px;">
-                    <input type="password" name="new_password" placeholder="Nueva contraseña" style="padding: 8px; background: #333; border: 2px solid #555; color: #fff; border-radius: 5px; font-family: 'Press Start 2P', cursive; font-size: 10px;">
-                    <button type="submit" onclick="return confirm('¿Estás seguro de reiniciar la contraseña de este usuario?')" style="background: #ff3333; color: #fff; border: 2px solid #ff6666; padding: 8px 15px; border-radius: 5px; font-family: 'Press Start 2P', cursive; font-size: 9px; cursor: pointer;">🔄 Reiniciar Contraseña</button>
-                </form>
-                
-                <form method="POST" action="{{ url_for('admin_clear_orders') }}" style="display: flex; flex-direction: column; gap: 10px;">
-                    <label style="color: #ff6666; font-size: 10px;">🗑️ Borrar Todos los Pedidos:</label>
-                    <div style="background: #2a1a1a; padding: 10px; border: 2px solid #ff3333; border-radius: 5px; font-size: 8px; color: #ff6666;">
-                        ⚠️ ADVERTENCIA: Esta acción eliminará TODOS los pedidos de TODOS los usuarios de forma permanente. No se puede deshacer.
-                    </div>
-                    <button type="submit" onclick="return confirm('¿ESTÁS COMPLETAMENTE SEGURO? Esta acción eliminará TODOS los pedidos de TODOS los usuarios y NO SE PUEDE DESHACER.')" style="background: #aa0000; color: #fff; border: 2px solid #ff3333; padding: 8px 15px; border-radius: 5px; font-family: 'Press Start 2P', cursive; font-size: 9px; cursor: pointer;">💥 BORRAR TODOS LOS PEDIDOS</button>
-                </form>
-            </div>
-        </div>
-        
-        <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #333;">
-            <h3 style="color: #00ff00; margin-bottom: 15px;">📋 Información Actual:</h3>
-            <div style="background: #2a2a2a; padding: 15px; border-radius: 5px; font-size: 9px; line-height: 1.6;">
-                <p><strong>Horarios:</strong> {{ config.horarios_atencion }}</p>
-                <p><strong>WhatsApp Principal:</strong> {{ config.whatsapp_principal }}</p>
-                {% if config.whatsapp_secundario %}
-                    <p><strong>WhatsApp Secundario:</strong> {{ config.whatsapp_secundario }}</p>
-                {% endif %}
-            </div>
-        </div>
     </div>
-    
-    <script>
-        // Manejar subida de logo
-        document.getElementById('logoForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const formData = new FormData();
-            const logoFile = document.getElementById('logo').files[0];
-            
-            if (!logoFile) {
-                alert('Por favor selecciona un archivo de logo');
-                return;
-            }
-            
-            formData.append('logo', logoFile);
-            
-            try {
-                const response = await fetch('/admin/upload-logo', {
-                    method: 'POST',
-                    body: formData
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    alert('Logo subido exitosamente');
-                    // Recargar la página para ver el nuevo logo
-                    location.reload();
-                } else {
-                    alert('Error: ' + data.message);
-                }
-            } catch (error) {
-                alert('Error al subir el logo: ' + error.message);
-            }
-        });
-    </script>
 </body>
 </html>

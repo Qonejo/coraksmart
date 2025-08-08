@@ -50,9 +50,18 @@ def cargar_configuracion():
         }
 
 def guardar_configuracion(config):
-    """Guardar configuración en archivo"""
-    with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
-        json.dump(config, f, indent=4, ensure_ascii=False)
+    """Guardar configuración en archivo con manejo de errores."""
+    try:
+        with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
+            json.dump(config, f, indent=4, ensure_ascii=False)
+        return True
+    except (IOError, OSError) as e:
+        print(f"FATAL: No se pudo guardar el archivo de configuración '{CONFIG_FILE}'. Error: {e}")
+        try:
+            flash(f"Error CRÍTICO: No se pudo guardar la configuración. Contacta al administrador.", "error")
+        except RuntimeError:
+            print("Error: No se pudo flashear mensaje porque no hay un contexto de request activo.")
+        return False
 
 # Cargar configuración al iniciar
 CONFIG = cargar_configuracion()
@@ -69,19 +78,53 @@ def cargar_productos():
             return productos
     except (FileNotFoundError, json.JSONDecodeError): return {}
 def guardar_productos(productos):
-    with open(PRODUCTOS_FILE, 'w', encoding='utf-8') as f: json.dump(productos, f, indent=4)
+    """Guardar productos en archivo con manejo de errores."""
+    try:
+        with open(PRODUCTOS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(productos, f, indent=4, ensure_ascii=False)
+        return True
+    except (IOError, OSError) as e:
+        print(f"FATAL: No se pudo guardar el archivo de productos '{PRODUCTOS_FILE}'. Error: {e}")
+        try:
+            flash(f"Error CRÍTICO: No se pudo guardar la base de datos de productos. Contacta al administrador.", "error")
+        except RuntimeError:
+            print("Error: No se pudo flashear mensaje porque no hay un contexto de request activo.")
+        return False
 def cargar_pedidos():
     try:
         with open(PEDIDOS_FILE, 'r', encoding='utf-8') as f: return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError): return []
 def guardar_pedidos(pedidos):
-    with open(PEDIDOS_FILE, 'w', encoding='utf-8') as f: json.dump(pedidos, f, indent=4)
+    """Guardar pedidos en archivo con manejo de errores."""
+    try:
+        with open(PEDIDOS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(pedidos, f, indent=4, ensure_ascii=False)
+        return True
+    except (IOError, OSError) as e:
+        print(f"FATAL: No se pudo guardar el archivo de pedidos '{PEDIDOS_FILE}'. Error: {e}")
+        try:
+            flash(f"Error CRÍTICO: No se pudo guardar la base de datos de pedidos. Contacta al administrador.", "error")
+        except RuntimeError:
+            print("Error: No se pudo flashear mensaje porque no hay un contexto de request activo.")
+        return False
 def cargar_usuarios():
     try:
         with open(USUARIOS_FILE, 'r', encoding='utf-8') as f: return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError): return {}
 def guardar_usuarios(usuarios):
-    with open(USUARIOS_FILE, 'w', encoding='utf-8') as f: json.dump(usuarios, f, indent=4)
+    """Guardar usuarios en archivo con manejo de errores."""
+    try:
+        with open(USUARIOS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(usuarios, f, indent=4, ensure_ascii=False)
+        return True
+    except (IOError, OSError) as e:
+        print(f"FATAL: No se pudo guardar el archivo de usuarios '{USUARIOS_FILE}'. Error: {e}")
+        # Intentar flashear un mensaje si estamos en un contexto de request
+        try:
+            flash(f"Error CRÍTICO: No se pudo guardar la base de datos de usuarios. Contacta al administrador.", "error")
+        except RuntimeError:
+            print("Error: No se pudo flashear mensaje porque no hay un contexto de request activo.")
+        return False
 
 # --- SISTEMA DE AURA Y GENERADOR DE IDS ---
 AURA_LEVELS_FILE = "aura_levels.json"
@@ -94,27 +137,35 @@ def cargar_aura_levels():
     except (FileNotFoundError, json.JSONDecodeError):
         return [
             {"level": 0, "points_needed": -float('inf'), "flame_color": "black",  "name": "Bandido", "prize": "No hay recompensas en este nivel", "character_size": 96},
-            {"level": 1, "points_needed": 5000,         "flame_color": "white",  "name": "Vampiro ojón", "prize": "1 Gomita gratis", "character_size": 96},
-            {"level": 2, "points_needed": 7000,      "flame_color": "blue",   "name": "Avispa mutante", "prize": "5% descuento en tu próxima compra", "character_size": 96},
-            {"level": 3, "points_needed": 9030,      "flame_color": "green",  "name": "Lombriz mounstro", "prize": "Salvia + 1", "character_size": 96},
-            {"level": 4, "points_needed": 15270,     "flame_color": "yellow", "name": "Perrodragón", "prize": "10% descuento en tu próxima compra", "character_size": 96},
-            {"level": 5, "points_needed": 19820,     "flame_color": "orange", "name": "Brujo runero", "prize": "1 Olla", "character_size": 96},
-            {"level": 6, "points_needed": 24000,     "flame_color": "red",    "name": "Obelisco runa", "prize": "15% descuento en tu próxima compra", "character_size": 96},
-            {"level": 7, "points_needed": 33000,     "flame_color": "purple", "name": "Entidad", "prize": "1 Brownie + 1 Gomita + Media olla + 5% descuento en tu próxima compra", "character_size": 96}
+            {"level": 1, "points_needed": 9000,         "flame_color": "white",  "name": "Vampiro ojón", "prize": "1 Gomita gratis", "character_size": 96},
+            {"level": 2, "points_needed": 16000,      "flame_color": "blue",   "name": "Avispa mutante", "prize": "5% descuento en tu próxima compra", "character_size": 96},
+            {"level": 3, "points_needed": 21000,      "flame_color": "green",  "name": "Lombriz mounstro", "prize": "Salvia + 1", "character_size": 96},
+            {"level": 4, "points_needed": 30000,     "flame_color": "yellow", "name": "Perrodragón", "prize": "10% descuento en tu próxima compra", "character_size": 96},
+            {"level": 5, "points_needed": 39000,     "flame_color": "orange", "name": "Brujo runero", "prize": "1 Olla", "character_size": 96},
+            {"level": 6, "points_needed": 52000,     "flame_color": "red",    "name": "Obelisco runa", "prize": "15% descuento en tu próxima compra", "character_size": 96},
+            {"level": 7, "points_needed": 66000,     "flame_color": "purple", "name": "Entidad", "prize": "1 Brownie + 1 Gomita + Media olla + 5% descuento en tu próxima compra", "character_size": 96}
         ]
 
 def guardar_aura_levels(levels):
-    """Guardar niveles de aura en archivo"""
-    # Convertir -inf a string para JSON
+    """Guardar niveles de aura en archivo con manejo de errores."""
     levels_for_json = []
     for level in levels:
         level_copy = level.copy()
-        if level_copy["points_needed"] == -float('inf'):
+        if level_copy.get("points_needed") == -float('inf'):
             level_copy["points_needed"] = "negative_infinity"
         levels_for_json.append(level_copy)
     
-    with open(AURA_LEVELS_FILE, 'w', encoding='utf-8') as f:
-        json.dump(levels_for_json, f, indent=4, ensure_ascii=False)
+    try:
+        with open(AURA_LEVELS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(levels_for_json, f, indent=4, ensure_ascii=False)
+        return True
+    except (IOError, OSError) as e:
+        print(f"FATAL: No se pudo guardar el archivo de niveles de aura '{AURA_LEVELS_FILE}'. Error: {e}")
+        try:
+            flash(f"Error CRÍTICO: No se pudo guardar la configuración de niveles de aura. Contacta al administrador.", "error")
+        except RuntimeError:
+            print("Error: No se pudo flashear mensaje porque no hay un contexto de request activo.")
+        return False
 
 def procesar_aura_levels_loaded(levels):
     """Procesar niveles cargados para convertir string infinity a float"""
@@ -552,19 +603,132 @@ def perfil_usuario():
     pedidos_del_usuario = [p for p in todos_los_pedidos if p.get("user_emoji") == user_emoji]
     return render_template("perfil.html", user_emoji=user_emoji, pedidos=reversed(pedidos_del_usuario), PRODUCTOS=cargar_productos(), aura_data=aura_data, AURA_LEVELS=AURA_LEVELS)
 
+# --- HELPER PARA HISTORIAL COMBINADO ---
+def parse_pedido_timestamp(ts_str):
+    """Intenta parsear los diferentes formatos de timestamp usados en la aplicación."""
+    # Formato 1: "30 de July, 2025 a las 19:19"
+    # Formato 2: "2025-07-30 19:30:00"
+    if " a las " in ts_str:
+        try:
+            # Normalizar el string
+            ts_str_normalized = ts_str.replace(' a las ', ' ').replace(' de ', ' ')
+            # Mapear meses en español si es necesario
+            month_map = {
+                'enero': 'January', 'febrero': 'February', 'marzo': 'March', 'abril': 'April',
+                'mayo': 'May', 'junio': 'June', 'julio': 'July', 'agosto': 'August',
+                'septiembre': 'September', 'octubre': 'October', 'noviembre': 'November', 'diciembre': 'December'
+            }
+            for es, en in month_map.items():
+                ts_str_normalized = ts_str_normalized.lower().replace(es, en)
+
+            # Asumimos que el mes está en inglés y capitalizado
+            return datetime.strptime(ts_str_normalized, '%d %B, %Y %H:%M')
+        except (ValueError, TypeError):
+            pass # Falla y prueba el siguiente formato
+
+    # Formato 2 y fallback
+    try:
+        return datetime.fromisoformat(ts_str)
+    except (ValueError, TypeError):
+        # Si todo falla, devolver una fecha por defecto para evitar crashes
+        return datetime.fromtimestamp(0)
+
+
+def get_combined_history():
+    """Crea una lista unificada y cronológica de pedidos y recompensas pendientes."""
+    pedidos = cargar_pedidos()
+    usuarios = cargar_usuarios()
+    productos = cargar_productos()
+    aura_levels = AURA_LEVELS
+
+    combined_history = []
+
+    # 1. Procesar Pedidos
+    for pedido in pedidos:
+        timestamp_str = pedido.get("timestamp")
+        if not timestamp_str or not isinstance(timestamp_str, str):
+            continue
+
+        timestamp_dt = parse_pedido_timestamp(timestamp_str)
+
+        # Crear resumen del detalle
+        detalle_summary_parts = []
+        if isinstance(pedido.get('detalle'), dict):
+            for prod_id, cantidad in pedido['detalle'].items():
+                base_id = prod_id.split('-')[0]
+                prod_info = productos.get(base_id, {})
+                nombre = prod_info.get('nombre', prod_id)
+                detalle_summary_parts.append(f"{cantidad}x {nombre}")
+        detalle_summary = ", ".join(detalle_summary_parts)
+
+        combined_history.append({
+            'type': 'pedido',
+            'id': pedido.get('id'),
+            'user_emoji': pedido.get('user_emoji', '👤'),
+            'timestamp_str': timestamp_str,
+            'timestamp_dt': timestamp_dt,
+            'details': detalle_summary or "Detalle no disponible",
+            'total': pedido.get('total', 0),
+            'status': pedido.get('completado', False),
+            'data': pedido
+        })
+
+    # 2. Procesar Recompensas Pendientes
+    for user_emoji, user_data in usuarios.items():
+        if "reward_codes" in user_data:
+            for level_str, reward_info in user_data["reward_codes"].items():
+                if not reward_info.get("claimed", False):
+                    level = int(level_str)
+                    level_info = next((l for l in aura_levels if l["level"] == level), None)
+                    if not level_info: continue
+
+                    timestamp_str = reward_info.get("generated_at")
+                    if not timestamp_str or not isinstance(timestamp_str, str): continue
+
+                    try:
+                        timestamp_dt = datetime.fromisoformat(timestamp_str)
+                    except ValueError:
+                        continue
+
+                    combined_history.append({
+                        'type': 'recompensa',
+                        'id': f"{user_emoji}-{level}",
+                        'user_emoji': user_emoji,
+                        'timestamp_str': timestamp_str,
+                        'timestamp_dt': timestamp_dt,
+                        'details': f"Nivel {level}: {level_info['prize']}",
+                        'total': 0,
+                        'status': False,
+                        'data': {
+                            'level': level,
+                            'user_emoji': user_emoji,
+                            'prize': level_info['prize'],
+                            'code': reward_info.get('code', 'N/A')
+                        }
+                    })
+
+    # 3. Ordenar la lista combinada
+    combined_history.sort(key=lambda x: x['timestamp_dt'], reverse=True)
+
+    return combined_history
+
+
 @app.route("/admin")
 def admin_view():
     if not session.get("logged_in"): return redirect(url_for("login"))
-    pedidos = cargar_pedidos()
+
+    # Usar la nueva función para obtener el historial combinado
+    historial_combinado = get_combined_history()
+
+    # Cargar datos adicionales que la plantilla pueda necesitar
     productos_dict = cargar_productos()
     productos_ordenados_admin = sorted(productos_dict.items(), key=lambda item: item[1].get('orden', 999))
-    pedidos_agrupados = {}
-    for pedido in reversed(pedidos):
-        emoji_key = pedido.get("user_emoji", "Pedidos Antiguos / Sin Usuario")
-        if emoji_key not in pedidos_agrupados:
-            pedidos_agrupados[emoji_key] = []
-        pedidos_agrupados[emoji_key].append(pedido)
-    return render_template("admin.html", PEDIDOS_AGRUPADOS=pedidos_agrupados, PRODUCTOS_ORDENADOS=productos_ordenados_admin, PRODUCTOS=productos_dict, config=CONFIG)
+
+    return render_template("admin.html",
+                           historial=historial_combinado,
+                           PRODUCTOS_ORDENADOS=productos_ordenados_admin,
+                           PRODUCTOS=productos_dict,
+                           config=CONFIG)
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -594,10 +758,19 @@ def cargar_emoji_list():
         return ["😀", "🚀", "🌟", "🍕", "🤖", "👻", "👽", "👾", "🦊", "🧙", "🌮", "💎", "🌙", "🔮", "🧬", "🌵", "🎉", "🔥", "💯", "👑", "💡", "🎮", "🛰️", "🛸", "🗿", "🌴", "🧪", "✨", "🔑", "🗺️", "🐙", "🦋", "🐲", "🍩", "⚡", "🎯", "⚓", "🌈", "🌌", "🌠", "🎱", "🎰", "🕹️", "🏆", "💊", "🎁", "💌", "📈", "😎", "😂", "🤣", "😍", "🥰", "😘", "😋", "😜", "🤩", "🥳", "😇", "🤠", "🤡", "🥸", "🤓", "😈", "👹", "👺", "💀", "👽", "🤖", "🎃", "😺", "😸", "😹", "😻", "😼", "😽", "🙀", "😿", "😾", "🦄", "🐵", "🐶", "🐺", "🐱", "🦁", "🐯", "🦒", "🦓", "🐴", "🦏", "🐘", "🐭", "🐹", "🐰", "🐻", "🐼", "🐨", "🐷", "🐸", "🦆", "🐧", "🦅", "🦉", "🐍", "🐢", "🦎", "🐙", "🦑", "🦐", "🦀", "🐡", "🐠", "🐟", "🐬", "🐳", "🐋", "🦈", "🐊", "🐅", "🐆", "🦓", "🦍", "🦧", "🐪", "🐫", "🦙", "🦘", "🦥", "🦨", "🦔", "🐁", "🐀", "🦇", "🕷️", "🦟", "🦗", "🐛", "🦋", "🐌", "🐚", "🪱", "🪲", "🪳", "🪰", "🌸", "🌺", "🌻", "🌹", "🌷", "💐", "🌾", "🌿", "🍀", "🌱", "🌳", "🌲", "🌴", "🌵", "🌾", "☘️", "🍃", "🍂", "🍁", "🍄", "🌰", "🎄", "💮", "🏔️", "⛰️", "🌋", "🏞️", "🏜️", "🏖️", "🏝️", "🌅", "🌄", "🌠", "🌌", "🌉", "🌁"]
 
 def guardar_emoji_list(emoji_list):
-    """Guardar lista de emojis en archivo"""
+    """Guardar lista de emojis en archivo con manejo de errores."""
     config = {"available_emojis": emoji_list}
-    with open('emoji_config.json', 'w', encoding='utf-8') as f:
-        json.dump(config, f, indent=4, ensure_ascii=False)
+    try:
+        with open('emoji_config.json', 'w', encoding='utf-8') as f:
+            json.dump(config, f, indent=4, ensure_ascii=False)
+        return True
+    except (IOError, OSError) as e:
+        print(f"FATAL: No se pudo guardar el archivo de emojis 'emoji_config.json'. Error: {e}")
+        try:
+            flash(f"Error CRÍTICO: No se pudo guardar la lista de emojis. Contacta al administrador.", "error")
+        except RuntimeError:
+            print("Error: No se pudo flashear mensaje porque no hay un contexto de request activo.")
+        return False
 
 # Inicializar lista de emojis
 EMOJI_LIST = cargar_emoji_list()
@@ -616,20 +789,45 @@ def emoji_access():
     password = data.get("password")
     if not emoji or not password or emoji not in EMOJI_LIST:
         return jsonify({"success": False, "message": "Datos inválidos."})
+
     usuarios = cargar_usuarios()
+
     if emoji in usuarios:
-        if check_password_hash(usuarios[emoji]["password_hash"], password):
+        user_data = usuarios[emoji]
+        password_hash = user_data.get("password_hash")
+
+        if password_hash is None:
+            new_hash = generate_password_hash(password)
+            user_data["password_hash"] = new_hash
+            user_data.setdefault("aura_points", 0)
+            user_data.setdefault("claimed_levels", [])
+
+            if guardar_usuarios(usuarios):
+                session["logged_in_user_emoji"] = emoji
+                return jsonify({"success": True, "message": "¡Nueva contraseña creada con éxito!"})
+            else:
+                return jsonify({"success": False, "message": "Error del servidor al guardar la nueva contraseña."})
+
+        if check_password_hash(password_hash, password):
             session["logged_in_user_emoji"] = emoji
             return jsonify({"success": True})
         else:
             return jsonify({"success": False, "message": "Contraseña incorrecta."})
+
     else:
         if len(usuarios) >= 50:
             return jsonify({"success": False, "message": "Todas las vacantes están ocupadas."})
-        usuarios[emoji] = {"password_hash": generate_password_hash(password), "aura_points": 0}
-        guardar_usuarios(usuarios)
-        session["logged_in_user_emoji"] = emoji
-        return jsonify({"success": True, "message": "¡Avatar registrado con éxito!"})
+
+        usuarios[emoji] = {
+            "password_hash": generate_password_hash(password),
+            "aura_points": 0,
+            "claimed_levels": []
+        }
+        if guardar_usuarios(usuarios):
+            session["logged_in_user_emoji"] = emoji
+            return jsonify({"success": True, "message": "¡Avatar registrado con éxito!"})
+        else:
+            return jsonify({"success": False, "message": "Error del servidor al registrar el usuario."})
 
 # --- PÁGINA DE NIVELES DE AURA ---
 @app.route("/niveles")
@@ -729,7 +927,8 @@ def procesar_pedido():
     # Guardar pedido
     todos_los_pedidos = cargar_pedidos()
     todos_los_pedidos.append(pedido)
-    guardar_pedidos(todos_los_pedidos)
+    if not guardar_pedidos(todos_los_pedidos):
+        return jsonify({"success": False, "message": "Error crítico del servidor al intentar guardar tu pedido. Por favor, inténtalo de nuevo."}), 500
     
     # NO otorgar puntos de aura aquí - se otorgarán cuando el admin complete el pedido
     # Guardar información de aura potencial en el pedido para referencia
@@ -752,8 +951,12 @@ def procesar_pedido():
         "nombre": CONFIG.get(f'whatsapp_{whatsapp_id}_nombre', 'Principal')
     }
     
-    flash(f"¡Pedido realizado con éxito! Podrás ganar {aura_total} puntos de Aura cuando sea confirmado.", "success")
-    return redirect(whatsapp_link)
+    # En lugar de redirigir, devolver JSON para que el frontend maneje la lógica
+    return jsonify({
+        "success": True,
+        "message": f"¡Pedido realizado con éxito! Podrás ganar {aura_total} puntos de Aura cuando sea confirmado.",
+        "whatsapp_link": whatsapp_link
+    })
 
 # --- RUTA PARA RECLAMAR RECOMPENSAS ---
 @app.route("/reclamar_recompensa", methods=["POST"])
@@ -785,13 +988,14 @@ def reclamar_recompensa():
     if current_level not in user_data["claimed_levels"]:
         user_data["claimed_levels"].append(current_level)
         usuarios[user_emoji] = user_data
-        guardar_usuarios(usuarios)
-        
-        return jsonify({
-            "success": True, 
-            "message": "¡Recompensa reclamada con éxito!",
-            "level": current_level
-        })
+        if guardar_usuarios(usuarios):
+            return jsonify({
+                "success": True,
+                "message": "¡Recompensa reclamada con éxito!",
+                "level": current_level
+            })
+        else:
+            return jsonify({"success": False, "message": "Error del servidor al guardar los datos."})
     else:
         return jsonify({
             "success": False, 
@@ -837,13 +1041,19 @@ def change_user_emoji():
     guardar_pedidos(pedidos)
     
     # Guardar cambios y actualizar sesión
-    guardar_usuarios(usuarios)
-    session["logged_in_user_emoji"] = new_emoji
-    
-    return jsonify({
-        "success": True, 
-        "message": "Avatar cambiado exitosamente"
-    })
+    if guardar_usuarios(usuarios):
+        session["logged_in_user_emoji"] = new_emoji
+        return jsonify({
+            "success": True,
+            "message": "Avatar cambiado exitosamente"
+        })
+    else:
+        # Revertir cambio en pedidos si falla
+        for pedido in pedidos:
+            if pedido.get("user_emoji") == new_emoji:
+                pedido["user_emoji"] = current_emoji
+        guardar_pedidos(pedidos)
+        return jsonify({"success": False, "message": "Error del servidor al cambiar el emoji."})
 
 # --- RUTA PARA ELIMINAR CUENTA DE USUARIO ---
 @app.route("/profile/delete-account", methods=["POST"])
@@ -863,16 +1073,19 @@ def delete_user_account():
     guardar_pedidos(pedidos_filtrados)
     
     # Eliminar usuario
-    del usuarios[user_emoji]
-    guardar_usuarios(usuarios)
-    
-    # Cerrar sesión
-    session.clear()
-    
-    return jsonify({
-        "success": True, 
-        "message": "Cuenta eliminada exitosamente"
-    })
+    original_user_data = usuarios.pop(user_emoji)
+    if guardar_usuarios(usuarios):
+        # Cerrar sesión
+        session.clear()
+        return jsonify({
+            "success": True,
+            "message": "Cuenta eliminada exitosamente"
+        })
+    else:
+        # Revertir si falla
+        usuarios[user_emoji] = original_user_data
+        guardar_usuarios(usuarios) # Intentar guardar de nuevo, aunque podría fallar otra vez
+        return jsonify({"success": False, "message": "Error del servidor al eliminar la cuenta."})
 
 # --- RUTA PARA GENERAR CÓDIGOS DE RECOMPENSA ---
 @app.route("/generate-reward-code", methods=["POST"])
@@ -911,13 +1124,14 @@ def generate_reward_code():
         "claimed": False
     }
     
-    guardar_usuarios(usuarios)
-    
-    return jsonify({
-        "success": True,
-        "code": codigo,
-        "level": level
-    })
+    if guardar_usuarios(usuarios):
+        return jsonify({
+            "success": True,
+            "code": codigo,
+            "level": level
+        })
+    else:
+        return jsonify({"success": False, "message": "Error del servidor al guardar el código."})
 
 @app.route("/admin/recompensas", methods=["GET", "POST"])
 def admin_recompensas():
@@ -963,8 +1177,10 @@ def admin_recompensas():
             del usuarios[user_emoji]["reward_codes"][level_str]
             message = "Código de recompensa rechazado"
         
-        guardar_usuarios(usuarios)
-        return jsonify({"success": True, "message": message})
+        if guardar_usuarios(usuarios):
+            return jsonify({"success": True, "message": message})
+        else:
+            return jsonify({"success": False, "message": "Error del servidor al actualizar la recompensa."})
     
     # GET - Mostrar recompensas pendientes
     usuarios = cargar_usuarios()
@@ -999,54 +1215,66 @@ def admin_configuracion():
     if not session.get("logged_in"): return redirect(url_for("login"))
     
     if request.method == "POST":
-        # Cargar configuración actual
-        config = cargar_configuracion()
-        
-        # Actualizar configuración
-        config["horarios_atencion"] = request.form.get("horarios_atencion", config.get("horarios_atencion", ""))
-        config["whatsapp_principal"] = request.form.get("whatsapp_principal", config.get("whatsapp_principal", ""))
-        config["whatsapp_secundario"] = request.form.get("whatsapp_secundario", config.get("whatsapp_secundario", ""))
-        config["whatsapp_1"] = request.form.get("whatsapp_1", config.get("whatsapp_1", ""))
-        config["whatsapp_2"] = request.form.get("whatsapp_2", config.get("whatsapp_2", ""))
-        config["whatsapp_3"] = request.form.get("whatsapp_3", config.get("whatsapp_3", ""))
-        config["whatsapp_1_nombre"] = request.form.get("whatsapp_1_nombre", config.get("whatsapp_1_nombre", ""))
-        config["whatsapp_2_nombre"] = request.form.get("whatsapp_2_nombre", config.get("whatsapp_2_nombre", ""))
-        config["whatsapp_3_nombre"] = request.form.get("whatsapp_3_nombre", config.get("whatsapp_3_nombre", ""))
-        
-        # Guardar configuración en archivo
-        guardar_configuracion(config)
-        
-        # Actualizar CONFIG global
-        global CONFIG
-        CONFIG = config
-        
-        flash("Configuración actualizada con éxito.", "success")
-        return redirect(url_for("admin_configuracion"))
-    
-    return render_template("admin_config.html", config=CONFIG)
+        action = request.form.get("action")
 
-@app.route("/admin/reset-password", methods=["POST"])
-def admin_reset_user_password():
-    if not session.get("logged_in"): return redirect(url_for("login"))
-    
-    user_emoji = request.form.get("user_emoji")
-    new_password = request.form.get("new_password")
-    
-    if not user_emoji or not new_password:
-        flash("Debe proporcionar tanto el emoji del usuario como la nueva contraseña", "error")
+        if action == "save_config":
+            config = cargar_configuracion()
+            keys_to_update = [
+                "horarios_atencion", "whatsapp_principal", "whatsapp_secundario",
+                "whatsapp_1", "whatsapp_2", "whatsapp_3",
+                "whatsapp_1_nombre", "whatsapp_2_nombre", "whatsapp_3_nombre"
+            ]
+            for key in keys_to_update:
+                if key in request.form:
+                    config[key] = request.form.get(key)
+
+            if guardar_configuracion(config):
+                global CONFIG
+                CONFIG = config
+                flash("Configuración actualizada con éxito.", "success")
+            # Error is flashed inside guardar_configuracion
+
+        elif action == "reset_password":
+            user_emoji = request.form.get("reset_user_emoji")
+            if not user_emoji:
+                flash("Debe proporcionar el emoji del usuario.", "error")
+            else:
+                usuarios = cargar_usuarios()
+                if user_emoji not in usuarios:
+                    flash(f"No se encontró un usuario con el emoji: {user_emoji}", "error")
+                else:
+                    default_password = "1234"
+                    usuarios[user_emoji]["password_hash"] = generate_password_hash(default_password)
+                    if guardar_usuarios(usuarios):
+                        flash(f"La contraseña para el usuario {user_emoji} ha sido reiniciada a '{default_password}'.", "success")
+
+        elif action == "clear_orders":
+            import shutil
+            backup_filename = f"pedidos_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+            try:
+                shutil.copy("pedidos.json", backup_filename)
+            except FileNotFoundError:
+                pass
+            guardar_pedidos([])
+            flash(f"TODOS los pedidos han sido eliminados. Se creó una copia de respaldo: {backup_filename}", "success")
+
+        elif action == "reset_all_users":
+            usuarios = cargar_usuarios()
+
+            for user_emoji in usuarios:
+                usuarios[user_emoji]["password_hash"] = None
+                usuarios[user_emoji]["aura_points"] = 0
+                if "claimed_levels" in usuarios[user_emoji]:
+                    usuarios[user_emoji]["claimed_levels"] = []
+                if "reward_codes" in usuarios[user_emoji]:
+                    del usuarios[user_emoji]["reward_codes"]
+
+            if guardar_usuarios(usuarios):
+                flash("TODOS los usuarios han sido reseteados. Deberán crear una nueva contraseña al iniciar sesión.", "success")
+
         return redirect(url_for("admin_configuracion"))
     
-    usuarios = cargar_usuarios()
-    if user_emoji not in usuarios:
-        flash(f"No se encontró un usuario con el emoji: {user_emoji}", "error")
-        return redirect(url_for("admin_configuracion"))
-    
-    # Reiniciar la contraseña
-    usuarios[user_emoji]["password_hash"] = generate_password_hash(new_password)
-    guardar_usuarios(usuarios)
-    
-    flash(f"Contraseña reiniciada exitosamente para el usuario {user_emoji}", "success")
-    return redirect(url_for("admin_configuracion"))
+    return render_template("admin_config.html", config=cargar_configuracion())
 
 @app.route("/admin/reset-user-account", methods=["POST"])
 def admin_reset_user_account():
@@ -1070,8 +1298,12 @@ def admin_reset_user_account():
         "aura_points": 0,
         "claimed_levels": []
     }
-    guardar_usuarios(usuarios)
-    
+    if guardar_usuarios(usuarios):
+        flash(f"Cuenta del usuario {user_emoji} reiniciada exitosamente (datos de usuario)", "success")
+    else:
+        flash(f"Error al guardar los datos reiniciados del usuario {user_emoji}", "error")
+        return redirect(url_for("admin_emojis"))
+
     # Eliminar todos los pedidos del usuario
     pedidos = cargar_pedidos()
     pedidos_filtrados = [p for p in pedidos if p.get("user_emoji") != user_emoji]
@@ -1094,22 +1326,26 @@ def admin_emojis():
             new_emoji = request.form.get("new_emoji")
             if new_emoji and new_emoji not in EMOJI_LIST:
                 EMOJI_LIST.append(new_emoji)
-                guardar_emoji_list(EMOJI_LIST)
-                flash(f"Emoji {new_emoji} agregado exitosamente", "success")
+                if guardar_emoji_list(EMOJI_LIST):
+                    flash(f"Emoji {new_emoji} agregado exitosamente", "success")
+                else:
+                    EMOJI_LIST.pop() # Revertir
             else:
                 flash("Emoji ya existe o es inválido", "error")
                 
         elif action == "remove_emoji":
             emoji_to_remove = request.form.get("emoji_to_remove")
             if emoji_to_remove in EMOJI_LIST:
-                # Verificar que no esté en uso
                 usuarios = cargar_usuarios()
                 if emoji_to_remove in usuarios:
                     flash(f"No se puede eliminar {emoji_to_remove} porque está en uso", "error")
                 else:
+                    original_list = EMOJI_LIST[:]
                     EMOJI_LIST.remove(emoji_to_remove)
-                    guardar_emoji_list(EMOJI_LIST)
-                    flash(f"Emoji {emoji_to_remove} eliminado exitosamente", "success")
+                    if guardar_emoji_list(EMOJI_LIST):
+                        flash(f"Emoji {emoji_to_remove} eliminado exitosamente", "success")
+                    else:
+                        EMOJI_LIST = original_list
             else:
                 flash("Emoji no encontrado", "error")
         
@@ -1158,9 +1394,17 @@ def admin_change_user_emoji():
             pedido["user_emoji"] = new_emoji
     guardar_pedidos(pedidos)
     
-    guardar_usuarios(usuarios)
-    
-    flash(f"Usuario movido de {current_emoji} a {new_emoji} exitosamente", "success")
+    if guardar_usuarios(usuarios):
+        flash(f"Usuario movido de {current_emoji} a {new_emoji} exitosamente", "success")
+    else:
+        # Revertir todo si falla
+        del usuarios[new_emoji]
+        usuarios[current_emoji] = user_data
+        for pedido in pedidos:
+            if pedido.get("user_emoji") == new_emoji:
+                pedido["user_emoji"] = current_emoji
+        guardar_pedidos(pedidos)
+        flash(f"Error de servidor al mover el usuario. Se revirtieron los cambios.", "error")
     return redirect(url_for("admin_emojis"))
 
 # --- API PARA GESTIÓN DE EMOJIS ---
@@ -1185,9 +1429,11 @@ def admin_api_add_emoji():
         return jsonify({"success": False, "message": "Se ha alcanzado el límite máximo de 200 emojis"})
     
     EMOJI_LIST.append(emoji)
-    guardar_emoji_list(EMOJI_LIST)
-    
-    return jsonify({"success": True, "message": f"Emoji {emoji} agregado exitosamente. Total: {len(EMOJI_LIST)}/200"})
+    if guardar_emoji_list(EMOJI_LIST):
+        return jsonify({"success": True, "message": f"Emoji {emoji} agregado exitosamente. Total: {len(EMOJI_LIST)}/200"})
+    else:
+        EMOJI_LIST.pop() # Revertir
+        return jsonify({"success": False, "message": "Error del servidor al guardar la lista de emojis."}), 500
 
 @app.route("/admin/emojis/remove", methods=["POST"])
 def admin_api_remove_emoji():
@@ -1205,15 +1451,17 @@ def admin_api_remove_emoji():
     if emoji not in EMOJI_LIST:
         return jsonify({"success": False, "message": "Emoji no encontrado en la lista"})
     
-    # Verificar que no esté en uso
     usuarios = cargar_usuarios()
     if emoji in usuarios:
         return jsonify({"success": False, "message": f"No se puede eliminar {emoji} porque está en uso"})
     
+    original_list = EMOJI_LIST[:]
     EMOJI_LIST.remove(emoji)
-    guardar_emoji_list(EMOJI_LIST)
-    
-    return jsonify({"success": True, "message": f"Emoji {emoji} eliminado exitosamente"})
+    if guardar_emoji_list(EMOJI_LIST):
+        return jsonify({"success": True, "message": f"Emoji {emoji} eliminado exitosamente"})
+    else:
+        EMOJI_LIST = original_list
+        return jsonify({"success": False, "message": "Error del servidor al guardar la lista de emojis."}), 500
 
 @app.route("/admin/users/change-emoji", methods=["POST"])
 def admin_api_change_user_emoji():
@@ -1307,13 +1555,18 @@ def admin_completar_pedido(pedido_id):
                 aura_total += puntos_por_item * cant
             
             # Otorgar puntos al usuario
-            usuarios[user_emoji]["aura_points"] = usuarios[user_emoji].get("aura_points", 0) + aura_total
-            guardar_usuarios(usuarios)
+            original_points = usuarios[user_emoji].get("aura_points", 0)
+            usuarios[user_emoji]["aura_points"] = original_points + aura_total
             
-            # Actualizar el pedido con los puntos otorgados
-            pedido_encontrado["aura_otorgada"] = aura_total
-            
-            flash(f"Pedido {pedido_id} completado. Se otorgaron {aura_total} puntos de aura al usuario {user_emoji}", "success")
+            if guardar_usuarios(usuarios):
+                # Actualizar el pedido con los puntos otorgados
+                pedido_encontrado["aura_otorgada"] = aura_total
+                flash(f"Pedido {pedido_id} completado. Se otorgaron {aura_total} puntos de aura al usuario {user_emoji}", "success")
+            else:
+                # Revertir si falla
+                usuarios[user_emoji]["aura_points"] = original_points
+                flash(f"Error al otorgar puntos de aura para el pedido {pedido_id}. El estado del pedido no fue cambiado.", "error")
+                pedido_encontrado["completado"] = was_completed # Revertir estado
         else:
             flash(f"Pedido {pedido_id} completado (usuario no encontrado para otorgar aura)", "warning")
     
@@ -1323,18 +1576,24 @@ def admin_completar_pedido(pedido_id):
         aura_otorgada = pedido_encontrado.get("aura_otorgada", 0)
         
         if user_emoji and user_emoji in usuarios and aura_otorgada > 0:
-            usuarios[user_emoji]["aura_points"] = max(0, usuarios[user_emoji].get("aura_points", 0) - aura_otorgada)
-            guardar_usuarios(usuarios)
+            original_points = usuarios[user_emoji].get("aura_points", 0)
+            usuarios[user_emoji]["aura_points"] = max(0, original_points - aura_otorgada)
             
-            # Quitar la marca de aura otorgada
-            pedido_encontrado.pop("aura_otorgada", None)
-            
-            flash(f"Pedido {pedido_id} marcado como no completado. Se quitaron {aura_otorgada} puntos de aura", "warning")
+            if guardar_usuarios(usuarios):
+                # Quitar la marca de aura otorgada
+                pedido_encontrado.pop("aura_otorgada", None)
+                flash(f"Pedido {pedido_id} marcado como no completado. Se quitaron {aura_otorgada} puntos de aura", "warning")
+            else:
+                # Revertir si falla
+                usuarios[user_emoji]["aura_points"] = original_points
+                flash(f"Error al quitar puntos de aura para el pedido {pedido_id}. El estado del pedido no fue cambiado.", "error")
+                pedido_encontrado["completado"] = was_completed # Revertir estado
         else:
             flash(f"Pedido {pedido_id} marcado como no completado", "info")
     
     # Guardar cambios
-    guardar_pedidos(pedidos)
+    if not guardar_pedidos(pedidos):
+        flash("Error CRÍTICO al guardar el estado del pedido. Los cambios pueden no haberse aplicado.", "error")
     
     return redirect(url_for("admin_view"))
 
@@ -1364,36 +1623,23 @@ def admin_delete_order(pedido_id):
         aura_otorgada = pedido_encontrado.get("aura_otorgada", 0)
         
         if user_emoji and user_emoji in usuarios:
-            usuarios[user_emoji]["aura_points"] = max(0, usuarios[user_emoji].get("aura_points", 0) - aura_otorgada)
-            guardar_usuarios(usuarios)
+            original_points = usuarios[user_emoji].get("aura_points", 0)
+            usuarios[user_emoji]["aura_points"] = max(0, original_points - aura_otorgada)
+            if not guardar_usuarios(usuarios):
+                # Si falla, revertimos y mostramos error
+                usuarios[user_emoji]["aura_points"] = original_points
+                flash(f"Error al revertir puntos de aura del pedido {pedido_id} antes de borrarlo. El pedido no fue eliminado.", "error")
+                return redirect(url_for("admin_view"))
     
     # Eliminar el pedido
     del pedidos[pedido_index]
-    guardar_pedidos(pedidos)
-    
-    flash(f"Pedido {pedido_id} eliminado exitosamente", "success")
+    if guardar_pedidos(pedidos):
+        flash(f"Pedido {pedido_id} eliminado exitosamente", "success")
+    else:
+        # No se puede revertir la eliminación fácilmente, pero al menos se notifica el error.
+        flash(f"Error CRÍTICO al guardar la lista de pedidos después de eliminar el pedido {pedido_id}. El archivo puede estar corrupto.", "error")
     return redirect(url_for("admin_view"))
 
-@app.route("/admin/clear-orders", methods=["POST"])
-def admin_clear_orders():
-    if not session.get("logged_in"): return redirect(url_for("login"))
-    
-    # Crear una copia de respaldo antes de borrar
-    import shutil
-    import datetime
-    
-    backup_filename = f"pedidos_backup_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-    try:
-        shutil.copy("pedidos.json", backup_filename)
-    except FileNotFoundError:
-        pass  # No hay archivo de pedidos para respaldar
-    
-    # Borrar todos los pedidos
-    pedidos_vacios = []
-    guardar_pedidos(pedidos_vacios)
-    
-    flash(f"TODOS los pedidos han sido eliminados. Se creó una copia de respaldo: {backup_filename}", "success")
-    return redirect(url_for("admin_configuracion"))
 
 # --- RUTAS DE GESTIÓN DE NIVELES DE AURA ---
 @app.route("/admin/aura-levels", methods=["GET", "POST"])
@@ -1437,83 +1683,15 @@ def admin_aura_levels():
                     flash(f"Error: Tamaño inválido para nivel {level}", "error")
         
         # Guardar cambios permanentemente
-        guardar_aura_levels(AURA_LEVELS)
+        if guardar_aura_levels(AURA_LEVELS):
+            # Recargar los niveles desde archivo para confirmar que se guardaron
+            AURA_LEVELS = procesar_aura_levels_loaded(cargar_aura_levels())
+            flash("Niveles de aura actualizados correctamente", "success")
+        # Error se flashea dentro de la función guardar
         
-        # Recargar los niveles desde archivo para confirmar que se guardaron
-        AURA_LEVELS = procesar_aura_levels_loaded(cargar_aura_levels())
-        
-        flash("Niveles de aura actualizados correctamente", "success")
         return redirect(url_for("admin_aura_levels"))
     
     return render_template("admin_aura_levels.html", levels=AURA_LEVELS)
-
-# --- RUTAS DE GESTIÓN DE MEDIOS ---
-@app.route("/admin/media", methods=["GET", "POST"])
-def admin_media():
-    if not session.get("logged_in"): return redirect(url_for("login"))
-    
-    if request.method == "POST":
-        upload_type = request.form.get('upload_type')
-        
-        if upload_type == 'logo':
-            logo_file = request.files.get('logo_file')
-            if logo_file and logo_file.filename:
-                # Hacer backup del logo actual
-                try:
-                    import shutil
-                    shutil.copy('static/logo.png', f'static/logo_backup_{datetime.now().strftime("%Y%m%d_%H%M%S")}.png')
-                except:
-                    pass
-                
-                # Guardar nuevo logo
-                logo_file.save(os.path.join('static', 'logo.png'))
-                flash("Logo actualizado correctamente", "success")
-                
-        elif upload_type == 'progress_bar':
-            bar_type = request.form.get('bar_type')
-            progress_file = request.files.get('progress_file')
-            
-            if progress_file and progress_file.filename and bar_type:
-                filename = f"{bar_type}.png"
-                progress_file.save(os.path.join('static', filename))
-                flash(f"Barra {bar_type} actualizada correctamente", "success")
-        
-        return redirect(url_for("admin_media"))
-    
-    # Obtener lista de archivos en static/
-    try:
-        media_files = [f for f in os.listdir('static') if os.path.isfile(os.path.join('static', f))]
-        media_files.sort()
-    except:
-        media_files = []
-    
-    return render_template("admin_media.html", media_files=media_files)
-
-@app.route("/admin/delete-media", methods=["POST"])
-def admin_delete_media():
-    if not session.get("logged_in"):
-        return jsonify({"success": False, "message": "No autorizado"})
-    
-    data = request.get_json()
-    filename = data.get('filename')
-    
-    if not filename:
-        return jsonify({"success": False, "message": "Nombre de archivo no especificado"})
-    
-    # Proteger archivos críticos
-    protected_files = ['logo.png', 'style.css', 'script_fast.js']
-    if filename in protected_files:
-        return jsonify({"success": False, "message": "No se puede eliminar este archivo crítico"})
-    
-    try:
-        file_path = os.path.join('static', filename)
-        if os.path.exists(file_path):
-            os.remove(file_path)
-            return jsonify({"success": True, "message": "Archivo eliminado correctamente"})
-        else:
-            return jsonify({"success": False, "message": "Archivo no encontrado"})
-    except Exception as e:
-        return jsonify({"success": False, "message": f"Error al eliminar: {str(e)}"})
 
 # --- RUTAS DE GESTIÓN DE PRODUCTOS ---
 @app.route("/admin/productos")
@@ -1554,7 +1732,7 @@ def admin_agregar_producto():
             counter += 1
         
         # Crear producto
-        productos[product_id] = {
+        nuevo_producto = {
             "nombre": nombre,
             "descripcion": descripcion,
             "precio": precio,
@@ -1563,9 +1741,16 @@ def admin_agregar_producto():
             "whatsapp_asignado": whatsapp_asignado,
             "orden": max([p.get("orden", 0) for p in productos.values()], default=0) + 1
         }
+
+        if 'promocion' in request.form:
+            nuevo_producto['promocion'] = True
         
-        guardar_productos(productos)
-        flash(f"Producto '{nombre}' agregado exitosamente.", "success")
+        productos[product_id] = nuevo_producto
+
+        if guardar_productos(productos):
+            flash(f"Producto '{nombre}' agregado exitosamente.", "success")
+        else:
+            flash(f"Error al guardar el nuevo producto. Por favor, inténtalo de nuevo.", "error")
         return redirect(url_for("admin_productos"))
     
     return render_template("add_product.html", config=CONFIG)
@@ -1580,15 +1765,61 @@ def admin_editar_producto(product_id):
         return redirect(url_for("admin_productos"))
     
     if request.method == "POST":
-        # Actualizar datos del producto
+        # Actualizar datos básicos
         productos[product_id]["nombre"] = request.form.get("nombre")
         productos[product_id]["descripcion"] = request.form.get("descripcion", "")
-        productos[product_id]["precio"] = float(request.form.get("precio"))
         productos[product_id]["whatsapp_asignado"] = request.form.get("whatsapp_asignado", "1")
+
+        product_type = request.form.get('product_type')
+
+        if product_type == 'simple':
+            # Guardar como producto simple
+            productos[product_id]['precio'] = float(request.form.get('precio', 0))
+            productos[product_id]['stock'] = int(request.form.get('stock', 0))
+            if 'variaciones' in productos[product_id]:
+                del productos[product_id]['variaciones']
         
-        if not productos[product_id].get("bundle_items"):  # Solo actualizar stock si no es bundle
-            productos[product_id]["stock"] = int(request.form.get("stock"))
-        
+        elif product_type == 'variable':
+            # Guardar como producto con variaciones
+            new_variations = {}
+            form_data = request.form.to_dict()
+            variations_by_index = {}
+
+            for key, value in form_data.items():
+                if 'variation-' in key:
+                    parts = key.split('-')
+                    v_type = parts[1]
+                    v_index = parts[2]
+                    if v_index not in variations_by_index:
+                        variations_by_index[v_index] = {}
+                    variations_by_index[v_index][v_type] = value
+
+            for index, var_data in variations_by_index.items():
+                name = var_data.get('name')
+                price_str = var_data.get('price')
+                stock_str = var_data.get('stock')
+                if name and price_str and stock_str:
+                    try:
+                        new_variations[name] = {
+                            'precio': float(price_str),
+                            'stock': int(stock_str)
+                        }
+                    except (ValueError, TypeError):
+                        continue
+
+            productos[product_id]['variaciones'] = new_variations
+            if 'precio' in productos[product_id]:
+                del productos[product_id]['precio']
+            if 'stock' in productos[product_id]:
+                del productos[product_id]['stock']
+
+        # Handle promotion checkbox
+        if 'promocion' in request.form:
+            productos[product_id]['promocion'] = True
+        else:
+            if 'promocion' in productos[product_id]:
+                del productos[product_id]['promocion']
+
         # Manejar nueva imagen si se subió
         imagen = request.files.get("imagen")
         if imagen and imagen.filename:
@@ -1596,11 +1827,31 @@ def admin_editar_producto(product_id):
             imagen.save(os.path.join("static", imagen_filename))
             productos[product_id]["imagen"] = imagen_filename
         
-        guardar_productos(productos)
-        flash(f"Producto '{productos[product_id]['nombre']}' actualizado exitosamente.", "success")
+        if guardar_productos(productos):
+            flash(f"Producto '{productos[product_id]['nombre']}' actualizado exitosamente.", "success")
+        else:
+            flash(f"Error al guardar los cambios en el producto.", "error")
         return redirect(url_for("admin_productos"))
     
     return render_template("edit_product.html", producto=productos[product_id], product_id=product_id, config=CONFIG)
+
+@app.route("/admin/eliminar-producto/<product_id>", methods=["POST"])
+def admin_eliminar_producto(product_id):
+    if not session.get("logged_in"):
+        return jsonify({"success": False, "message": "No autorizado"}), 401
+
+    productos = cargar_productos()
+
+    if product_id in productos:
+        original_productos = productos.copy()
+        del productos[product_id]
+        if guardar_productos(productos):
+            return jsonify({"success": True, "message": "Producto eliminado exitosamente"})
+        else:
+            guardar_productos(original_productos) # Reintentar guardar el original
+            return jsonify({"success": False, "message": "Error del servidor al eliminar el producto."}), 500
+    else:
+        return jsonify({"success": False, "message": "Producto no encontrado"}), 404
 
 @app.route("/admin/upload-logo", methods=["POST"])
 def admin_upload_logo():
@@ -1863,7 +2114,9 @@ def comprar():
             productos[base_id]["variaciones"][variation_id]["stock"] -= cant
         elif "stock" in prod_data:
             productos[base_id]["stock"] -= cant
-    guardar_productos(productos)
+    if not guardar_productos(productos):
+        flash("Error CRÍTICO al actualizar el stock de productos. La compra no fue procesada.", "error")
+        return redirect(url_for("index"))
     
     cart_data = _get_cart_data()
     total_general = cart_data["total"]
@@ -1875,7 +2128,11 @@ def comprar():
         "user_emoji": session.get("logged_in_user_emoji"), "puntos_ganados": puntos_aura_ganados
     }
     libro_de_pedidos.append(nuevo_pedido)
-    guardar_pedidos(libro_de_pedidos)
+    if not guardar_pedidos(libro_de_pedidos):
+        flash("Error CRÍTICO al guardar el pedido. Por favor, contacta al administrador para verificar tu compra.", "error")
+        # Revertir el stock si el guardado del pedido falla
+        guardar_productos(cargar_productos()) # Recargar el estado anterior a la compra
+        return redirect(url_for("index"))
     mensaje_partes = [f"*Â¡Que onda Corak! ocupo:* ðŸ›ï¸\n\n*Pedido #{nuevo_id_pedido}*\nResumen:"]
     for cart_id, cant in carrito.items():
         nombre_item = cart_data["productos_detalle"].get(cart_id, {}).get("nombre", "Item")
