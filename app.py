@@ -13,6 +13,9 @@ import functools
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 
+import requests
+from uuid import uuid4
+
 app = Flask(__name__)
 app.jinja_env.add_extension('jinja2.ext.do')
 
@@ -42,6 +45,33 @@ app.wsgi_app = WhiteNoise(app.wsgi_app, root="static/", max_age=31536000)
 UPLOAD_FOLDER = 'static'
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "coraker12") # It's better to use env vars
 
+# --- SUPABASE STORAGE CONFIG ---
+SUPABASE_URL = os.environ.get("SUPABASE_URL")
+SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+SUPABASE_BUCKET = os.environ.get("SUPABASE_BUCKET", "media")
+
+def subir_a_supabase(file_storage):
+    """
+    Sube el archivo a Supabase Storage (bucket público) y regresa la URL pública.
+    """
+    nombre = f"{uuid4().hex}_{secure_filename(file_storage.filename)}"
+    ruta = f"uploads/{nombre}"  # carpeta lógica en el bucket
+    url_upload = f"{SUPABASE_URL}/storage/v1/object/{SUPABASE_BUCKET}/{ruta}"
+
+    resp = requests.post(
+        url_upload,
+        headers={
+            "Authorization": f"Bearer {SUPABASE_KEY}",
+            "Content-Type": file_storage.mimetype or "application/octet-stream",
+            "x-upsert": "false",
+        },
+        data=file_storage.read(),
+        timeout=30,
+    )
+    resp.raise_for_status()
+    return f"{SUPABASE_URL}/storage/v1/object/public/{SUPABASE_BUCKET}/{ruta}"
+
+
 # --- DATABASE MODELS ---
 class Product(db.Model):
     id = db.Column(db.String, primary_key=True)
@@ -49,7 +79,7 @@ class Product(db.Model):
     descripcion = db.Column(db.Text)
     precio = db.Column(db.Float)
     stock = db.Column(db.Integer)
-    imagen = db.Column(db.String(100))
+    imagen = db.Column(db.String(512))
     whatsapp_asignado = db.Column(db.String(10), default='1')
     orden = db.Column(db.Integer, default=999)
     promocion = db.Column(db.Boolean, default=False)
@@ -347,17 +377,18 @@ def determinar_whatsapp_destino(carrito, productos):
     whatsapp_numero = whatsapp_map.get(max_whatsapp) or CONFIG.get('whatsapp_principal')
     return whatsapp_numero, max_whatsapp
 
-from flask import abort
+from sqlalchemy import text  # <-- agrega este import arriba si no lo tienes
 
-@app.get("/__initdb")
-def __initdb():
+@app.get("/__migrate_imglen")
+def __migrate_imglen():
     token_env = os.environ.get("INIT_DB_TOKEN")
     token_req = request.args.get("token")
     if not token_env or token_req != token_env:
-        return abort(403)
+        return "Forbidden", 403
     with app.app_context():
-        db.create_all()
-    return "OK: tablas creadas"
+        db.session.execute(text("ALTER TABLE product ALTER COLUMN imagen TYPE VARCHAR(512);"))
+        db.session.commit()
+    return "OK: imagen -> VARCHAR(512)"
 
 # --- MAIN VIEWS ---
 @app.route("/entrar")
