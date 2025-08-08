@@ -724,6 +724,17 @@ def get_emojis():
 
 @app.route("/api/emoji-access", methods=["POST"])
 def emoji_access():
+    """
+    Handles user login, password reset, and registration via emoji and password.
+    
+    Accepts a JSON payload with an emoji and password. If the emoji corresponds to an existing user:
+    - If the password hash is `None` (reset by admin), the submitted password is set as the new password and the user is logged in.
+    - If a password hash exists, verifies the password for login.
+    If the emoji is not registered and user slots are available, creates a new user with the provided password and initializes their data.
+    
+    Returns:
+        JSON response indicating success or failure, with an appropriate message.
+    """
     data = request.get_json()
     emoji = data.get("emoji")
     password = data.get("password")
@@ -1139,6 +1150,11 @@ def admin_recompensas():
 # --- RUTAS DE CONFIGURACIÓN ADMIN ---
 @app.route("/admin/configuracion", methods=["GET", "POST"])
 def admin_configuracion():
+    """
+    Handles the admin configuration page, allowing updates to app settings, user password resets, order clearing, and global user resets.
+    
+    Supports saving configuration changes, resetting individual user passwords, clearing all orders with backup, and resetting all users (passwords set to require creation on next login, aura points reset, and claimed rewards cleared). Only accessible to logged-in admins.
+    """
     if not session.get("logged_in"): return redirect(url_for("login"))
     
     if request.method == "POST":
