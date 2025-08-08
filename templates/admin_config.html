@@ -92,6 +92,15 @@
                         </div>
                         <button type="submit" name="action" value="clear_orders" onclick="return confirm('¿ESTÁS COMPLETAMENTE SEGURO? Esta acción eliminará TODOS los pedidos y NO SE PUEDE DESHACER.')" class="submit-btn" style="background: #aa0000; border-color: #ff3333; color: #fff; margin-top: 10px;">💥 BORRAR TODOS LOS PEDIDOS</button>
                     </div>
+
+                    <!-- Resetear todos los usuarios -->
+                    <div class="form-group">
+                        <label style="color: #ff6666; font-size: 10px;">🔄 Resetear Todos los Usuarios y Contraseñas:</label>
+                        <div style="background: #2a1a1a; padding: 10px; border: 2px solid #ff3333; border-radius: 5px; font-size: 8px; color: #ff6666;">
+                            ⚠️ ADVERTENCIA: Esta acción reiniciará los puntos, niveles y contraseñas (a '1234') de TODOS los usuarios. Es irreversible.
+                        </div>
+                        <button type="submit" name="action" value="reset_all_users" onclick="return confirm('¿ESTÁS COMPLETAMENTE SEGURO? Esta acción reiniciará a TODOS los usuarios y sus contraseñas. NO SE PUEDE DESHACER.')" class="submit-btn" style="background: #aa0000; border-color: #ff3333; color: #fff; margin-top: 10px;">💥 RESETEAR TODOS LOS USUARIOS</button>
+                    </div>
                 </div>
             </div>
         </form>
