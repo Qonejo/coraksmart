@@ -2,7 +2,7 @@ services:
   - type: web
     name: coraksmart
     env: python
-    buildCommand: pip install -r requirements.txt
+    buildCommand: pip install -r requirements.txt && python migrate_data.py
     startCommand: gunicorn --config gunicorn.conf.py app:app
     plan: free
     envVars:
@@ -10,3 +10,13 @@ services:
         value: 3.11.0
       - key: WEB_CONCURRENCY
         value: 1
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: coraksmart-db
+          property: connectionString
+
+databases:
+  - name: coraksmart-db
+    plan: free
