@@ -1147,10 +1147,9 @@ def admin_reset_user_password():
     if not session.get("logged_in"): return redirect(url_for("login"))
     
     user_emoji = request.form.get("user_emoji")
-    new_password = request.form.get("new_password")
     
-    if not user_emoji or not new_password:
-        flash("Debe proporcionar tanto el emoji del usuario como la nueva contraseña", "error")
+    if not user_emoji:
+        flash("Debe proporcionar el emoji del usuario.", "error")
         return redirect(url_for("admin_configuracion"))
     
     usuarios = cargar_usuarios()
@@ -1158,11 +1157,12 @@ def admin_reset_user_password():
         flash(f"No se encontró un usuario con el emoji: {user_emoji}", "error")
         return redirect(url_for("admin_configuracion"))
     
-    # Reiniciar la contraseña
-    usuarios[user_emoji]["password_hash"] = generate_password_hash(new_password)
+    # Reiniciar la contraseña a un valor por defecto
+    default_password = "1234"
+    usuarios[user_emoji]["password_hash"] = generate_password_hash(default_password)
     guardar_usuarios(usuarios)
     
-    flash(f"Contraseña reiniciada exitosamente para el usuario {user_emoji}", "success")
+    flash(f"La contraseña para el usuario {user_emoji} ha sido reiniciada a '{default_password}'.", "success")
     return redirect(url_for("admin_configuracion"))
 
 @app.route("/admin/reset-user-account", methods=["POST"])
