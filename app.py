@@ -1116,54 +1116,51 @@ def admin_configuracion():
     if not session.get("logged_in"): return redirect(url_for("login"))
     
     if request.method == "POST":
-        # Cargar configuración actual
-        config = cargar_configuracion()
-        
-        # Actualizar configuración
-        keys_to_update = [
-            "horarios_atencion", "whatsapp_principal", "whatsapp_secundario",
-            "whatsapp_1", "whatsapp_2", "whatsapp_3",
-            "whatsapp_1_nombre", "whatsapp_2_nombre", "whatsapp_3_nombre"
-        ]
-        for key in keys_to_update:
-            if key in request.form:
-                config[key] = request.form.get(key)
-        
-        # Guardar configuración en archivo
-        guardar_configuracion(config)
-        
-        # Actualizar CONFIG global
-        global CONFIG
-        CONFIG = config
-        
-        flash("Configuración actualizada con éxito.", "success")
-        return redirect(url_for("admin_configuracion"))
-    
-    # Always load fresh config for rendering to avoid stale data in multi-worker setups
-    return render_template("admin_config.html", config=cargar_configuracion())
+        action = request.form.get("action")
 
-@app.route("/admin/reset-password", methods=["POST"])
-def admin_reset_user_password():
-    if not session.get("logged_in"): return redirect(url_for("login"))
-    
-    user_emoji = request.form.get("user_emoji")
-    
-    if not user_emoji:
-        flash("Debe proporcionar el emoji del usuario.", "error")
+        if action == "save_config":
+            config = cargar_configuracion()
+            keys_to_update = [
+                "horarios_atencion", "whatsapp_principal", "whatsapp_secundario",
+                "whatsapp_1", "whatsapp_2", "whatsapp_3",
+                "whatsapp_1_nombre", "whatsapp_2_nombre", "whatsapp_3_nombre"
+            ]
+            for key in keys_to_update:
+                if key in request.form:
+                    config[key] = request.form.get(key)
+
+            guardar_configuracion(config)
+            global CONFIG
+            CONFIG = config
+            flash("Configuración actualizada con éxito.", "success")
+
+        elif action == "reset_password":
+            user_emoji = request.form.get("reset_user_emoji")
+            if not user_emoji:
+                flash("Debe proporcionar el emoji del usuario.", "error")
+            else:
+                usuarios = cargar_usuarios()
+                if user_emoji not in usuarios:
+                    flash(f"No se encontró un usuario con el emoji: {user_emoji}", "error")
+                else:
+                    default_password = "1234"
+                    usuarios[user_emoji]["password_hash"] = generate_password_hash(default_password)
+                    guardar_usuarios(usuarios)
+                    flash(f"La contraseña para el usuario {user_emoji} ha sido reiniciada a '{default_password}'.", "success")
+        
+        elif action == "clear_orders":
+            import shutil
+            backup_filename = f"pedidos_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+            try:
+                shutil.copy("pedidos.json", backup_filename)
+            except FileNotFoundError:
+                pass
+            guardar_pedidos([])
+            flash(f"TODOS los pedidos han sido eliminados. Se creó una copia de respaldo: {backup_filename}", "success")
+
         return redirect(url_for("admin_configuracion"))
     
-    usuarios = cargar_usuarios()
-    if user_emoji not in usuarios:
-        flash(f"No se encontró un usuario con el emoji: {user_emoji}", "error")
-        return redirect(url_for("admin_configuracion"))
-    
-    # Reiniciar la contraseña a un valor por defecto
-    default_password = "1234"
-    usuarios[user_emoji]["password_hash"] = generate_password_hash(default_password)
-    guardar_usuarios(usuarios)
-    
-    flash(f"La contraseña para el usuario {user_emoji} ha sido reiniciada a '{default_password}'.", "success")
-    return redirect(url_for("admin_configuracion"))
+    return render_template("admin_config.html", config=cargar_configuracion())
 
 @app.route("/admin/reset-user-account", methods=["POST"])
 def admin_reset_user_account():
@@ -1491,26 +1488,6 @@ def admin_delete_order(pedido_id):
     flash(f"Pedido {pedido_id} eliminado exitosamente", "success")
     return redirect(url_for("admin_view"))
 
-@app.route("/admin/clear-orders", methods=["POST"])
-def admin_clear_orders():
-    if not session.get("logged_in"): return redirect(url_for("login"))
-    
-    # Crear una copia de respaldo antes de borrar
-    import shutil
-    import datetime
-    
-    backup_filename = f"pedidos_backup_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-    try:
-        shutil.copy("pedidos.json", backup_filename)
-    except FileNotFoundError:
-        pass  # No hay archivo de pedidos para respaldar
-    
-    # Borrar todos los pedidos
-    pedidos_vacios = []
-    guardar_pedidos(pedidos_vacios)
-    
-    flash(f"TODOS los pedidos han sido eliminados. Se creó una copia de respaldo: {backup_filename}", "success")
-    return redirect(url_for("admin_configuracion"))
 
 # --- RUTAS DE GESTIÓN DE NIVELES DE AURA ---
 @app.route("/admin/aura-levels", methods=["GET", "POST"])
