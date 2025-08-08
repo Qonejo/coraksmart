@@ -1,6 +1,6 @@
 Flask
 gunicorn
-werkzeug
-whitenoise
-psycopg2-binary
 Flask-SQLAlchemy
+SQLAlchemy
+psycopg2-binary
+whitenoise
