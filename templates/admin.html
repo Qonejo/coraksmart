@@ -25,30 +25,51 @@
         .item-type-icon { font-size: 1.5em; text-align: center; }
 
         /* Estilos para el menú de navegación en columnas */
-        a[href*="admin"]:hover { 
+        .admin-menu {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .admin-menu-button {
+            color: white !important; /* Importante para sobreescribir estilos de link por defecto */
+            padding: 15px;
+            text-decoration: none;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 12px;
+            transition: all 0.3s;
+            display: block;
+        }
+        .admin-menu-button:hover {
             transform: translateY(-2px); 
             box-shadow: 0 4px 8px rgba(0,0,0,0.3); 
         }
+        .btn-config { background-color: #007bff; }
+        .btn-emojis { background-color: #8a2be2; }
+        .btn-aura { background-color: #ff6600; }
+        .btn-productos { background-color: #6f42c1; }
+        .btn-logout { background-color: #dc3545; }
     </style>
 </head>
 <body>
     <h1 style="text-align: center; margin-bottom: 30px;">Panel de Administración</h1>
     
     <!-- Menú de navegación en forma de columnas -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px;">
-        <a href="{{ url_for('admin_configuracion') }}" style="background: #007bff; color: white; padding: 15px; text-decoration: none; border-radius: 8px; text-align: center; font-size: 12px; transition: all 0.3s; display: block;">
+    <div class="admin-menu">
+        <a href="{{ url_for('admin_configuracion') }}" class="admin-menu-button btn-config">
             ⚙️<br>Configuración
         </a>
-        <a href="{{ url_for('admin_emojis') }}" style="background: #8a2be2; color: white; padding: 15px; text-decoration: none; border-radius: 8px; text-align: center; font-size: 12px; transition: all 0.3s; display: block;">
+        <a href="{{ url_for('admin_emojis') }}" class="admin-menu-button btn-emojis">
             😀<br>Usuarios
         </a>
-        <a href="{{ url_for('admin_aura_levels') }}" style="background: #ff6600; color: white; padding: 15px; text-decoration: none; border-radius: 8px; text-align: center; font-size: 12px; transition: all 0.3s; display: block;">
+        <a href="{{ url_for('admin_aura_levels') }}" class="admin-menu-button btn-aura">
             🔥<br>Niveles Aura
         </a>
-        <a href="{{ url_for('admin_productos') }}" style="background: #6f42c1; color: white; padding: 15px; text-decoration: none; border-radius: 8px; text-align: center; font-size: 12px; transition: all 0.3s; display: block;">
+        <a href="{{ url_for('admin_productos') }}" class="admin-menu-button btn-productos">
             📦<br>Productos
         </a>
-        <a href="{{ url_for('logout') }}" style="background: #dc3545; color: white; padding: 15px; text-decoration: none; border-radius: 8px; text-align: center; font-size: 12px; transition: all 0.3s; display: block;">
+        <a href="{{ url_for('logout') }}" class="admin-menu-button btn-logout">
             🚪<br>Cerrar Sesión
         </a>
     </div>

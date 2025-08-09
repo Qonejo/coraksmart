@@ -12,6 +12,7 @@ import random
 import functools
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
+import click
 
 import requests
 from uuid import uuid4
@@ -43,7 +44,7 @@ app.wsgi_app = WhiteNoise(app.wsgi_app, root="static/", max_age=31536000)
 
 # --- CONSTANTS ---
 UPLOAD_FOLDER = 'static'
-ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "coraker12") # It's better to use env vars
+ADMIN_PASSWORD_HASH = os.environ.get("ADMIN_PASSWORD_HASH") # It's better to use env vars
 
 # --- SUPABASE STORAGE CONFIG ---
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
@@ -87,6 +88,7 @@ class Product(db.Model):
     bundle_items = db.Column(JSON)
     bundle_precio = db.Column(db.Float)
     imagenes_adicionales = db.Column(JSON)
+    aura_multiplier = db.Column(db.Float, default=3.0, nullable=False)
 
     def to_dict(self):
         return {c.name: getattr(self, c.name) for c in self.__table__.columns}
@@ -97,6 +99,9 @@ class User(db.Model):
     aura_points = db.Column(db.Integer, default=0)
     claimed_levels = db.Column(JSON, default=list)
     reward_codes = db.Column(JSON, default=dict)
+
+    def to_dict(self):
+        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
 class Order(db.Model):
     id = db.Column(db.String(100), primary_key=True)
@@ -266,15 +271,6 @@ def get_progress_bar_info(points, current_level_info, user_emoji):
         "points_needed_for_next": points_needed_for_next, "orb_value": int(orb_value)
     }
 
-def get_aura_points_for_product(product_id, price):
-    aura_multipliers = {"vapes": 3.0, "vape_1000": 3.5, "gotero": 6.0, "caps": 5.5, "olla4": 5.0, "olla3": 5.0, "oll2": 5.0, "ruffles": 6.0, "brownie": 5.5, "nerd": 5.5, "nerdsrope": 5.5, "barrita": 5.5, "salvia": 6.0, "galleta": 5.0, "bombon": 5.0, "nerdbit": 5.0, "pelon": 4.5, "gomitas": 4.0}
-    multiplier = aura_multipliers.get(product_id.lower(), 3.0)
-    for keyword, mult in aura_multipliers.items():
-        if keyword in product_id.lower():
-            multiplier = mult
-            break
-    return int(price * multiplier)
-
 def codificar_numero(numero):
     if not isinstance(numero, int) or numero < 0: return str(numero)
     letras = string.ascii_uppercase
@@ -320,37 +316,6 @@ def check_pending_rewards(user_emoji):
 # ... (rest of the functions need to be refactored similarly)
 # This is a huge file, I will continue refactoring.
 # The following is the continuation of the refactored code.
-
-def procesar_compra_interna(carrito, productos, user_emoji):
-    total = 0
-    detalle_completo = {}
-    aura_total = 0
-    
-    for cart_id, cant in carrito.items():
-        parts = cart_id.split('-', 1)
-        base_id = parts[0]
-        prod_data = productos.get(base_id)
-        
-        if not prod_data: continue
-            
-        precio_item = prod_data.get('precio', 0)
-        if "bundle_items" in prod_data:
-            precio_item = prod_data.get("bundle_precio", 0)
-        elif len(parts) > 1 and "variaciones" in prod_data:
-            variation_id = parts[1]
-            variation_data = prod_data["variaciones"].get(variation_id)
-            if variation_data:
-                precio_item = variation_data.get("precio", 0)
-        
-        subtotal = precio_item * cant
-        total += subtotal
-        puntos_por_item = get_aura_points_for_product(base_id, precio_item)
-        aura_total += puntos_por_item * cant
-        detalle_completo[cart_id] = {
-            "nombre": prod_data.get("nombre", "Producto"),
-            "precio": precio_item, "cantidad": cant, "subtotal": subtotal
-        }
-    return total, detalle_completo, aura_total
 
 def crear_mensaje_pedido(pedido, detalle_completo):
     delivery_info = pedido.get("delivery_info", {})
@@ -412,16 +377,100 @@ def perfil_usuario():
     
     return render_template("perfil.html", user_emoji=user_emoji, pedidos=pedidos_del_usuario, PRODUCTOS=productos_dict, aura_data=aura_data, AURA_LEVELS=get_aura_levels())
 
+@app.route('/procesar_pedido', methods=['POST'])
+def procesar_pedido():
+    if not session.get("logged_in_user_emoji"):
+        return jsonify({"success": False, "message": "No has iniciado sesión."}), 401
+
+    user_emoji = session["logged_in_user_emoji"]
+    carrito = session.get('carrito', {})
+    if not carrito:
+        return jsonify({"success": False, "message": "Tu carrito está vacío."}), 400
+
+    products_db = Product.query.all()
+    productos_dict = {p.id: p for p in products_db}
+
+    total = 0
+    aura_total = 0
+    detalle_completo = {}
+
+    for cart_id, cant in carrito.items():
+        parts = cart_id.split('-', 1)
+        base_id = parts[0]
+        prod_data = productos_dict.get(base_id)
+
+        if not prod_data:
+            return jsonify({"success": False, "message": f"Producto {base_id} no encontrado."}), 404
+
+        precio_item = prod_data.precio or 0
+        aura_multiplier = prod_data.aura_multiplier or 3.0
+
+        if prod_data.bundle_precio is not None:
+             precio_item = prod_data.bundle_precio
+        elif len(parts) > 1 and prod_data.variaciones:
+            variation_id = parts[1]
+            variation_data = prod_data.variaciones.get(variation_id)
+            if variation_data:
+                precio_item = variation_data.get("precio", 0)
+
+        total += precio_item * cant
+        aura_total += int((precio_item * aura_multiplier) * cant)
+
+        detalle_completo[cart_id] = {
+            "nombre": prod_data.nombre,
+            "precio": precio_item,
+            "cantidad": cant,
+            "subtotal": precio_item * cant
+        }
+
+    delivery_info = {
+        "day": request.form.get("delivery_day"),
+        "time": request.form.get("delivery_time"),
+        "station": request.form.get("delivery_station"),
+        "instructions": request.form.get("special_instructions"),
+        "phone": request.form.get("phone_number"),
+        "location_type": request.form.get("location_type")
+    }
+
+    new_order = Order(
+        id=generar_id_pedido(),
+        user_emoji=user_emoji,
+        timestamp=datetime.now().isoformat(),
+        detalle=carrito,
+        detalle_completo=detalle_completo,
+        total=total,
+        aura_ganada=aura_total,
+        delivery_info=delivery_info,
+        completado=False
+    )
+    db.session.add(new_order)
+    db.session.commit()
+
+    session.pop('carrito', None)
+
+    whatsapp_numero, _ = determinar_whatsapp_destino(carrito, {p.id: p.to_dict() for p in products_db})
+    mensaje = crear_mensaje_pedido(new_order.to_dict(), detalle_completo)
+    whatsapp_link = f"https://wa.me/{whatsapp_numero}?text={urllib.parse.quote(mensaje)}"
+
+    return jsonify({
+        "success": True,
+        "message": "Pedido procesado con éxito. Serás redirigido a WhatsApp.",
+        "whatsapp_link": whatsapp_link
+    })
+
 # ... Will continue to refactor all routes and helpers
 # This is a very large file. The agent will continue refactoring.
 # For brevity, I will now apply the fully refactored file.
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
+    if not ADMIN_PASSWORD_HASH:
+        flash("La aplicación no está configurada correctamente. No se ha definido un hash de contraseña de administrador.", "error")
+        return render_template("login.html")
+
     if request.method == "POST":
         password = request.form.get("password")
-        # Using plain text comparison for admin password as per legacy app
-        if password == ADMIN_PASSWORD:
+        if password and check_password_hash(ADMIN_PASSWORD_HASH, password):
             session["logged_in"] = True
             return redirect(url_for("admin"))
         else:
@@ -531,6 +580,7 @@ def admin_editar_producto(product_id):
                 imagen.save(os.path.join(UPLOAD_FOLDER, imagen_filename))
                 producto.imagen = imagen_filename
         
+        producto.aura_multiplier = float(request.form.get("aura_multiplier", 3.0))
         db.session.commit()
         flash(f"Producto '{producto.nombre}' actualizado.", "success")
         return redirect(url_for("admin_productos"))
@@ -565,7 +615,8 @@ def admin_agregar_producto():
             whatsapp_asignado=request.form.get("whatsapp_asignado", "1"),
             imagen=imagen_filename,
             orden=max_orden + 1,
-            promocion='promocion' in request.form
+            promocion='promocion' in request.form,
+            aura_multiplier=float(request.form.get("aura_multiplier", 3.0))
         )
         db.session.add(nuevo_producto)
         db.session.commit()
@@ -696,6 +747,46 @@ def admin_aura_levels():
     levels = AuraLevel.query.order_by(AuraLevel.level).all()
     return render_template('admin_aura_levels.html', levels=levels)
 
+@app.route('/api/get-emojis')
+def get_emojis_api():
+    all_emojis_from_db = get_emoji_list()
+    users = User.query.all()
+    occupied_emojis = [user.emoji for user in users]
+    return jsonify({
+        "all_emojis": all_emojis_from_db,
+        "occupied_emojis": occupied_emojis
+    })
+
+@app.route('/api/emoji-access', methods=['POST'])
+def emoji_access_api():
+    data = request.get_json()
+    emoji = data.get("emoji")
+    password = data.get("password")
+
+    if not emoji or not password:
+        return jsonify({"success": False, "message": "Datos inválidos."})
+
+    all_emojis_from_db = get_emoji_list()
+    if emoji not in all_emojis_from_db:
+        return jsonify({"success": False, "message": "Emoji no válido."})
+
+    user = User.query.get(emoji)
+    if user:
+        if check_password_hash(user.password_hash, password):
+            session["logged_in_user_emoji"] = emoji
+            return jsonify({"success": True})
+        else:
+            return jsonify({"success": False, "message": "Contraseña incorrecta."})
+    else:
+        new_user = User(
+            emoji=emoji,
+            password_hash=generate_password_hash(password)
+        )
+        db.session.add(new_user)
+        db.session.commit()
+        session["logged_in_user_emoji"] = emoji
+        return jsonify({"success": True, "message": "¡Avatar registrado con éxito!"})
+
 @app.route("/admin/configuracion", methods=["GET", "POST"])
 def admin_configuracion():
     if not session.get("logged_in"): return redirect(url_for("login"))
@@ -745,6 +836,16 @@ def init_db_command():
     """Creates the database tables."""
     db.create_all()
     print("Initialized the database.")
+
+@app.cli.command("hash-password")
+@click.argument("password")
+def hash_password_command(password):
+    """Hashes the given password."""
+    hashed_password = generate_password_hash(password)
+    print("--- Hashed Admin Password ---")
+    print(hashed_password)
+    print("--- End Hashed Admin Password ---")
+    print("\nSet this value as the ADMIN_PASSWORD_HASH environment variable.")
 
 if __name__ == "__main__":
     with app.app_context():
