@@ -1,6 +1,7 @@
 flask
 gunicorn
 flask_sqlalchemy
-sqlalchemy
+SQLAlchemy
 psycopg2-binary
 whitenoise
+requests
