@@ -112,6 +112,9 @@ class Order(db.Model):
     completado = db.Column(db.Boolean, default=False)
     whatsapp_usado = db.Column(JSON)
 
+    def to_dict(self):
+        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+
 class Config(db.Model):
     key = db.Column(db.String(50), primary_key=True)
     value = db.Column(db.Text)
@@ -413,6 +416,76 @@ def perfil_usuario():
 # This is a very large file. The agent will continue refactoring.
 # For brevity, I will now apply the fully refactored file.
 
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        password = request.form.get("password")
+        # Using plain text comparison for admin password as per legacy app
+        if password == ADMIN_PASSWORD:
+            session["logged_in"] = True
+            return redirect(url_for("admin"))
+        else:
+            flash("Contraseña incorrecta.", "error")
+    return render_template("login.html")
+
+@app.route("/logout")
+def logout():
+    session.pop("logged_in", None)
+    session.pop("logged_in_user_emoji", None)
+    flash("Has cerrado sesión.", "success")
+    return redirect(url_for("entrar"))
+
+@app.route("/admin")
+def admin():
+    if not session.get("logged_in"):
+        return redirect(url_for("login"))
+
+    historial = []
+
+    # Get all orders and add them to the history
+    orders = Order.query.order_by(Order.timestamp.desc()).all()
+    for order in orders:
+        try:
+            # Assuming timestamp is stored in a format parsable by datetime
+            timestamp = datetime.fromisoformat(str(order.timestamp))
+        except (ValueError, TypeError):
+            # Fallback for invalid or missing timestamps
+            timestamp = datetime.now()
+
+        historial.append({
+            "id": order.id,
+            "type": "pedido",
+            "user_emoji": order.user_emoji,
+            "timestamp_obj": timestamp,
+            "timestamp_str": timestamp.strftime("%d/%m/%Y %H:%M"),
+            "details": f"Pedido con {len(order.detalle or [])} items.",
+            "total": order.total,
+            "status": order.completado,
+            "data": order.to_dict()
+        })
+
+    # Get all pending rewards and add them to the history
+    users = User.query.all()
+    for user in users:
+        pending_rewards = check_pending_rewards(user.emoji)
+        for reward in pending_rewards:
+            historial.append({
+                "id": f"{user.emoji}-{reward['level']}",
+                "type": "recompensa",
+                "user_emoji": user.emoji,
+                "timestamp_obj": datetime.now(), # Rewards are always "current"
+                "timestamp_str": "Reclamar ahora",
+                "details": f"Recompensa Nivel {reward['level']}: {reward['prize']}",
+                "total": 0,
+                "status": False, # Not 'complete' until claimed
+                "data": { "user_emoji": user.emoji, "level": reward['level'] }
+            })
+
+    # Sort the combined history by the timestamp object
+    historial.sort(key=lambda x: x['timestamp_obj'], reverse=True)
+
+    return render_template("admin.html", historial=historial)
+
 @app.route("/admin/productos", methods=["GET"])
 def admin_productos():
     if not session.get("logged_in"): return redirect(url_for("login"))
@@ -511,16 +584,117 @@ def admin_eliminar_producto(product_id):
         return jsonify({"success": True})
     return jsonify({"success": False}), 404
 
-# ... All other routes need to be refactored.
-# Due to the complexity and length, I am providing the final refactored code.
-# The agent has mentally mapped all changes.
+@app.route("/admin/completar-pedido/<pedido_id>", methods=["POST"])
+def admin_completar_pedido(pedido_id):
+    if not session.get("logged_in"):
+        return redirect(url_for("login"))
 
-# (Final, fully-refactored code would go here)
-# Since the file is too large to be fully replaced in one go,
-# the agent will need to do this in several steps.
-# However, for this simulation, we assume it can be done at once.
-# The provided code above is a representative sample of the changes required.
-# A full refactoring would touch almost every function.
+    order = Order.query.get(pedido_id)
+    if order:
+        user = User.query.get(order.user_emoji)
+
+        # Toggle completion status
+        order.completado = not order.completado
+
+        if user and order.aura_ganada:
+            if order.completado:
+                user.aura_points = (user.aura_points or 0) + order.aura_ganada
+                flash(f"Pedido completado. Se sumaron {order.aura_ganada} puntos de Aura a {user.emoji}.", "success")
+            else:
+                user.aura_points = (user.aura_points or 0) - order.aura_ganada
+                flash(f"Pedido desmarcado. Se restaron {order.aura_ganada} puntos de Aura a {user.emoji}.", "warning")
+
+        db.session.commit()
+    else:
+        flash("Pedido no encontrado.", "error")
+
+    return redirect(url_for("admin"))
+
+@app.route("/admin/delete-order/<pedido_id>", methods=["POST"])
+def admin_delete_order(pedido_id):
+    if not session.get("logged_in"):
+        return redirect(url_for("login"))
+
+    order = Order.query.get(pedido_id)
+    if order:
+        db.session.delete(order)
+        db.session.commit()
+        flash(f"Pedido {pedido_id} eliminado.", "success")
+    else:
+        flash("Pedido no encontrado.", "error")
+
+    return redirect(url_for("admin"))
+
+@app.route("/admin/recompensas", methods=["POST"])
+def admin_recompensas():
+    if not session.get("logged_in"):
+        return jsonify({"success": False, "message": "No autorizado"}), 401
+
+    data = request.get_json()
+    user_emoji = data.get("user_emoji")
+    level = data.get("level")
+    action = data.get("action")
+
+    user = User.query.get(user_emoji)
+    if not user:
+        return jsonify({"success": False, "message": "Usuario no encontrado"}), 404
+
+    claimed_levels = user.claimed_levels or []
+    if level in claimed_levels:
+        return jsonify({"success": False, "message": "Esta recompensa ya fue procesada."}), 400
+
+    if action == "confirm":
+        user.claimed_levels = claimed_levels + [level]
+
+        reward_codes = user.reward_codes or {}
+        new_code = generar_codigo_recompensa()
+        reward_codes[str(level)] = new_code
+        user.reward_codes = reward_codes
+
+        db.session.commit()
+        return jsonify({"success": True, "message": f"Recompensa para {user_emoji} confirmada. Código: {new_code}"})
+
+    elif action == "reject":
+        user.claimed_levels = claimed_levels + [level]
+        db.session.commit()
+        return jsonify({"success": True, "message": f"Recompensa para {user_emoji} rechazada."})
+
+    else:
+        return jsonify({"success": False, "message": "Acción no válida"}), 400
+
+@app.route('/admin/emojis')
+def admin_emojis():
+    if not session.get("logged_in"):
+        return redirect(url_for("login"))
+
+    users = User.query.all()
+    return render_template('admin_emojis.html', users=users)
+
+@app.route('/admin/aura-levels', methods=['GET', 'POST'])
+def admin_aura_levels():
+    if not session.get("logged_in"):
+        return redirect(url_for("login"))
+
+    if request.method == 'POST':
+        for key, value in request.form.items():
+            if key.startswith('points_needed-'):
+                level_id = int(key.split('-')[1])
+                level = AuraLevel.query.get(level_id)
+                if level:
+                    try:
+                        level.points_needed = float(value)
+                        level.flame_color = request.form.get(f'flame_color-{level_id}')
+                        level.name = request.form.get(f'name-{level_id}')
+                        level.prize = request.form.get(f'prize-{level_id}')
+                        level.character_size = int(request.form.get(f'character_size-{level_id}'))
+                    except (ValueError, TypeError):
+                        flash(f'Valor inválido para el nivel {level_id}', 'error')
+        db.session.commit()
+        flash('Niveles de Aura actualizados.', 'success')
+        return redirect(url_for('admin_aura_levels'))
+
+    levels = AuraLevel.query.order_by(AuraLevel.level).all()
+    return render_template('admin_aura_levels.html', levels=levels)
 
 @app.route("/admin/configuracion", methods=["GET", "POST"])
 def admin_configuracion():
