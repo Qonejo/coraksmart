@@ -376,20 +376,6 @@ def determinar_whatsapp_destino(carrito, productos):
     }
     whatsapp_numero = whatsapp_map.get(max_whatsapp) or CONFIG.get('whatsapp_principal')
     return whatsapp_numero, max_whatsapp
-
-from sqlalchemy import text  # <-- agrega este import arriba si no lo tienes
-
-@app.get("/__migrate_imglen")
-def __migrate_imglen():
-    token_env = os.environ.get("INIT_DB_TOKEN")
-    token_req = request.args.get("token")
-    if not token_env or token_req != token_env:
-        return "Forbidden", 403
-    with app.app_context():
-        db.session.execute(text("ALTER TABLE product ALTER COLUMN imagen TYPE VARCHAR(512);"))
-        db.session.commit()
-    return "OK: imagen -> VARCHAR(512)"
-
 # --- MAIN VIEWS ---
 @app.route("/entrar")
 def entrar():
