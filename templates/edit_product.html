@@ -31,6 +31,11 @@
             <textarea name="descripcion" id="descripcion" rows="4">{{ producto.get('descripcion', '') }}</textarea>
         </p>
 
+        <p>
+            <label for="aura_multiplier">Multiplicador de Aura:</label>
+            <input type="number" name="aura_multiplier" id="aura_multiplier" step="0.1" value="{{ producto.aura_multiplier | default(3.0) }}" required>
+        </p>
+
         <div class="form-section">
             <label>Tipo de Producto:</label>
             <select id="product-type-selector" name="product_type" style="width: auto;">

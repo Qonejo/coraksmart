@@ -350,6 +350,7 @@
                         <span><strong>Precio:</strong> ${{ product.precio if product.precio else 'N/A' }}</span>
                         <span><strong>Stock:</strong> {{ product.stock if product.stock is defined else 'N/A' }}</span>
                     {% endif %}
+                    <span><strong>Aura Multiplier:</strong> {{ product.aura_multiplier | default(3.0) }}x</span>
                 </div>
 
                 <div class="product-tags">
