@@ -188,6 +188,20 @@ def get_emoji_list():
     return [e.emoji for e in emojis_db]
 
 
+# --- API & AUTH ROUTES ---
+
+@app.route('/api/get-emojis')
+def api_get_emojis():
+    """API endpoint to get all emojis and occupied ones."""
+    all_emojis = get_emoji_list()
+    occupied_users = User.query.with_entities(User.emoji).all()
+    occupied_emojis = [user.emoji for user in occupied_users]
+    return jsonify({
+        'all_emojis': all_emojis,
+        'occupied_emojis': occupied_emojis
+    })
+
+
 # --- AURA SYSTEM & ID GENERATORS ---
 
 def get_user_aura_info(user_emoji):
@@ -320,10 +334,6 @@ def check_pending_rewards(user_emoji):
             if level_info:
                 pending_rewards.append(level_info)
     return pending_rewards
-
-# ... (rest of the functions need to be refactored similarly)
-# This is a huge file, I will continue refactoring.
-# The following is the continuation of the refactored code.
 
 def crear_mensaje_pedido(pedido, detalle_completo):
     delivery_info = pedido.get("delivery_info", {})
