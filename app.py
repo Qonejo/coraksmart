@@ -255,20 +255,41 @@ def get_character_gif(points, level_info):
     return "f0.gif"
 
 def get_progress_bar_info(points, current_level_info, user_emoji):
+    """Función robusta para calcular información de la barra de progreso de aura."""
     level = current_level_info.get("level", 0)
     AURA_LEVELS = get_aura_levels()
 
-    if level >= 7: return {"bar_type": "barcom.gif", "exp_orbs": 0, "completed": True}
+    if level >= 7: 
+        return {"bar_type": "barcom.gif", "exp_orbs": 0, "completed": True}
     
     next_level_info = next((l for l in AURA_LEVELS if l["level"] == level + 1), None)
-    if not next_level_info: return {"bar_type": "barcom.gif", "exp_orbs": 0, "completed": True}
+    if not next_level_info: 
+        return {"bar_type": "barcom.gif", "exp_orbs": 0, "completed": True}
 
-    points_needed_for_next = next_level_info["points_needed"]
-    points_in_current_level = points - current_level_info["points_needed"]
-    points_needed_in_level = points_needed_for_next - current_level_info["points_needed"]
+    # Convertir todos los valores a números de forma segura
+    def safe_float(value, default=0):
+        try:
+            if isinstance(value, str):
+                return float(value)
+            return float(value) if value is not None else default
+        except (ValueError, TypeError):
+            return default
     
-    if points_needed_in_level <= 0 or points_in_current_level < 0: return {"bar_type": "barva.png", "exp_orbs": 0, "completed": False}
-    if points_in_current_level <= 0: return {"bar_type": "barva.png", "exp_orbs": 0, "completed": False}
+    def safe_int(value, default=0):
+        try:
+            val = safe_float(value, default)
+            if val == float('inf') or val == -float('inf') or val != val:  # NaN check
+                return default
+            return int(val)
+        except (ValueError, TypeError, OverflowError):
+            return default
+
+    points = safe_float(points, 0)
+    points_needed_for_next = safe_float(next_level_info["points_needed"], 1)
+    current_points_needed = safe_float(current_level_info.get("points_needed", 0), 0)
+    
+    points_in_current_level = max(0, points - current_points_needed)
+    points_needed_in_level = max(1, points_needed_for_next - current_points_needed)
     
     if points >= points_needed_for_next:
         user = User.query.get(user_emoji)
@@ -277,20 +298,28 @@ def get_progress_bar_info(points, current_level_info, user_emoji):
         return {
             "bar_type": "barcom.gif", "exp_orbs": 0, "completed": True,
             "level_up": next_level not in claimed_levels, "reward": next_level_info["prize"],
-            "next_level": next_level, "points_in_level": points_in_current_level,
-            "points_needed_for_next": points_needed_for_next
+            "next_level": next_level, "points_in_level": safe_int(points_in_current_level),
+            "points_needed_for_next": safe_int(points_needed_for_next)
         }
     
+    # Cálculos seguros para orbes
     max_orbs = 8
     orb_value = max(240, points_needed_in_level / max_orbs) if points_needed_in_level > 0 else 240
-    exp_orbs = min(max_orbs, int(points_in_current_level / orb_value)) if orb_value > 0 else 0
+    
+    exp_orbs = safe_int(points_in_current_level / orb_value) if orb_value > 0 else 0
+    exp_orbs = min(max_orbs, exp_orbs)
+    
     bar_type = "barinic.png" if points_in_current_level >= 240 else "barva.png"
-    progress_percent = int((points_in_current_level / points_needed_in_level) * 100) if points_needed_in_level > 0 else 0
+    progress_percent = safe_int((points_in_current_level / points_needed_in_level) * 100) if points_needed_in_level > 0 else 0
     
     return {
-        "bar_type": bar_type, "exp_orbs": exp_orbs, "completed": False,
-        "progress_percent": progress_percent, "points_in_level": points_in_current_level,
-        "points_needed_for_next": points_needed_for_next, "orb_value": int(orb_value)
+        "bar_type": bar_type, 
+        "exp_orbs": exp_orbs, 
+        "completed": False,
+        "progress_percent": progress_percent, 
+        "points_in_level": safe_int(points_in_current_level),
+        "points_needed_for_next": safe_int(points_needed_for_next), 
+        "orb_value": safe_int(orb_value)
     }
 
 def codificar_numero(numero):
