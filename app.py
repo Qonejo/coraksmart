@@ -301,7 +301,15 @@ def check_pending_rewards(user_emoji):
     
     current_level = 0
     for level_info in reversed(AURA_LEVELS):
-        if current_points >= level_info["points_needed"]:
+        # Asegurar que points_needed es numérico
+        points_needed = level_info["points_needed"]
+        if isinstance(points_needed, str):
+            try:
+                points_needed = float(points_needed)
+            except ValueError:
+                points_needed = 0
+        
+        if current_points >= points_needed:
             current_level = level_info["level"]
             break
     
@@ -786,6 +794,220 @@ def emoji_access_api():
         db.session.commit()
         session["logged_in_user_emoji"] = emoji
         return jsonify({"success": True, "message": "¡Avatar registrado con éxito!"})
+
+@app.route("/niveles")
+def niveles_aura():
+    if not session.get("logged_in_user_emoji"): 
+        return redirect(url_for("entrar"))
+    
+    user_emoji = session["logged_in_user_emoji"]
+    aura_data = get_user_aura_info(user_emoji)
+    
+    return render_template("niveles.html", 
+                         aura_data=aura_data, 
+                         AURA_LEVELS=get_aura_levels(),
+                         config=get_config())
+
+@app.route("/checkout")
+def checkout():
+    if not session.get("logged_in_user_emoji"): 
+        return redirect(url_for("entrar"))
+    
+    carrito = session.get('carrito', {})
+    if not carrito:
+        flash("Tu carrito está vacío.", "error")
+        return redirect(url_for("index"))
+    
+    products_db = Product.query.all()
+    productos_dict = {p.id: p.to_dict() for p in products_db}
+    
+    # Calcular totales
+    carrito_items = list(carrito.items())
+    item_total = {}
+    total = 0
+    
+    for cart_id, cantidad in carrito.items():
+        base_id = cart_id.split('-')[0]
+        if base_id in productos_dict:
+            producto = productos_dict[base_id]
+            precio = producto.get('precio', 0)
+            subtotal = precio * cantidad
+            item_total[cart_id] = subtotal
+            total += subtotal
+    
+    return render_template("checkout.html",
+                         carrito_items=carrito_items,
+                         productos=productos_dict,
+                         item_total=item_total,
+                         total=total,
+                         config=get_config())
+
+# --- API RUTAS PARA CARRITO ---
+
+@app.route('/api/carrito')
+def api_carrito():
+    if not session.get("logged_in_user_emoji"):
+        return jsonify({"carrito": {}, "productos_detalle": {}}), 401
+    
+    carrito = session.get('carrito', {})
+    products_db = Product.query.all()
+    productos_dict = {p.id: p.to_dict() for p in products_db}
+    
+    productos_detalle = {}
+    for cart_id, cantidad in carrito.items():
+        base_id = cart_id.split('-')[0]
+        if base_id in productos_dict:
+            producto = productos_dict[base_id]
+            productos_detalle[cart_id] = {
+                "nombre": producto["nombre"],
+                "precio": producto.get("precio", 0),
+                "imagen": producto.get("imagen", "")
+            }
+    
+    return jsonify({
+        "carrito": carrito,
+        "productos_detalle": productos_detalle
+    })
+
+@app.route('/api/agregar/<product_id>', methods=['POST'])
+def api_agregar_carrito(product_id):
+    if not session.get("logged_in_user_emoji"):
+        return jsonify({"success": False}), 401
+    
+    carrito = session.get('carrito', {})
+    carrito[product_id] = carrito.get(product_id, 0) + 1
+    session['carrito'] = carrito
+    
+    # Retornar datos actualizados
+    products_db = Product.query.all()
+    productos_dict = {p.id: p.to_dict() for p in products_db}
+    
+    productos_detalle = {}
+    for cart_id, cantidad in carrito.items():
+        base_id = cart_id.split('-')[0]
+        if base_id in productos_dict:
+            producto = productos_dict[base_id]
+            productos_detalle[cart_id] = {
+                "nombre": producto["nombre"],
+                "precio": producto.get("precio", 0),
+                "imagen": producto.get("imagen", "")
+            }
+    
+    return jsonify({
+        "carrito": carrito,
+        "productos_detalle": productos_detalle
+    })
+
+@app.route('/api/quitar/<product_id>', methods=['POST'])
+def api_quitar_carrito(product_id):
+    if not session.get("logged_in_user_emoji"):
+        return jsonify({"success": False}), 401
+    
+    carrito = session.get('carrito', {})
+    if product_id in carrito:
+        carrito[product_id] -= 1
+        if carrito[product_id] <= 0:
+            del carrito[product_id]
+    session['carrito'] = carrito
+    
+    # Retornar datos actualizados
+    products_db = Product.query.all()
+    productos_dict = {p.id: p.to_dict() for p in products_db}
+    
+    productos_detalle = {}
+    for cart_id, cantidad in carrito.items():
+        base_id = cart_id.split('-')[0]
+        if base_id in productos_dict:
+            producto = productos_dict[base_id]
+            productos_detalle[cart_id] = {
+                "nombre": producto["nombre"],
+                "precio": producto.get("precio", 0),
+                "imagen": producto.get("imagen", "")
+            }
+    
+    return jsonify({
+        "carrito": carrito,
+        "productos_detalle": productos_detalle
+    })
+
+@app.route('/api/limpiar', methods=['POST'])
+def api_limpiar_carrito():
+    if not session.get("logged_in_user_emoji"):
+        return jsonify({"success": False}), 401
+    
+    session['carrito'] = {}
+    return jsonify({
+        "carrito": {},
+        "productos_detalle": {}
+    })
+
+@app.route('/generate-reward-code', methods=['POST'])
+def generate_reward_code():
+    if not session.get("logged_in_user_emoji"):
+        return jsonify({"success": False, "message": "No autorizado"}), 401
+    
+    user_emoji = session["logged_in_user_emoji"]
+    data = request.get_json()
+    level = data.get("level")
+    
+    user = User.query.get(user_emoji)
+    if not user:
+        return jsonify({"success": False, "message": "Usuario no encontrado"}), 404
+    
+    # Verificar que el usuario puede reclamar este nivel
+    claimed_levels = user.claimed_levels or []
+    if level in claimed_levels:
+        return jsonify({"success": False, "message": "Esta recompensa ya fue reclamada"}), 400
+    
+    # Verificar que el usuario tiene suficientes puntos
+    aura_levels = get_aura_levels()
+    level_info = next((l for l in aura_levels if l["level"] == level), None)
+    if not level_info or user.aura_points < level_info["points_needed"]:
+        return jsonify({"success": False, "message": "No tienes suficientes puntos para este nivel"}), 400
+    
+    # Generar código y marcar como reclamado
+    code = generar_codigo_recompensa()
+    user.claimed_levels = claimed_levels + [level]
+    
+    reward_codes = user.reward_codes or {}
+    reward_codes[str(level)] = code
+    user.reward_codes = reward_codes
+    
+    db.session.commit()
+    
+    return jsonify({"success": True, "code": code})
+
+@app.route('/reclamar_recompensa', methods=['POST'])
+def reclamar_recompensa():
+    if not session.get("logged_in_user_emoji"):
+        return jsonify({"success": False, "message": "No autorizado"}), 401
+    
+    user_emoji = session["logged_in_user_emoji"]
+    user = User.query.get(user_emoji)
+    if not user:
+        return jsonify({"success": False, "message": "Usuario no encontrado"}), 404
+    
+    # Obtener recompensas pendientes
+    pending_rewards = check_pending_rewards(user_emoji)
+    if not pending_rewards:
+        return jsonify({"success": False, "message": "No tienes recompensas pendientes"}), 400
+    
+    # Reclamar la primera recompensa pendiente
+    reward = pending_rewards[0]
+    level = reward["level"]
+    
+    claimed_levels = user.claimed_levels or []
+    user.claimed_levels = claimed_levels + [level]
+    
+    # Generar código de recompensa
+    code = generar_codigo_recompensa()
+    reward_codes = user.reward_codes or {}
+    reward_codes[str(level)] = code
+    user.reward_codes = reward_codes
+    
+    db.session.commit()
+    
+    return jsonify({"success": True, "code": code, "level": level, "prize": reward["prize"]})
 
 @app.route("/admin/configuracion", methods=["GET", "POST"])
 def admin_configuracion():
