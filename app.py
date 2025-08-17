@@ -213,7 +213,15 @@ def get_user_aura_info(user_emoji):
     AURA_LEVELS = get_aura_levels()
     current_level_info = AURA_LEVELS[0] if AURA_LEVELS else {}
     for level_info in reversed(AURA_LEVELS):
-        if points >= level_info["points_needed"]:
+        # Asegurar que points_needed es numérico
+        points_needed = level_info["points_needed"]
+        if isinstance(points_needed, str):
+            try:
+                points_needed = float(points_needed)
+            except ValueError:
+                points_needed = 0
+        
+        if points >= points_needed:
             current_level_info = level_info
             break
 

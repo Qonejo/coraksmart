@@ -29,7 +29,7 @@
     </header>
 
     <div class="config-container">
-        <a href="{{ url_for('admin_view') }}" class="back-btn">← Volver al Panel</a>
+        <a href="{{ url_for('admin') }}" class="back-btn">← Volver al Panel</a>
         <h1 style="text-align: center; color: #00ff00; margin-bottom: 30px;">⚙️ Configuración General</h1>
         
         {% with messages = get_flashed_messages(with_categories=true) %}
