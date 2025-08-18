@@ -599,9 +599,38 @@ def admin():
 
 @app.route("/admin/productos", methods=["GET"])
 def admin_productos():
-    if not session.get("logged_in"): return redirect(url_for("login"))
-    productos = Product.query.order_by(Product.orden).all()
+    if not session.get("logged_in"):
+        return redirect(url_for("login"))
+
+    products_db = Product.query.order_by(Product.orden).all()
+
+    # Por si el modelo no tiene .to_dict(), lo convertimos a mano
+    def as_dict(p):
+        try:
+            return p.to_dict()
+        except Exception:
+            return {
+                "id": p.id,
+                "nombre": p.nombre,
+                "descripcion": p.descripcion,
+                "precio": p.precio,
+                "stock": p.stock,
+                "imagen": p.imagen,
+                "whatsapp_asignado": p.whatsapp_asignado,
+                "orden": p.orden,
+                "promocion": p.promocion,
+                "variaciones": p.variaciones,
+                "bundle_items": p.bundle_items,
+                "bundle_precio": p.bundle_precio,
+                "imagenes_adicionales": p.imagenes_adicionales,
+                "aura_multiplier": getattr(p, "aura_multiplier", 1),
+            }
+
+    # 🔴 Clave: la plantilla usa productos.items(), así que enviamos un dict {id: producto_dict}
+    productos = {p.id: as_dict(p) for p in products_db}
+
     return render_template("admin_productos.html", productos=productos, config=get_config())
+
 
 @app.route("/admin/editar-producto/<product_id>", methods=["GET", "POST"])
 def admin_editar_producto(product_id):
