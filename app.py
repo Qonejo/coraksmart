@@ -1,6 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
 from sqlalchemy.types import JSON
 from whitenoise import WhiteNoise
 from datetime import datetime
@@ -39,7 +38,6 @@ if db_url.startswith("postgres://"):
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
-migrate = Migrate(app, db)
 
 # --- WHITENOISE CONFIGURATION ---
 app.wsgi_app = WhiteNoise(app.wsgi_app, root="static/", max_age=31536000)
@@ -90,7 +88,8 @@ class Product(db.Model):
     bundle_items = db.Column(JSON)
     bundle_precio = db.Column(db.Float)
     imagenes_adicionales = db.Column(JSON)
-    aura_multiplier = db.Column(db.Float, default=3.0, nullable=False)
+    aura_multiplier = db.Column(db.Float, default=1.0)
+
 
     def to_dict(self):
         return {c.name: getattr(self, c.name) for c in self.__table__.columns}
