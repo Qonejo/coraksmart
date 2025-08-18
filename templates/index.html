@@ -31,6 +31,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
+    {# Nivel actual robusto, aunque falte level_info o level #}
     {% set current_level = (aura_data.level_info|default({})).get('level', aura_data.get('level', 0)) %}
 
 <header>
@@ -49,32 +50,38 @@
                 {% endif %}
             </div>
             
-            <!-- ¡NUEVA LÓGICA DE LA BARRA DE PROGRESO! -->
+            {# BARRA DE PROGRESO ROBUSTA (no asume cantidad fija de niveles) #}
             {% set progress_percent = 0 %}
-            {% if current_level < 6 %}
-                {% set next_level = AURA_LEVELS[current_level + 1] %}
-                {% if next_level.points_needed > 0 %}
-                    {% set progress_percent = (aura_data.points / next_level.points_needed * 100) | int %}
-                    {% if progress_percent > 100 %}{% set progress_percent = 100 %}{% endif %}
-                {% endif %}
-            {% else %}
-                {% set progress_percent = 100 %}
-            {% endif %} 
+            {% set levels = AURA_LEVELS or [] %}
+            {% set next_index = current_level + 1 %}
 
-            
+            {# Obtiene siguiente nivel tanto si levels es dict como lista #}
+            {% set next_level = None %}
+            {% if levels is mapping %}
+              {% set next_level = levels.get(next_index) or levels.get(next_index|string) %}
+            {% elif levels is sequence and next_index < (levels|length) %}
+              {% set next_level = levels[next_index] %}
+            {% endif %}
+
+            {% if next_level %}
+              {% set pn = (next_level.points_needed if next_level.points_needed is defined else next_level.get('points_needed', 0)) %}
+              {% if pn > 0 %}
+                {% set progress_percent = ((aura_data.points or 0) / pn * 100) | int %}
+                {% if progress_percent > 100 %}{% set progress_percent = 100 %}{% endif %}
+              {% endif %}
+            {% else %}
+              {% set progress_percent = 100 %}
+            {% endif %}
+
             <div class="aura-progress-bar">
-                <!-- Pasamos el porcentaje como un 'data-attribute' -->
                 <div class="aura-progress-fill" data-progress="{{ progress_percent }}"></div>
             </div>
             
-            <!-- Notificación de recompensas pendientes -->
             {% if aura_data.pending_rewards %}
             <div class="pending-rewards-notification" style="margin-top: 5px; padding: 5px 10px; background: rgba(255, 204, 0, 0.2); border: 1px solid #ffcc00; border-radius: 5px; font-size: 9px; color: #ffcc00; animation: pulse 2s infinite;">
                 🎁 Tienes {{ aura_data.pending_rewards|length }} recompensa(s) pendiente(s) - <a href="{{ url_for('niveles_aura') }}" style="color: #ffcc00; text-decoration: underline;">¡Reclámalas!</a>
             </div>
             {% endif %}
-            
-            <!-- Barra de progreso visual removida por solicitud del usuario -->
         </div>
         {% endif %}
         
@@ -94,20 +101,20 @@
             <h2>Objetos a la Venta</h2>
             <div class="productos-grid">
 
-                <!-- Bucle de promociones corregido -->
- {% for id, prod in PRODUCTOS_ORDENADOS if prod.get('promocion') %}
-     {% include 'product_card.html' %}
- {% endfor %}
+                <!-- Promociones -->
+                {% for id, prod in PRODUCTOS_ORDENADOS if prod.get('promocion') %}
+                    {% include 'product_card.html' %}
+                {% endfor %}
 
- <!-- Bucle de venta general corregido -->
- {% for id, prod in PRODUCTOS_ORDENADOS if not prod.get('promocion') %}
-     {% include 'product_card.html' %}
- {% endfor %}
+                <!-- Venta general -->
+                {% for id, prod in PRODUCTOS_ORDENADOS if not prod.get('promocion') %}
+                    {% include 'product_card.html' %}
+                {% endfor %}
 
             </div>
         </div>
 
-        <!-- ===== PANEL DERECHO: INVENTARIO (ESTRUCTURA ÚNICA Y LIMPIA) ===== -->
+        <!-- ===== PANEL DERECHO: INVENTARIO ===== -->
         <div id="carrito-panel">
             <h2>Inventario</h2>
             <div id="carrito-contenido">
@@ -128,13 +135,13 @@ COMPRA
         </div>
     </main>
 
-    <!-- Estructura del Modal de Imagen -->
+    <!-- Modal Imagen -->
     <div id="image-modal" class="modal-hidden">
         <span id="close-modal" class="close-button" onclick="cerrarImagenModal()">×</span>
         <img id="modal-image" class="modal-content-image">
     </div>
     
-    <!-- Modal de Felicitaciones por Subir de Nivel -->
+    <!-- Modal Level Up -->
     <div id="level-up-modal" class="modal-hidden">
         <div class="level-up-content">
             <h2>🎉 ¡FELICITACIONES! 🎉</h2>
@@ -160,32 +167,40 @@ COMPRA
     
     <!-- Inicializar galerías de productos -->
     <script>
-        // Configurar galerías de productos con imágenes (principales y adicionales)
+        // Construye la URL correcta (Supabase o /static)
+        function imgUrl(nameOrUrl) {
+            if (!nameOrUrl) return "{{ url_for('static', filename='default.png') }}";
+            return (nameOrUrl.startsWith('http'))
+                ? nameOrUrl
+                : "{{ url_for('static', filename='') }}" + nameOrUrl;
+        }
+
         {% for id, prod in PRODUCTOS_ORDENADOS %}
-        setProductGallery('{{ id }}', [
-            '{{ url_for("static", filename=prod.imagen) }}'
-            {%- if prod.get('imagenes_adicionales') -%}
-                {%- for img_index, img_name in prod.imagenes_adicionales.items() -%}
-                    , '{{ url_for("static", filename=img_name) }}'
-                {%- endfor -%}
-            {%- endif -%}
-        ]);
+        setProductGallery('{{ id }}', (function(){
+            const arr = [];
+            arr.push(imgUrl('{{ prod.imagen or "default.png" }}'));
+            {% if prod.get('imagenes_adicionales') %}
+                {% for _idx, img_name in prod.imagenes_adicionales.items() %}
+                    arr.push(imgUrl('{{ img_name }}'));
+                {% endfor %}
+            {% endif %}
+            return arr;
+        })());
         {% endfor %}
     </script>
     
     <!-- Script para el sistema de nivel -->
     <script>
-        // Verificar si el usuario subió de nivel
         {%- if aura_data.progress_bar and aura_data.progress_bar.get('level_up') %}
         window.addEventListener('load', function() {
             showLevelUpModal(
-                {{ current_level }},, 
-                "{{ aura_data.progress_bar.reward }}", 
+                {{ current_level }},
+                "{{ aura_data.progress_bar.reward }}",
                 "{{ aura_data.level_info.character_gif }}"
             );
         });
         {%- endif %}
-        
+
         function showLevelUpModal(level, reward, characterGif) {
             document.getElementById('level-character').src = "{{ url_for('static', filename='') }}" + characterGif;
             document.getElementById('level-title').textContent = `¡Has alcanzado el Nivel ${level}!`;
@@ -201,17 +216,12 @@ COMPRA
             try {
                 const response = await fetch('/reclamar_recompensa', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
+                    headers: { 'Content-Type': 'application/json' }
                 });
-                
                 const data = await response.json();
-                
                 if (data.success) {
                     alert('¡Recompensa reclamada con éxito! Recibirás tu premio en tu próximo pedido.');
                     closeLevelUpModal();
-                    // Recargar la página para actualizar el estado
                     location.reload();
                 } else {
                     alert(data.message || 'Error al reclamar la recompensa');
