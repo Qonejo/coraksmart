@@ -31,6 +31,8 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
+    {% set current_level = (aura_data.level_info|default({})).get('level', aura_data.get('level', 0)) %}
+
 <header>
     <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo de la Tienda" id="logo">
     
@@ -49,15 +51,16 @@
             
             <!-- ¡NUEVA LÓGICA DE LA BARRA DE PROGRESO! -->
             {% set progress_percent = 0 %}
-            {% if aura_data.level_info.level < 7 %}
-                {% set next_level = AURA_LEVELS[aura_data.level_info.level + 1] %}
+            {% if current_level < 6 %}
+                {% set next_level = AURA_LEVELS[current_level + 1] %}
                 {% if next_level.points_needed > 0 %}
                     {% set progress_percent = (aura_data.points / next_level.points_needed * 100) | int %}
                     {% if progress_percent > 100 %}{% set progress_percent = 100 %}{% endif %}
                 {% endif %}
             {% else %}
                 {% set progress_percent = 100 %}
-            {% endif %}
+            {% endif %} 
+
             
             <div class="aura-progress-bar">
                 <!-- Pasamos el porcentaje como un 'data-attribute' -->
@@ -176,7 +179,7 @@ COMPRA
         {%- if aura_data.progress_bar and aura_data.progress_bar.get('level_up') %}
         window.addEventListener('load', function() {
             showLevelUpModal(
-                {{ aura_data.level_info.level }}, 
+                {{ current_level }},, 
                 "{{ aura_data.progress_bar.reward }}", 
                 "{{ aura_data.level_info.character_gif }}"
             );
