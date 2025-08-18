@@ -8,149 +8,65 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
         .niveles-container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background: #1a1a1a;
-            border: 4px solid #00ff00;
-            border-radius: 10px;
-            margin-top: 20px;
+            max-width: 800px; margin: 0 auto; padding: 20px;
+            background: #1a1a1a; border: 4px solid #00ff00; border-radius: 10px; margin-top: 20px;
         }
-        
         .nivel-item {
-            display: flex;
-            align-items: center;
-            padding: 15px;
-            margin: 10px 0;
-            background: #2a2a2a;
-            border: 2px solid #444;
-            border-radius: 8px;
-            transition: all 0.3s ease;
+            display: flex; align-items: center; padding: 15px; margin: 10px 0;
+            background: #2a2a2a; border: 2px solid #444; border-radius: 8px; transition: all 0.3s ease;
         }
-        
-        .nivel-item.current {
-            border-color: #00ff00;
-            box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
-            background: #003300;
-        }
-        
-        .nivel-item.completed {
-            border-color: #888;
-            background: #333;
-        }
-        
+        .nivel-item.current { border-color: #00ff00; box-shadow: 0 0 15px rgba(0,255,0,.3); background: #003300; }
+        .nivel-item.completed { border-color: #888; background: #333; }
         .character-icon {
-            width: 60px;
-            height: 60px;
-            margin-right: 15px;
-            border-radius: 8px;
-            object-fit: contain;
-            border: 2px solid #444;
+            width: 60px; height: 60px; margin-right: 15px; border-radius: 8px;
+            object-fit: contain; border: 2px solid #444;
         }
-        
-        .character-icon.current {
-            border-color: #00ff00;
-            box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
-        }
-        
-        .flame-white { background: linear-gradient(45deg, #fff, #ddd); color: #333; }
-        .flame-blue { background: linear-gradient(45deg, #4444ff, #2222cc); color: #fff; }
-        .flame-green { background: linear-gradient(45deg, #44ff44, #22cc22); color: #000; }
-        .flame-yellow { background: linear-gradient(45deg, #ffff44, #cccc22); color: #000; }
-        .flame-orange { background: linear-gradient(45deg, #ff8844, #cc5522); color: #fff; }
-        .flame-red { background: linear-gradient(45deg, #ff4444, #cc2222); color: #fff; }
-        .flame-purple { background: linear-gradient(45deg, #8844ff, #5522cc); color: #fff; }
-        .flame-black { background: linear-gradient(45deg, #333, #111); color: #fff; }
-        
-        .nivel-info {
-            flex: 1;
-        }
-        
-        .nivel-titulo {
-            font-size: 14px;
-            color: #00ff00;
-            margin-bottom: 5px;
-        }
-        
-        .nivel-puntos {
-            font-size: 12px;
-            color: #ccc;
-            margin-bottom: 5px;
-        }
-        
-        .nivel-premio {
-            font-size: 11px;
-            color: #ffff44;
-        }
-        
-        .progreso-container {
-            margin-top: 20px;
-            text-align: center;
-        }
-        
-        .progreso-bar {
-            width: 100%;
-            height: 20px;
-            background: #333;
-            border: 2px solid #555;
-            border-radius: 10px;
-            overflow: hidden;
-            margin: 10px 0;
-        }
-        
-        .progreso-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #00ff00, #44ff44);
-            transition: width 0.5s ease;
-        }
-        
+        .character-icon.current { border-color: #00ff00; box-shadow: 0 0 10px rgba(0,255,0,.5); }
+        .flame-white { background: linear-gradient(45deg,#fff,#ddd); color:#333; }
+        .flame-blue { background: linear-gradient(45deg,#44f,#22c); color:#fff; }
+        .flame-green { background: linear-gradient(45deg,#4f4,#2c2); color:#000; }
+        .flame-yellow { background: linear-gradient(45deg,#ff4,#cc2); color:#000; }
+        .flame-orange { background: linear-gradient(45deg,#f84,#c52); color:#fff; }
+        .flame-red { background: linear-gradient(45deg,#f44,#c22); color:#fff; }
+        .flame-purple { background: linear-gradient(45deg,#84f,#52c); color:#fff; }
+        .flame-black { background: linear-gradient(45deg,#333,#111); color:#fff; }
+        .nivel-info { flex: 1; }
+        .nivel-titulo { font-size: 14px; color: #00ff00; margin-bottom: 5px; }
+        .nivel-puntos { font-size: 12px; color: #ccc; margin-bottom: 5px; }
+        .nivel-premio { font-size: 11px; color: #ffff44; }
+        .progreso-container { margin-top: 20px; text-align: center; }
+        .progreso-bar { width:100%; height:20px; background:#333; border:2px solid #555; border-radius:10px; overflow:hidden; margin:10px 0; }
+        .progreso-fill { height:100%; background: linear-gradient(90deg,#00ff00,#44ff44); transition: width .5s ease; }
         .volver-btn {
-            display: inline-block;
-            margin-top: 20px;
-            padding: 12px 20px;
-            background: #333;
-            color: #00ff00;
-            text-decoration: none;
-            border: 2px solid #00ff00;
-            border-radius: 5px;
-            font-family: 'Press Start 2P', cursive;
-            font-size: 10px;
-            transition: all 0.3s ease;
+            display:inline-block; margin-top:20px; padding:12px 20px; background:#333; color:#00ff00;
+            text-decoration:none; border:2px solid #00ff00; border-radius:5px; font-family:'Press Start 2P', cursive;
+            font-size:10px; transition: all .3s ease;
         }
-        
-        .volver-btn:hover {
-            background: #00ff00;
-            color: #000;
-        }
-        
-        @media (max-width: 768px) {
-            .niveles-container {
-                margin: 10px;
-                padding: 15px;
-            }
-            
-            .nivel-item {
-                padding: 10px;
-            }
-            
-            .flame-icon {
-                width: 30px;
-                height: 30px;
-                font-size: 16px;
-                margin-right: 10px;
-            }
-            
-            .nivel-titulo {
-                font-size: 12px;
-            }
-            
-            .nivel-puntos, .nivel-premio {
-                font-size: 10px;
-            }
+        .volver-btn:hover { background:#00ff00; color:#000; }
+        @media (max-width:768px){
+            .niveles-container{ margin:10px; padding:15px; }
+            .nivel-item{ padding:10px; }
+            .flame-icon{ width:30px; height:30px; font-size:16px; margin-right:10px; }
+            .nivel-titulo{ font-size:12px; }
+            .nivel-puntos,.nivel-premio{ font-size:10px; }
         }
     </style>
 </head>
 <body>
+
+    {# ==== Vars robustas para nivel actual y siguiente ==== #}
+    {% set current_level = (aura_data.level_info|default({})).get('level', aura_data.get('level', 0)) %}
+    {% set levels = AURA_LEVELS or [] %}
+    {% set next_index = current_level + 1 %}
+
+    {# next_level funciona tanto si AURA_LEVELS es dict como lista #}
+    {% set next_level = None %}
+    {% if levels is mapping %}
+      {% set next_level = levels.get(next_index) or levels.get(next_index|string) %}
+    {% elif levels is sequence and next_index < (levels|length) %}
+      {% set next_level = levels[next_index] %}
+    {% endif %}
+
     <header>
         <div class="logo-container">
             <img src="{{ url_for('static', filename='logo.png') }}" alt="CorakSmart" style="height: 60px;">
@@ -159,7 +75,7 @@
             <span class="user-emoji">{{ session.logged_in_user_emoji }}</span>
             <div class="aura-display">
                 {% if aura_data.points > 0 %}
-                    <img src="{{ url_for('static', filename='flame_' + aura_data.level_info.flame_color + '.png') }}" 
+                    <img src="{{ url_for('static', filename='flame_' + (aura_data.level_info.flame_color if aura_data.level_info and aura_data.level_info.flame_color is defined else 'white') + '.png') }}" 
                          alt="Aura" class="flame-icon-small">
                     <span>Aura: +{{ aura_data.points }} pts</span>
                 {% else %}
@@ -175,80 +91,157 @@
         <div class="progreso-container">
             <h3 style="color: #00ff00;">Tu Progreso Actual</h3>
             <p style="color: #ccc;">Puntos de Aura: <strong style="color: #ffff44;">{{ aura_data.points }}</strong></p>
-            
-            {% if aura_data.level_info.level < 7 %}
-                {% set next_level = AURA_LEVELS[aura_data.level_info.level + 1] %}
-                {% set progress = ((aura_data.points - aura_data.level_info.points_needed) / (next_level.points_needed - aura_data.level_info.points_needed)) * 100 %}
-                <p style="color: #ccc;">Progreso al siguiente nivel: 
-                    <strong style="color: #ffff44;">{{ aura_data.points - aura_data.level_info.points_needed }}</strong> / 
-                    <strong style="color: #ffff44;">{{ next_level.points_needed - aura_data.level_info.points_needed }}</strong>
+
+            {# --- Cálculo de progreso robusto --- #}
+            {% set progress = 0 %}
+            {% if next_level %}
+                {# siguiente umbral #}
+                {% set next_needed = (next_level.points_needed if next_level.points_needed is defined else next_level.get('points_needed', 0)) %}
+                {# umbral actual: de level_info si está; si no, del objeto del nivel actual; si no, 0 #}
+                {% set cur_needed = 0 %}
+                {% if aura_data.level_info and (aura_data.level_info.points_needed is defined) %}
+                    {% set cur_needed = aura_data.level_info.points_needed %}
+                {% elif levels is mapping %}
+                    {% set cur_obj = levels.get(current_level) or levels.get(current_level|string) %}
+                    {% if cur_obj %}
+                        {% set cur_needed = (cur_obj.points_needed if cur_obj.points_needed is defined else cur_obj.get('points_needed', 0)) %}
+                    {% endif %}
+                {% elif levels is sequence and current_level < (levels|length) %}
+                    {% set cur_obj = levels[current_level] %}
+                    {% if cur_obj %}
+                        {% set cur_needed = (cur_obj.points_needed if cur_obj.points_needed is defined else cur_obj.get('points_needed', 0)) %}
+                    {% endif %}
+                {% endif %}
+
+                {% set denom = (next_needed - cur_needed) %}
+                {% set gained = (aura_data.points or 0) - cur_needed %}
+                {% if denom <= 0 %}{% set denom = 1 %}{% endif %}
+                {% if gained < 0 %}{% set gained = 0 %}{% endif %}
+                {% set progress = (gained / denom * 100) | int %}
+                {% if progress > 100 %}{% set progress = 100 %}{% endif %}
+
+                <p style="color: #ccc;">Progreso al siguiente nivel:
+                    <strong style="color: #ffff44;">{{ gained }}</strong> /
+                    <strong style="color: #ffff44;">{{ denom }}</strong>
                 </p>
                 <div class="progreso-bar">
-                    <div class="progreso-fill" style="width: {{ progress if progress > 0 else 0 }}%"></div>
+                    <div class="progreso-fill" style="width: {{ progress }}%"></div>
                 </div>
             {% else %}
-                <p style="color: #ffff44;">¡Nivel máximo alcanzado!</p>
+                <p style="color: #ffff44;">¡Nivel máximo o sin siguiente nivel!</p>
+                <div class="progreso-bar">
+                    <div class="progreso-fill" style="width: 100%"></div>
+                </div>
             {% endif %}
         </div>
         
         <div class="niveles-lista">
-            {% for nivel in AURA_LEVELS %}
-                <div class="nivel-item 
-                    {% if aura_data.level_info.level == nivel.level %}current
-                    {% elif aura_data.points >= nivel.points_needed %}completed
-                    {% endif %}">
-                    
-                    {% if nivel.level == 0 %}
-                        <img src="{{ url_for('static', filename='f0.gif') }}" 
-                             alt="{{ nivel.name }}" 
-                             class="character-icon {% if aura_data.level_info.level == nivel.level %}current{% endif %}"
-                             style="width: {{ nivel.character_size }}px; height: {{ nivel.character_size }}px;">
-                    {% elif nivel.level == 1 %}
-                        <img src="{{ url_for('static', filename='f1c.gif') }}" 
-                             alt="{{ nivel.name }}" 
-                             class="character-icon {% if aura_data.level_info.level == nivel.level %}current{% endif %}"
-                             style="width: {{ nivel.character_size }}px; height: {{ nivel.character_size }}px;">
-                    {% else %}
-                        <img src="{{ url_for('static', filename='f' ~ nivel.level ~ '.gif') }}"
-                             alt="{{ nivel.name }}" 
-                             class="character-icon {% if aura_data.level_info.level == nivel.level %}current{% endif %}"
-                             style="width: {{ nivel.character_size }}px; height: {{ nivel.character_size }}px;">
-                    {% endif %}
-                    
-                    <div class="nivel-info">
-                        <div class="nivel-titulo">
-                            Nivel {{ nivel.level }} - {{ nivel.name }}
-                        </div>
-                        <div class="nivel-puntos">
-                            {% if nivel.points_needed == 0 %}
-                                Desde 0 puntos
-                            {% else %}
-                                Desde {{ "{:,}".format(nivel.points_needed) }} puntos
-                            {% endif %}
-                        </div>
-                        <div class="nivel-premio">
-                            🎁 Premio: {{ nivel.prize }}
-                        </div>
-                    </div>
-                    
-                    <div style="display: flex; flex-direction: column; gap: 10px; align-items: center;">
+            {# --- Iteración compatible: dict o lista --- #}
+            {% if levels is mapping %}
+                {% for _k, nivel in levels|dictsort %}
+                    <div class="nivel-item 
+                        {% if current_level == nivel.level %}current
+                        {% elif aura_data.points >= (nivel.points_needed if nivel.points_needed is defined else nivel.get('points_needed', 0)) %}completed
+                        {% endif %}">
+                        
                         {% if nivel.level == 0 %}
-                            <div style="color: #666; font-size: 12px; text-align: center;">Sin recompensa</div>
-                        {% elif aura_data.points >= nivel.points_needed %}
-                            {% if nivel.level not in (aura_data.progress_bar.get('claimed_levels', []) if aura_data.progress_bar else []) %}
-                                <button onclick="claimReward({{ nivel.level }}, '{{ nivel.prize }}')" 
-                                        style="background: #ffcc00; color: #000; border: 2px solid #ff9900; padding: 8px 12px; border-radius: 5px; font-family: 'Press Start 2P', cursive; font-size: 8px; cursor: pointer;">
-                                    🎁 Obtener Recompensa
-                                </button>
-                            {% else %}
-                                <div style="color: #00ff00; font-size: 20px;">✓ Reclamado</div>
-                            {% endif %}
-                        {% elif aura_data.level_info.level + 1 == nivel.level %}
-                            <div style="color: #ffff44; font-size: 16px;">⭐ Próximo</div>
+                            <img src="{{ url_for('static', filename='f0.gif') }}" 
+                                 alt="{{ nivel.name }}" 
+                                 class="character-icon {% if current_level == nivel.level %}current{% endif %}"
+                                 style="width: {{ nivel.character_size }}px; height: {{ nivel.character_size }}px;">
+                        {% elif nivel.level == 1 %}
+                            <img src="{{ url_for('static', filename='f1c.gif') }}" 
+                                 alt="{{ nivel.name }}" 
+                                 class="character-icon {% if current_level == nivel.level %}current{% endif %}"
+                                 style="width: {{ nivel.character_size }}px; height: {{ nivel.character_size }}px;">
+                        {% else %}
+                            <img src="{{ url_for('static', filename='f' ~ nivel.level ~ '.gif') }}"
+                                 alt="{{ nivel.name }}" 
+                                 class="character-icon {% if current_level == nivel.level %}current{% endif %}"
+                                 style="width: {{ nivel.character_size }}px; height: {{ nivel.character_size }}px;">
                         {% endif %}
+                        
+                        <div class="nivel-info">
+                            <div class="nivel-titulo">Nivel {{ nivel.level }} - {{ nivel.name }}</div>
+                            <div class="nivel-puntos">
+                                {% set need = (nivel.points_needed if nivel.points_needed is defined else nivel.get('points_needed', 0)) %}
+                                {% if need == 0 %}Desde 0 puntos{% else %}Desde {{ "{:,}".format(need) }} puntos{% endif %}
+                            </div>
+                            <div class="nivel-premio">🎁 Premio: {{ nivel.prize }}</div>
+                        </div>
+                        
+                        <div style="display:flex; flex-direction:column; gap:10px; align-items:center;">
+                            {% set need2 = (nivel.points_needed if nivel.points_needed is defined else nivel.get('points_needed', 0)) %}
+                            {% if nivel.level == 0 %}
+                                <div style="color:#666; font-size:12px; text-align:center;">Sin recompensa</div>
+                            {% elif aura_data.points >= need2 %}
+                                {% if nivel.level not in (aura_data.progress_bar.get('claimed_levels', []) if aura_data.progress_bar else []) %}
+                                    <button onclick="claimReward({{ nivel.level }}, '{{ nivel.prize }}')" 
+                                            style="background:#ffcc00; color:#000; border:2px solid #ff9900; padding:8px 12px; border-radius:5px; font-family:'Press Start 2P', cursive; font-size:8px; cursor:pointer;">
+                                        🎁 Obtener Recompensa
+                                    </button>
+                                {% else %}
+                                    <div style="color:#00ff00; font-size:20px;">✓ Reclamado</div>
+                                {% endif %}
+                            {% elif current_level + 1 == nivel.level %}
+                                <div style="color:#ffff44; font-size:16px;">⭐ Próximo</div>
+                            {% endif %}
+                        </div>
                     </div>
-                </div>
-            {% endfor %}
+                {% endfor %}
+            {% else %}
+                {% for nivel in levels %}
+                    <div class="nivel-item 
+                        {% if current_level == nivel.level %}current
+                        {% elif aura_data.points >= (nivel.points_needed if nivel.points_needed is defined else nivel.get('points_needed', 0)) %}completed
+                        {% endif %}">
+                        
+                        {% if nivel.level == 0 %}
+                            <img src="{{ url_for('static', filename='f0.gif') }}" 
+                                 alt="{{ nivel.name }}" 
+                                 class="character-icon {% if current_level == nivel.level %}current{% endif %}"
+                                 style="width: {{ nivel.character_size }}px; height: {{ nivel.character_size }}px;">
+                        {% elif nivel.level == 1 %}
+                            <img src="{{ url_for('static', filename='f1c.gif') }}" 
+                                 alt="{{ nivel.name }}" 
+                                 class="character-icon {% if current_level == nivel.level %}current{% endif %}"
+                                 style="width: {{ nivel.character_size }}px; height: {{ nivel.character_size }}px;">
+                        {% else %}
+                            <img src="{{ url_for('static', filename='f' ~ nivel.level ~ '.gif') }}"
+                                 alt="{{ nivel.name }}" 
+                                 class="character-icon {% if current_level == nivel.level %}current{% endif %}"
+                                 style="width: {{ nivel.character_size }}px; height: {{ nivel.character_size }}px;">
+                        {% endif %}
+                        
+                        <div class="nivel-info">
+                            <div class="nivel-titulo">Nivel {{ nivel.level }} - {{ nivel.name }}</div>
+                            <div class="nivel-puntos">
+                                {% set need = (nivel.points_needed if nivel.points_needed is defined else nivel.get('points_needed', 0)) %}
+                                {% if need == 0 %}Desde 0 puntos{% else %}Desde {{ "{:,}".format(need) }} puntos{% endif %}
+                            </div>
+                            <div class="nivel-premio">🎁 Premio: {{ nivel.prize }}</div>
+                        </div>
+                        
+                        <div style="display:flex; flex-direction:column; gap:10px; align-items:center;">
+                            {% set need2 = (nivel.points_needed if nivel.points_needed is defined else nivel.get('points_needed', 0)) %}
+                            {% if nivel.level == 0 %}
+                                <div style="color:#666; font-size:12px; text-align:center;">Sin recompensa</div>
+                            {% elif aura_data.points >= need2 %}
+                                {% if nivel.level not in (aura_data.progress_bar.get('claimed_levels', []) if aura_data.progress_bar else []) %}
+                                    <button onclick="claimReward({{ nivel.level }}, '{{ nivel.prize }}')" 
+                                            style="background:#ffcc00; color:#000; border:2px solid #ff9900; padding:8px 12px; border-radius:5px; font-family:'Press Start 2P', cursive; font-size:8px; cursor:pointer;">
+                                        🎁 Obtener Recompensa
+                                    </button>
+                                {% else %}
+                                    <div style="color:#00ff00; font-size:20px;">✓ Reclamado</div>
+                                {% endif %}
+                            {% elif current_level + 1 == nivel.level %}
+                                <div style="color:#ffff44; font-size:16px;">⭐ Próximo</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            {% endif %}
         </div>
         
         <div style="text-align: center;">
@@ -259,12 +252,9 @@
     <script>
         async function claimReward(level, prize) {
             try {
-                // Generar código de reclamación
                 const response = await fetch('/generate-reward-code', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ level: level })
                 });
                 
@@ -273,25 +263,24 @@
                 if (data.success) {
                     const code = data.code;
                     const userEmoji = '{{ session.logged_in_user_emoji }}';
+                    const message =
+                        `🎁 RECLAMACIÓN DE RECOMPENSA 🎁\n\n` +
+                        `Usuario: ${userEmoji}\n` +
+                        `Nivel alcanzado: ${level}\n` +
+                        `Recompensa: ${prize}\n` +
+                        `Código de reclamación: ${code}\n\n` +
+                        `Por favor, entregar mi recompensa presentando este código.`;
                     
-                    // Crear mensaje para WhatsApp
-                    const message = `🎁 RECLAMACIÓN DE RECOMPENSA 🎁\n\n` +
-                                   `Usuario: ${userEmoji}\n` +
-                                   `Nivel alcanzado: ${level}\n` +
-                                   `Recompensa: ${prize}\n` +
-                                   `Código de reclamación: ${code}\n\n` +
-                                   `Por favor, entregar mi recompensa presentando este código.`;
-                    
-                    // Abrir WhatsApp
                     const whatsappUrl = `https://wa.me/{{ config.whatsapp_principal or "5215513361764" }}?text=${encodeURIComponent(message)}`;
                     window.open(whatsappUrl, '_blank');
                     
-                    // Marcar como reclamado localmente
-                    event.target.style.display = 'none';
-                    event.target.parentElement.innerHTML = '<div style="color: #ffcc00; font-size: 12px;">⏳ Enviado</div>';
-                    
+                    // Marca visual rápida
+                    if (event && event.target) {
+                        event.target.style.display = 'none';
+                        event.target.parentElement.innerHTML = '<div style="color:#ffcc00; font-size:12px;">⏳ Enviado</div>';
+                    }
                 } else {
-                    alert('Error: ' + data.message);
+                    alert(data.message || 'Error al generar código de reclamación');
                 }
             } catch (error) {
                 alert('Error al generar código de reclamación');
