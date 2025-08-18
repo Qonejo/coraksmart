@@ -405,21 +405,27 @@ def determinar_whatsapp_destino(carrito, productos):
 def entrar():
     return render_template("bienvenida.html")
 
+# --- HOME ---
 @app.route("/")
 def index():
-    if not session.get("logged_in_user_emoji"): return redirect(url_for("entrar"))
+    if not session.get("logged_in_user_emoji"):
+        return redirect(url_for("entrar"))
+
     user_emoji = session["logged_in_user_emoji"]
     aura_data = get_user_aura_info(user_emoji)
-    
+
     products_db = Product.query.order_by(Product.orden).all()
     productos_ordenados = [(p.id, p.to_dict()) for p in products_db]
     productos_dict = {p.id: p.to_dict() for p in products_db}
-    
-    return render_template("index.html",
-                           PRODUCTOS_ORDENADOS=productos_ordenados,
-                           PRODUCTOS=productos_dict,
-                           aura_data=aura_data,
-                           AURA_LEVELS=get_aura_levels())
+
+    return render_template(
+        "index.html",
+        PRODUCTOS_ORDENADOS=productos_ordenados,
+        PRODUCTOS=productos_dict,
+        aura_data=aura_data,
+        AURA_LEVELS=get_aura_levels()
+    )
+
 
 @app.route("/perfil")
 def perfil_usuario():
