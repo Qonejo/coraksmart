@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { supabase } from '../lib/supabaseClient';
+import React, { useEffect, useState } from "react";
+import { supabase } from "../lib/supabaseClient";
 
 interface Product {
   id: string;
@@ -7,8 +7,7 @@ interface Product {
   descripcion: string;
   precio: number;
   stock: number;
-  image_url?: string;
-  is_active?: boolean;
+  image?: string; // ej: gomita.png en public/
 }
 
 const Shop = () => {
@@ -23,14 +22,11 @@ const Shop = () => {
       setLoading(true);
       setError(null);
 
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('is_active', true);
+      const { data, error } = await supabase.from("product").select("*");
 
       if (error) {
-        console.error('Error fetching products:', error);
-        setError('❌ No se pudieron cargar los productos.');
+        console.error("Error fetching products:", error);
+        setError("❌ No se pudieron cargar los productos.");
       } else {
         setProducts(data || []);
       }
@@ -47,31 +43,31 @@ const Shop = () => {
 
   const handleCheckout = async () => {
     if (cart.length === 0) {
-      setError('⚠️ Tu carrito está vacío.');
+      setError("⚠️ Tu carrito está vacío.");
       return;
     }
 
     setSaving(true);
     setError(null);
 
-    // Crear un nuevo pedido en la tabla "orders"
+    // Crear orden en tabla orders
     const { data: order, error: orderError } = await supabase
-      .from('orders')
+      .from("orders")
       .insert({
-        status: 'pending',
+        status: "pending",
         total: cart.reduce((sum, item) => sum + item.precio, 0),
       })
       .select()
       .single();
 
     if (orderError) {
-      console.error('Error creando orden:', orderError);
-      setError('❌ No se pudo crear la orden.');
+      console.error("Error creando orden:", orderError);
+      setError("❌ No se pudo crear la orden.");
       setSaving(false);
       return;
     }
 
-    // Insertar cada producto del carrito en una tabla "order_items"
+    // Insertar items en order_items
     const orderItems = cart.map((item) => ({
       order_id: order.id,
       product_id: item.id,
@@ -79,18 +75,19 @@ const Shop = () => {
       price: item.precio,
     }));
 
-    const { error: itemsError } = await supabase.from('order_items').insert(orderItems);
+    const { error: itemsError } = await supabase
+      .from("order_items")
+      .insert(orderItems);
 
     if (itemsError) {
-      console.error('Error guardando productos de la orden:', itemsError);
-      setError('❌ No se pudieron guardar los productos en la orden.');
+      console.error("Error guardando productos de la orden:", itemsError);
+      setError("❌ No se pudieron guardar los productos en la orden.");
       setSaving(false);
       return;
     }
 
-    // Resetear carrito tras compra exitosa
     setCart([]);
-    alert('✅ ¡Tu compra fue registrada con éxito!');
+    alert("✅ ¡Tu compra fue registrada con éxito!");
     setSaving(false);
   };
 
@@ -103,65 +100,72 @@ const Shop = () => {
   }
 
   return (
-    <div className="min-h-screen bg-black text-green-300 p-6 font-mono">
-      <h1 className="text-3xl font-bold text-green-400 mb-6">🛒 Tienda CorakSmart</h1>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {products.map((product) => (
-          <div
-            key={product.id}
-            className="bg-gray-900 border-2 border-green-400 p-4 rounded-lg shadow-[0_0_15px_rgba(0,255,0,0.6)]"
-          >
-            {product.image_url && (
-              <img
-                src={product.image_url}
-                alt={product.nombre}
-                className="w-full h-40 object-cover rounded mb-3"
-              />
-            )}
-            <h2 className="text-xl font-bold">{product.nombre}</h2>
-            <p className="text-sm text-green-400">{product.descripcion}</p>
-            <p className="font-bold mt-2 text-green-300">${product.precio.toFixed(2)}</p>
-            <p className="text-sm text-gray-400">Stock: {product.stock}</p>
-
-            <button
-              onClick={() => addToCart(product)}
-              className="mt-3 w-full py-2 bg-green-400 text-black font-bold rounded hover:bg-green-300 transition-colors"
-            >
-              ➕ Agregar al carrito
-            </button>
-          </div>
-        ))}
+    <div className="rpg-container">
+      {/* Panel de Productos */}
+      <div id="productos-panel">
+        <h2>Productos</h2>
+        <div className="productos-grid">
+          {products.map((product) => (
+            <div key={product.id} className="producto-item">
+              {product.image && (
+                <img
+                  src={`/${product.image}`} // desde public/
+                  alt={product.nombre}
+                  className="producto-imagen"
+                />
+              )}
+              <div className="producto-nombre">{product.nombre}</div>
+              <div className="producto-precio">${product.precio}</div>
+              <div
+                className={`producto-stock ${
+                  product.stock > 0 ? "" : "stock-agotado"
+                }`}
+              >
+                Stock: {product.stock}
+              </div>
+              <button
+                onClick={() => addToCart(product)}
+                disabled={product.stock === 0}
+                className="boton-agregar"
+              >
+                ➕ Agregar
+              </button>
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* Carrito */}
-      <div className="mt-10 p-6 bg-gray-900 border-2 border-pink-500 rounded-lg">
-        <h2 className="text-2xl font-bold text-pink-400">🛍️ Carrito</h2>
-        {cart.length === 0 ? (
-          <p className="text-gray-400">Tu carrito está vacío.</p>
-        ) : (
-          <>
-            <ul className="mt-4 space-y-2">
+      {/* Panel del Carrito */}
+      <div id="carrito-panel">
+        <h2>Carrito</h2>
+        <div id="carrito-contenido">
+          {cart.length === 0 ? (
+            <p className="empty-cart-message">Tu carrito está vacío.</p>
+          ) : (
+            <ul id="carrito-lista">
               {cart.map((item, index) => (
-                <li
-                  key={index}
-                  className="flex justify-between items-center border-b border-green-700 pb-1"
-                >
-                  <span>{item.nombre}</span>
-                  <span>${item.precio.toFixed(2)}</span>
+                <li key={index}>
+                  {item.nombre} — ${item.precio}
                 </li>
               ))}
             </ul>
-
-            <button
-              onClick={handleCheckout}
-              disabled={saving}
-              className="mt-6 w-full py-3 font-bold bg-pink-500 text-black rounded hover:bg-pink-400 transition-colors disabled:bg-gray-500"
-            >
-              {saving ? 'Guardando...' : '✅ Finalizar Compra'}
-            </button>
-          </>
-        )}
+          )}
+        </div>
+        <div id="carrito-resumen">
+          <div className="total-line">
+            <span>Total:</span>
+            <span id="carrito-total">
+              ${cart.reduce((sum, i) => sum + i.precio, 0)}
+            </span>
+          </div>
+          <button
+            onClick={handleCheckout}
+            disabled={saving}
+            className={`boton-comprar ${cart.length === 0 ? "disabled" : ""}`}
+          >
+            {saving ? "Guardando..." : "Comprar"}
+          </button>
+        </div>
       </div>
     </div>
   );
