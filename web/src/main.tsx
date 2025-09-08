@@ -9,6 +9,7 @@ import Admin from './pages/Admin'
 import EmojiLogin from './pages/EmojiLogin'
 import Profile from './pages/Profile'
 import Settings from './pages/Settings'
+import { AuthProvider } from './context/AuthContext'
 
 const router = createBrowserRouter([
   {
@@ -39,6 +40,8 @@ const router = createBrowserRouter([
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <RouterProvider router={router} />
+    <AuthProvider>
+      <RouterProvider router={router} />
+    </AuthProvider>
   </React.StrictMode>,
 )

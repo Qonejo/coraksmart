@@ -1,4 +1,4 @@
-from flask import Flask, request, session, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.types import JSON
 from whitenoise import WhiteNoise
@@ -13,6 +13,7 @@ import functools
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 import click
+from supabase import create_client, Client
 
 import requests
 from uuid import uuid4
@@ -46,9 +47,12 @@ app.wsgi_app = WhiteNoise(app.wsgi_app, root="static/", max_age=31536000)
 UPLOAD_FOLDER = 'static'
 ADMIN_PASSWORD_HASH = os.environ.get("ADMIN_PASSWORD_HASH") # It's better to use env vars
 
-# --- SUPABASE STORAGE CONFIG ---
+# --- SUPABASE CLIENT INITIALIZATION ---
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+# --- SUPABASE STORAGE CONFIG ---
 SUPABASE_BUCKET = os.environ.get("SUPABASE_BUCKET", "media")
 
 def subir_a_supabase(file_storage):
@@ -168,39 +172,23 @@ def get_config():
     return {item.key: item.value for item in config_db}
 
 def get_aura_levels():
-    """Cargar niveles de aura desde la base de datos."""
-    levels_db = AuraLevel.query.order_by(AuraLevel.level).all()
-    if not levels_db:
-        return [] # Should be populated by migration script
-
-    levels = []
-    for level in levels_db:
-        level_dict = level.to_dict()
-        if level_dict.get("points_needed") == "negative_infinity":
-            level_dict["points_needed"] = -float('inf')
-        levels.append(level_dict)
-    return levels
+    """Cargar niveles de aura desde Supabase."""
+    try:
+        response = supabase.table('aura_level').select('*').order('level', desc=False).execute()
+        return response.data
+    except Exception:
+        return []
 
 def get_emoji_list():
-    """Cargar lista de emojis desde la base de datos."""
-    emojis_db = Emoji.query.order_by(Emoji.id).all()
-    if not emojis_db:
-        return [] # Should be populated by migration script
-    return [e.emoji for e in emojis_db]
+    """Cargar lista de emojis desde Supabase."""
+    try:
+        response = supabase.table('emoji').select('emoji').order('id', desc=False).execute()
+        return [item['emoji'] for item in response.data]
+    except Exception:
+        return []
 
 
 # --- API & AUTH ROUTES ---
-
-@app.route('/api/get-emojis')
-def api_get_emojis():
-    """API endpoint to get all emojis and occupied ones."""
-    all_emojis = get_emoji_list()
-    occupied_users = User.query.with_entities(User.emoji).all()
-    occupied_emojis = [user.emoji for user in occupied_users]
-    return jsonify({
-        'all_emojis': all_emojis,
-        'occupied_emojis': occupied_emojis
-    })
 
 @app.route('/api/profile')
 def api_profile():
@@ -209,37 +197,166 @@ def api_profile():
     if not user_emoji:
         return jsonify({"error": "Not authenticated"}), 401
 
-    user = User.query.get(user_emoji)
-    if not user:
-        return jsonify({"error": "User not found"}), 404
+    try:
+        user_res = supabase.table('user').select('*').eq('emoji', user_emoji).single().execute()
+        if not user_res.data: return jsonify({"error": "User not found"}), 404
+        user = user_res.data
 
-    # Calculate current level
-    aura_points = user.aura_points or 0
-    aura_levels = get_aura_levels()
-    current_level_info = {}
-    if aura_levels:
-        current_level_info = aura_levels[0]
-        for level_info in reversed(aura_levels):
-            points_needed = level_info.get("points_needed", 0)
-            if isinstance(points_needed, str):
-                try:
-                    points_needed = float(points_needed)
-                except (ValueError, TypeError):
-                    points_needed = 0
+        aura_points = user.get('aura_points', 0)
+        aura_levels = get_aura_levels()
+        current_level_info = {}
+        if aura_levels:
+            current_level_info = aura_levels[0]
+            for level_info in reversed(aura_levels):
+                if aura_points >= level_info.get("points_needed", float('inf')):
+                    current_level_info = level_info
+                    break
 
-            if aura_points >= points_needed:
-                current_level_info = level_info
-                break
+        return jsonify({
+            "emoji": user.get('emoji'),
+            "aura_points": aura_points,
+            "aura_level": current_level_info.get('level', 0),
+            "level_name": current_level_info.get('name', 'N/A')
+        })
+    except Exception as e:
+        return jsonify({"error": f"Database error: {str(e)}"}), 500
 
-    return jsonify({
-        "emoji": user.emoji,
-        "aura_points": aura_points,
-        "aura_level": current_level_info.get('level', 0),
-        "level_name": current_level_info.get('name', 'N/A')
-    })
+@app.route('/api/get-emojis')
+def api_get_emojis():
+    """API endpoint to get all emojis and occupied ones."""
+    try:
+        all_emojis = get_emoji_list()
+
+        occupied_res = supabase.table('user').select('emoji').execute()
+        occupied_emojis = [item['emoji'] for item in occupied_res.data]
+
+        return jsonify({
+            'all_emojis': all_emojis,
+            'occupied_emojis': occupied_emojis
+        })
+    except Exception as e:
+        return jsonify({"error": f"Database error: {str(e)}"}), 500
 
 
 # --- AURA SYSTEM & ID GENERATORS ---
+
+def get_user_aura_info(user_emoji):
+    user = User.query.get(user_emoji)
+    if not user:
+        return None # Or handle as an error
+
+    points = user.aura_points
+    AURA_LEVELS = get_aura_levels()
+    current_level_info = AURA_LEVELS[0] if AURA_LEVELS else {}
+    for level_info in reversed(AURA_LEVELS):
+        # Asegurar que points_needed es numérico
+        points_needed = level_info["points_needed"]
+        if isinstance(points_needed, str):
+            try:
+                points_needed = float(points_needed)
+            except ValueError:
+                points_needed = 0
+
+        if points >= points_needed:
+            current_level_info = level_info
+            break
+
+    character_gif = get_character_gif(points, current_level_info)
+    current_level_info["character_gif"] = character_gif
+
+    progress_bar_info = get_progress_bar_info(points, current_level_info, user_emoji)
+    pending_rewards = check_pending_rewards(user_emoji)
+
+    return {
+        "points": points,
+        "level_info": current_level_info,
+        "progress_bar": progress_bar_info,
+        "pending_rewards": pending_rewards
+    }
+
+def get_character_gif(points, level_info):
+    level = level_info.get("level", 0)
+    AURA_LEVELS = get_aura_levels()
+
+    if points == 0: return "f0.gif"
+    if level == 1:
+        next_level_points = next((l["points_needed"] for l in AURA_LEVELS if l["level"] == 2), None)
+        if next_level_points:
+            progress = points / next_level_points
+            if progress < 1/3: return "f1a.gif"
+            elif progress < 2/3: return "f1b.gif"
+            else: return "f1c.gif"
+        else: return "f1a.gif"
+    elif 2 <= level <= 7: return f"f{level}.gif"
+    return "f0.gif"
+
+def get_progress_bar_info(points, current_level_info, user_emoji):
+    """Función robusta para calcular información de la barra de progreso de aura."""
+    level = current_level_info.get("level", 0)
+    AURA_LEVELS = get_aura_levels()
+
+    if level >= 7:
+        return {"bar_type": "barcom.gif", "exp_orbs": 0, "completed": True}
+
+    next_level_info = next((l for l in AURA_LEVELS if l["level"] == level + 1), None)
+    if not next_level_info:
+        return {"bar_type": "barcom.gif", "exp_orbs": 0, "completed": True}
+
+    # Convertir todos los valores a números de forma segura
+    def safe_float(value, default=0):
+        try:
+            if isinstance(value, str):
+                return float(value)
+            return float(value) if value is not None else default
+        except (ValueError, TypeError):
+            return default
+
+    def safe_int(value, default=0):
+        try:
+            val = safe_float(value, default)
+            if val == float('inf') or val == -float('inf') or val != val:  # NaN check
+                return default
+            return int(val)
+        except (ValueError, TypeError, OverflowError):
+            return default
+
+    points = safe_float(points, 0)
+    points_needed_for_next = safe_float(next_level_info["points_needed"], 1)
+    current_points_needed = safe_float(current_level_info.get("points_needed", 0), 0)
+
+    points_in_current_level = max(0, points - current_points_needed)
+    points_needed_in_level = max(1, points_needed_for_next - current_points_needed)
+
+    if points >= points_needed_for_next:
+        user = User.query.get(user_emoji)
+        claimed_levels = user.claimed_levels if user else []
+        next_level = next_level_info["level"]
+        return {
+            "bar_type": "barcom.gif", "exp_orbs": 0, "completed": True,
+            "level_up": next_level not in claimed_levels, "reward": next_level_info["prize"],
+            "next_level": next_level, "points_in_level": safe_int(points_in_current_level),
+            "points_needed_for_next": safe_int(points_needed_for_next)
+        }
+
+    # Cálculos seguros para orbes
+    max_orbs = 8
+    orb_value = max(240, points_needed_in_level / max_orbs) if points_needed_in_level > 0 else 240
+
+    exp_orbs = safe_int(points_in_current_level / orb_value) if orb_value > 0 else 0
+    exp_orbs = min(max_orbs, exp_orbs)
+
+    bar_type = "barinic.png" if points_in_current_level >= 240 else "barva.png"
+    progress_percent = safe_int((points_in_current_level / points_needed_in_level) * 100) if points_needed_in_level > 0 else 0
+
+    return {
+        "bar_type": bar_type,
+        "exp_orbs": exp_orbs,
+        "completed": False,
+        "progress_percent": progress_percent,
+        "points_in_level": safe_int(points_in_current_level),
+        "points_needed_for_next": safe_int(points_needed_for_next),
+        "orb_value": safe_int(orb_value)
+    }
 
 def codificar_numero(numero):
     if not isinstance(numero, int) or numero < 0: return str(numero)
@@ -251,7 +368,9 @@ def codificar_numero(numero):
 
 def generar_id_pedido():
     now = datetime.now()
-    order_count = Order.query.count()
+    # Fetch count from Supabase. Note: this can be slow on large tables.
+    # A dedicated counter or a different ID generation strategy would be better in production.
+    order_count = len(supabase.table('orders').select('id', count='exact').execute().data)
     parte_fecha = f"{codificar_numero(now.day - 1)}{codificar_numero(now.month - 1)}{now.strftime('%y')}"
     parte_hora = f"{codificar_numero(now.hour)}{codificar_numero(now.minute)}{codificar_numero(now.second)}"
     parte_pedido = codificar_numero(100 + order_count)
@@ -260,6 +379,36 @@ def generar_id_pedido():
 
 def generar_codigo_recompensa():
     return "".join(random.choices(string.ascii_uppercase + string.digits, k=6))
+
+def check_pending_rewards(user_emoji):
+    user = User.query.get(user_emoji)
+    if not user: return []
+
+    AURA_LEVELS = get_aura_levels()
+    current_points = user.aura_points
+    claimed_levels = user.claimed_levels
+
+    current_level = 0
+    for level_info in reversed(AURA_LEVELS):
+        # Asegurar que points_needed es numérico
+        points_needed = level_info["points_needed"]
+        if isinstance(points_needed, str):
+            try:
+                points_needed = float(points_needed)
+            except ValueError:
+                points_needed = 0
+
+        if current_points >= points_needed:
+            current_level = level_info["level"]
+            break
+
+    pending_rewards = []
+    for level in range(1, current_level + 1):
+        if level not in claimed_levels:
+            level_info = next((l for l in AURA_LEVELS if l["level"] == level), None)
+            if level_info:
+                pending_rewards.append(level_info)
+    return pending_rewards
 
 def crear_mensaje_pedido(pedido, detalle_completo):
     delivery_info = pedido.get("delivery_info", {})
@@ -288,12 +437,44 @@ def determinar_whatsapp_destino(carrito, productos):
     }
     whatsapp_numero = whatsapp_map.get(max_whatsapp) or CONFIG.get('whatsapp_principal')
     return whatsapp_numero, max_whatsapp
-# --- MAIN VIEWS (DEPRECATED) ---
-# The frontend is now handled by the React application in the /web directory.
-# This route is now a simple API status check.
+# --- MAIN VIEWS ---
+@app.route("/entrar")
+def entrar():
+    return render_template("bienvenida.html")
+
+# --- HOME ---
 @app.route("/")
 def index():
-    return jsonify({"status": "ok", "message": "Flask API is running. Frontend is served separately."})
+    if not session.get("logged_in_user_emoji"):
+        return redirect(url_for("entrar"))
+
+    user_emoji = session["logged_in_user_emoji"]
+    aura_data = get_user_aura_info(user_emoji)
+
+    products_db = Product.query.order_by(Product.orden).all()
+    productos_ordenados = [(p.id, p.to_dict()) for p in products_db]
+    productos_dict = {p.id: p.to_dict() for p in products_db}
+
+    return render_template(
+        "index.html",
+        PRODUCTOS_ORDENADOS=productos_ordenados,
+        PRODUCTOS=productos_dict,
+        aura_data=aura_data,
+        AURA_LEVELS=get_aura_levels()
+    )
+
+
+@app.route("/perfil")
+def perfil_usuario():
+    if not session.get("logged_in_user_emoji"): return redirect(url_for("entrar"))
+    user_emoji = session["logged_in_user_emoji"]
+    aura_data = get_user_aura_info(user_emoji)
+
+    pedidos_del_usuario = Order.query.filter_by(user_emoji=user_emoji).order_by(Order.timestamp.desc()).all()
+    products_db = Product.query.all()
+    productos_dict = {p.id: p.to_dict() for p in products_db}
+
+    return render_template("perfil.html", user_emoji=user_emoji, pedidos=pedidos_del_usuario, PRODUCTOS=productos_dict, aura_data=aura_data, AURA_LEVELS=get_aura_levels())
 
 @app.route('/procesar_pedido', methods=['POST'])
 def procesar_pedido():
@@ -305,8 +486,15 @@ def procesar_pedido():
     if not carrito:
         return jsonify({"success": False, "message": "Tu carrito está vacío."}), 400
 
-    products_db = Product.query.all()
-    productos_dict = {p.id: p for p in products_db}
+    try:
+        product_ids = [pid.split('-')[0] for pid in carrito.keys()]
+        if not product_ids:
+            return jsonify({"success": False, "message": "Cart is empty but session was not."}), 400
+
+        products_res = supabase.table('product').select('*').in_('id', product_ids).execute()
+        productos_dict = {p['id']: p for p in products_res.data}
+    except Exception as e:
+        return jsonify({"success": False, "message": f"Error fetching products: {str(e)}"}), 500
 
     total = 0
     aura_total = 0
@@ -350,19 +538,19 @@ def procesar_pedido():
         "location_type": request.form.get("location_type")
     }
 
-    new_order = Order(
-        id=generar_id_pedido(),
-        user_emoji=user_emoji,
-        timestamp=datetime.now().isoformat(),
-        detalle=carrito,
-        detalle_completo=detalle_completo,
-        total=total,
-        aura_ganada=aura_total,
-        delivery_info=delivery_info,
-        completado=False
-    )
-    db.session.add(new_order)
-    db.session.commit()
+    order_id = generar_id_pedido()
+    new_order_data = {
+        "id": order_id,
+        "user_emoji": user_emoji,
+        "timestamp": datetime.now().isoformat(),
+        "detalle": carrito,
+        "detalle_completo": detalle_completo,
+        "total": total,
+        "aura_ganada": aura_total,
+        "delivery_info": delivery_info,
+        "completado": False
+    }
+    supabase.table('orders').insert(new_order_data).execute()
 
     session.pop('carrito', None)
 
@@ -380,6 +568,20 @@ def procesar_pedido():
 # This is a very large file. The agent will continue refactoring.
 # For brevity, I will now apply the fully refactored file.
 
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if not ADMIN_PASSWORD_HASH:
+        flash("La aplicación no está configurada correctamente. No se ha definido un hash de contraseña de administrador.", "error")
+        return render_template("login.html")
+
+    if request.method == "POST":
+        password = request.form.get("password")
+        if password and check_password_hash(ADMIN_PASSWORD_HASH, password):
+            session["logged_in"] = True
+            return redirect(url_for("admin"))
+        else:
+            flash("Contraseña incorrecta.", "error")
+    return render_template("login.html")
 
 @app.route("/logout")
 def logout():
@@ -388,10 +590,174 @@ def logout():
     flash("Has cerrado sesión.", "success")
     return redirect(url_for("entrar"))
 
+@app.route("/admin")
+def admin():
+    if not session.get("logged_in"):
+        return redirect(url_for("login"))
+
+    historial = []
+
+    # Get all orders and add them to the history
+    orders = Order.query.order_by(Order.timestamp.desc()).all()
+    for order in orders:
+        try:
+            # Assuming timestamp is stored in a format parsable by datetime
+            timestamp = datetime.fromisoformat(str(order.timestamp))
+        except (ValueError, TypeError):
+            # Fallback for invalid or missing timestamps
+            timestamp = datetime.now()
+
+        historial.append({
+            "id": order.id,
+            "type": "pedido",
+            "user_emoji": order.user_emoji,
+            "timestamp_obj": timestamp,
+            "timestamp_str": timestamp.strftime("%d/%m/%Y %H:%M"),
+            "details": f"Pedido con {len(order.detalle or [])} items.",
+            "total": order.total,
+            "status": order.completado,
+            "data": order.to_dict()
+        })
+
+    # Get all pending rewards and add them to the history
+    users = User.query.all()
+    for user in users:
+        pending_rewards = check_pending_rewards(user.emoji)
+        for reward in pending_rewards:
+            historial.append({
+                "id": f"{user.emoji}-{reward['level']}",
+                "type": "recompensa",
+                "user_emoji": user.emoji,
+                "timestamp_obj": datetime.now(), # Rewards are always "current"
+                "timestamp_str": "Reclamar ahora",
+                "details": f"Recompensa Nivel {reward['level']}: {reward['prize']}",
+                "total": 0,
+                "status": False, # Not 'complete' until claimed
+                "data": { "user_emoji": user.emoji, "level": reward['level'] }
+            })
+
+    # Sort the combined history by the timestamp object
+    historial.sort(key=lambda x: x['timestamp_obj'], reverse=True)
+
+    return render_template("admin.html", historial=historial)
+
+@app.route("/admin/productos", methods=["GET"])
+def admin_productos():
+    if not session.get("logged_in"):
+        return redirect(url_for("login"))
+
+    products_db = Product.query.order_by(Product.orden).all()
+
+    # Por si el modelo no tiene .to_dict(), lo convertimos a mano
+    def as_dict(p):
+        try:
+            return p.to_dict()
+        except Exception:
+            return {
+                "id": p.id,
+                "nombre": p.nombre,
+                "descripcion": p.descripcion,
+                "precio": p.precio,
+                "stock": p.stock,
+                "imagen": p.imagen,
+                "whatsapp_asignado": p.whatsapp_asignado,
+                "orden": p.orden,
+                "promocion": p.promocion,
+                "variaciones": p.variaciones,
+                "bundle_items": p.bundle_items,
+                "bundle_precio": p.bundle_precio,
+                "imagenes_adicionales": p.imagenes_adicionales,
+                "aura_multiplier": getattr(p, "aura_multiplier", 1),
+            }
+
+    # 🔴 Clave: la plantilla usa productos.items(), así que enviamos un dict {id: producto_dict}
+    productos = {p.id: as_dict(p) for p in products_db}
+
+    return render_template("admin_productos.html", productos=productos, config=get_config())
 
 
+@app.route("/admin/editar-producto/<product_id>", methods=["GET", "POST"])
+def admin_editar_producto(product_id):
+    if not session.get("logged_in"): return redirect(url_for("login"))
 
+    producto = Product.query.get_or_404(product_id)
 
+    if request.method == "POST":
+        producto.nombre = request.form.get("nombre")
+        producto.descripcion = request.form.get("descripcion", "")
+        producto.whatsapp_asignado = request.form.get("whatsapp_asignado", "1")
+        producto.promocion = 'promocion' in request.form
+
+        product_type = request.form.get('product_type')
+        if product_type == 'simple':
+            producto.precio = float(request.form.get('precio', 0))
+            producto.stock = int(request.form.get('stock', 0))
+            producto.variaciones = None
+        elif product_type == 'variable':
+            new_variations = {}
+            # Simplified form processing
+            i = 0
+            while f'variation-name-{i}' in request.form:
+                name = request.form.get(f'variation-name-{i}')
+                price = request.form.get(f'variation-price-{i}')
+                stock = request.form.get(f'variation-stock-{i}')
+                if name and price and stock:
+                    new_variations[name] = {'precio': float(price), 'stock': int(stock)}
+                i += 1
+            producto.variaciones = new_variations
+            producto.precio = None
+            producto.stock = None
+
+        if 'imagen' in request.files:
+            imagen = request.files["imagen"]
+            if imagen.filename:
+                imagen_filename = secure_filename(imagen.filename)
+                imagen.save(os.path.join(UPLOAD_FOLDER, imagen_filename))
+                producto.imagen = imagen_filename
+
+        producto.aura_multiplier = float(request.form.get("aura_multiplier", 3.0))
+        db.session.commit()
+        flash(f"Producto '{producto.nombre}' actualizado.", "success")
+        return redirect(url_for("admin_productos"))
+
+    return render_template("edit_product.html", producto=producto, product_id=product_id, config=get_config())
+
+@app.route("/admin/agregar-producto", methods=["GET", "POST"])
+def admin_agregar_producto():
+    if not session.get("logged_in"): return redirect(url_for("login"))
+    if request.method == "POST":
+        nombre = request.form.get("nombre")
+        product_id = nombre.lower().replace(" ", "_").replace("ñ", "n")
+        if Product.query.get(product_id):
+            flash("Un producto con este ID ya existe.", "error")
+            return redirect(url_for("admin_agregar_producto"))
+
+        imagen_filename = "default.png"
+        if 'imagen' in request.files:
+            imagen = request.files['imagen']
+            if imagen.filename:
+                imagen_filename = secure_filename(imagen.filename)
+                imagen.save(os.path.join(UPLOAD_FOLDER, imagen_filename))
+
+        max_orden = db.session.query(db.func.max(Product.orden)).scalar() or 0
+
+        nuevo_producto = Product(
+            id=product_id,
+            nombre=nombre,
+            descripcion=request.form.get("descripcion", ""),
+            precio=float(request.form.get("precio")),
+            stock=int(request.form.get("stock")),
+            whatsapp_asignado=request.form.get("whatsapp_asignado", "1"),
+            imagen=imagen_filename,
+            orden=max_orden + 1,
+            promocion='promocion' in request.form,
+            aura_multiplier=float(request.form.get("aura_multiplier", 3.0))
+        )
+        db.session.add(nuevo_producto)
+        db.session.commit()
+        flash(f"Producto '{nombre}' agregado.", "success")
+        return redirect(url_for("admin_productos"))
+    return render_template("add_product.html", config=get_config())
 
 @app.route("/admin/eliminar-producto/<product_id>", methods=["POST"])
 def admin_eliminar_producto(product_id):
@@ -482,7 +848,39 @@ def admin_recompensas():
     else:
         return jsonify({"success": False, "message": "Acción no válida"}), 400
 
+@app.route('/admin/emojis')
+def admin_emojis():
+    if not session.get("logged_in"):
+        return redirect(url_for("login"))
 
+    users = User.query.all()
+    return render_template('admin_emojis.html', users=users)
+
+@app.route('/admin/aura-levels', methods=['GET', 'POST'])
+def admin_aura_levels():
+    if not session.get("logged_in"):
+        return redirect(url_for("login"))
+
+    if request.method == 'POST':
+        for key, value in request.form.items():
+            if key.startswith('points_needed-'):
+                level_id = int(key.split('-')[1])
+                level = AuraLevel.query.get(level_id)
+                if level:
+                    try:
+                        level.points_needed = float(value)
+                        level.flame_color = request.form.get(f'flame_color-{level_id}')
+                        level.name = request.form.get(f'name-{level_id}')
+                        level.prize = request.form.get(f'prize-{level_id}')
+                        level.character_size = int(request.form.get(f'character_size-{level_id}'))
+                    except (ValueError, TypeError):
+                        flash(f'Valor inválido para el nivel {level_id}', 'error')
+        db.session.commit()
+        flash('Niveles de Aura actualizados.', 'success')
+        return redirect(url_for('admin_aura_levels'))
+
+    levels = AuraLevel.query.order_by(AuraLevel.level).all()
+    return render_template('admin_aura_levels.html', levels=levels)
 
 @app.route('/api/get-emojis')
 def get_emojis_api():
@@ -503,28 +901,82 @@ def emoji_access_api():
     if not emoji or not password:
         return jsonify({"success": False, "message": "Datos inválidos."})
 
-    all_emojis_from_db = get_emoji_list()
-    if emoji not in all_emojis_from_db:
-        return jsonify({"success": False, "message": "Emoji no válido."})
+    try:
+        # Check if emoji is valid
+        all_emojis_from_db = get_emoji_list()
+        if emoji not in all_emojis_from_db:
+            return jsonify({"success": False, "message": "Emoji no válido."})
 
-    user = User.query.get(emoji)
-    if user:
-        if check_password_hash(user.password_hash, password):
-            session["logged_in_user_emoji"] = emoji
-            return jsonify({"success": True})
+        # Check if user exists
+        user_res = supabase.table('user').select('*').eq('emoji', emoji).single().execute()
+
+        if user_res.data:
+            # User exists, check password
+            user = user_res.data
+            if check_password_hash(user['password_hash'], password):
+                session["logged_in_user_emoji"] = emoji
+                return jsonify({"success": True})
+            else:
+                return jsonify({"success": False, "message": "Contraseña incorrecta."})
         else:
-            return jsonify({"success": False, "message": "Contraseña incorrecta."})
-    else:
-        new_user = User(
-            emoji=emoji,
-            password_hash=generate_password_hash(password)
-        )
-        db.session.add(new_user)
-        db.session.commit()
-        session["logged_in_user_emoji"] = emoji
-        return jsonify({"success": True, "message": "¡Avatar registrado con éxito!"})
+            # User does not exist, create new user
+            new_user_data = {
+                "emoji": emoji,
+                "password_hash": generate_password_hash(password),
+            }
+            supabase.table('user').insert(new_user_data).execute()
+            session["logged_in_user_emoji"] = emoji
+            return jsonify({"success": True, "message": "¡Avatar registrado con éxito!"})
 
+    except Exception as e:
+        return jsonify({"success": False, "message": f"Database error: {str(e)}"}), 500
 
+@app.route("/niveles")
+def niveles_aura():
+    if not session.get("logged_in_user_emoji"):
+        return redirect(url_for("entrar"))
+
+    user_emoji = session["logged_in_user_emoji"]
+    aura_data = get_user_aura_info(user_emoji)
+
+    return render_template("niveles.html",
+                         aura_data=aura_data,
+                         AURA_LEVELS=get_aura_levels(),
+                         config=get_config())
+
+@app.route("/checkout")
+def checkout():
+    if not session.get("logged_in_user_emoji"):
+        return redirect(url_for("entrar"))
+
+    carrito = session.get('carrito', {})
+    if not carrito:
+        flash("Tu carrito está vacío.", "error")
+        return redirect(url_for("index"))
+
+    products_db = Product.query.all()
+    productos_dict = {p.id: p.to_dict() for p in products_db}
+
+    # Calcular totales
+    carrito_items = list(carrito.items())
+    item_total = {}
+    total = 0
+
+    for cart_id, cantidad in carrito.items():
+        base_id = cart_id.split('-')[0]
+        if base_id in productos_dict:
+            producto = productos_dict[base_id]
+            precio = producto.get('precio', 0)
+            subtotal = precio * cantidad
+            item_total[cart_id] = subtotal
+            total += subtotal
+
+    return render_template("checkout.html",
+                         carrito_items=carrito_items,
+                         productos=productos_dict,
+                         item_total=item_total,
+                         total=total,
+                         config=get_config())
 
 # --- API RUTAS PARA CARRITO ---
 
@@ -534,8 +986,12 @@ def api_carrito():
         return jsonify({"carrito": {}, "productos_detalle": {}}), 401
     
     carrito = session.get('carrito', {})
-    products_db = Product.query.all()
-    productos_dict = {p.id: p.to_dict() for p in products_db}
+    product_ids = [pid.split('-')[0] for pid in carrito.keys()]
+    if not product_ids:
+        return jsonify({"carrito": carrito, "productos_detalle": {}})
+
+    products_res = supabase.table('product').select('id, nombre, precio, imagen').in_('id', product_ids).execute()
+    productos_dict = {p['id']: p for p in products_res.data}
     
     productos_detalle = {}
     for cart_id, cantidad in carrito.items():
@@ -563,8 +1019,12 @@ def api_agregar_carrito(product_id):
     session['carrito'] = carrito
     
     # Retornar datos actualizados
-    products_db = Product.query.all()
-    productos_dict = {p.id: p.to_dict() for p in products_db}
+    product_ids = [pid.split('-')[0] for pid in carrito.keys()]
+    if not product_ids:
+        return jsonify({"carrito": carrito, "productos_detalle": {}})
+
+    products_res = supabase.table('product').select('id, nombre, precio, imagen').in_('id', product_ids).execute()
+    productos_dict = {p['id']: p for p in products_res.data}
     
     productos_detalle = {}
     for cart_id, cantidad in carrito.items():
@@ -595,8 +1055,12 @@ def api_quitar_carrito(product_id):
     session['carrito'] = carrito
     
     # Retornar datos actualizados
-    products_db = Product.query.all()
-    productos_dict = {p.id: p.to_dict() for p in products_db}
+    product_ids = [pid.split('-')[0] for pid in carrito.keys()]
+    if not product_ids:
+        return jsonify({"carrito": carrito, "productos_detalle": {}})
+
+    products_res = supabase.table('product').select('id, nombre, precio, imagen').in_('id', product_ids).execute()
+    productos_dict = {p['id']: p for p in products_res.data}
     
     productos_detalle = {}
     for cart_id, cantidad in carrito.items():
@@ -693,6 +1157,48 @@ def reclamar_recompensa():
     
     return jsonify({"success": True, "code": code, "level": level, "prize": reward["prize"]})
 
+@app.route("/admin/configuracion", methods=["GET", "POST"])
+def admin_configuracion():
+    if not session.get("logged_in"): return redirect(url_for("login"))
+
+    if request.method == "POST":
+        action = request.form.get("action")
+        if action == "save_config":
+            for key, value in request.form.items():
+                if key != "action":
+                    config_item = Config.query.get(key)
+                    if config_item:
+                        config_item.value = value
+                    else:
+                        db.session.add(Config(key=key, value=value))
+            db.session.commit()
+            flash("Configuración actualizada.", "success")
+
+        elif action == "clear_orders":
+            try:
+                num_deleted = db.session.query(Order).delete()
+                db.session.commit()
+                flash(f"{num_deleted} pedidos eliminados.", "success")
+            except Exception as e:
+                db.session.rollback()
+                flash(f"Error al eliminar pedidos: {e}", "error")
+
+        elif action == "reset_all_users":
+            try:
+                users = User.query.all()
+                for user in users:
+                    user.aura_points = 0
+                    user.claimed_levels = []
+                    user.reward_codes = {}
+                db.session.commit()
+                flash("Todos los usuarios reseteados.", "success")
+            except Exception as e:
+                db.session.rollback()
+                flash(f"Error al resetear usuarios: {e}", "error")
+
+        return redirect(url_for("admin_configuracion"))
+
+    return render_template("admin_config.html", config=get_config())
 
 # --- INIT DB COMMAND ---
 @app.cli.command("init-db")
