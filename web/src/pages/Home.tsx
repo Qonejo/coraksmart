@@ -22,7 +22,7 @@ const Home = () => {
   };
 
   return (
-    <div className="relative min-h-screen w-full flex items-center justify-center overflow-hidden font-mono">
+    <div className="relative min-h-screen w-full flex items-center justify-center overflow-hidden font-mono bg-black">
       <MatrixBackground />
       <div className="relative z-10 w-full max-w-md p-8 space-y-6 bg-gray-900 bg-opacity-90 rounded-lg border-2 border-green-400 shadow-[0_0_20px_rgba(0,255,0,0.8)]">
 
