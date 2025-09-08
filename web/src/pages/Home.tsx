@@ -20,18 +20,67 @@ const Home = () => {
       return;
     }
 
-    const { data, error } = await supabase
-      .from("user")
-      .select("*")
-      .eq("emoji", selectedEmoji)
-      .eq("password", password)
+    if (!password) {
+      setError("❌ Por favor, introduce una contraseña.");
+      return;
+    }
+
+    // Step 1: Check if user exists with the selected emoji
+    const { data: user, error: fetchError } = await supabase
+      .from('user')
+      .select('*')
+      .eq('emoji', selectedEmoji)
       .single();
 
-    if (error || !data) {
-      setError("❌ Usuario o contraseña incorrectos");
-    } else {
-      navigate("/shop");
+    // Handle unexpected fetch errors
+    if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 means no rows found, which is fine
+      console.error('Error fetching user:', fetchError);
+      setError('❌ Error al conectar con la base de datos.');
+      return;
     }
+
+    // Case A: No user exists -> Create a new one (implicit registration)
+    if (!user) {
+      const { error: insertError } = await supabase.from('user').insert({
+        emoji: selectedEmoji,
+        password: password,
+        aura_points: 0,
+        aura_level: 1,
+      });
+
+      if (insertError) {
+        console.error('Error creating user:', insertError);
+        setError('❌ No se pudo registrar el nuevo usuario.');
+      } else {
+        navigate('/shop');
+      }
+      return;
+    }
+
+    // Case B: User exists but has no password -> Set password
+    if (user && !user.password) {
+      const { error: updateError } = await supabase
+        .from('user')
+        .update({ password: password })
+        .eq('id', user.id);
+
+      if (updateError) {
+        console.error('Error setting password:', updateError);
+        setError('❌ No se pudo asignar la contraseña.');
+      } else {
+        navigate('/shop');
+      }
+      return;
+    }
+
+    // Case C: User exists and password matches -> Login
+    if (user.password === password) {
+      navigate('/shop');
+      return;
+    }
+
+    // Case D: User exists but password does not match -> Show error
+    setError('❌ Contraseña incorrecta');
   };
 
   return (
