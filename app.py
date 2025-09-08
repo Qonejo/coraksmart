@@ -202,6 +202,42 @@ def api_get_emojis():
         'occupied_emojis': occupied_emojis
     })
 
+@app.route('/api/profile')
+def api_profile():
+    """API endpoint to get the current user's profile info."""
+    user_emoji = session.get('logged_in_user_emoji')
+    if not user_emoji:
+        return jsonify({"error": "Not authenticated"}), 401
+
+    user = User.query.get(user_emoji)
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    # Calculate current level
+    aura_points = user.aura_points or 0
+    aura_levels = get_aura_levels()
+    current_level_info = {}
+    if aura_levels:
+        current_level_info = aura_levels[0]
+        for level_info in reversed(aura_levels):
+            points_needed = level_info.get("points_needed", 0)
+            if isinstance(points_needed, str):
+                try:
+                    points_needed = float(points_needed)
+                except (ValueError, TypeError):
+                    points_needed = 0
+
+            if aura_points >= points_needed:
+                current_level_info = level_info
+                break
+
+    return jsonify({
+        "emoji": user.emoji,
+        "aura_points": aura_points,
+        "aura_level": current_level_info.get('level', 0),
+        "level_name": current_level_info.get('name', 'N/A')
+    })
+
 
 # --- AURA SYSTEM & ID GENERATORS ---
 
