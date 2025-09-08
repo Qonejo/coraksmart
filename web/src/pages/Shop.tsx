@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { supabase } from '../lib/supabaseClient';
+import React, { useEffect, useState } from "react";
+import { supabase } from "../lib/supabaseClient";
 
 interface Product {
   id: string;
@@ -7,9 +7,9 @@ interface Product {
   descripcion: string;
   precio: number;
   stock: number;
-  image?: string;
+  image_url?: string;
   is_active?: boolean;
-  is_promo?: boolean; // 👈 nueva columna en DB
+  is_promo?: boolean;
 }
 
 const Shop = () => {
@@ -24,13 +24,13 @@ const Shop = () => {
       setError(null);
 
       const { data, error } = await supabase
-        .from('product')
-        .select('*')
-        .eq('is_active', true);
+        .from("product") // 👈 nombre correcto de la tabla
+        .select("*")
+        .eq("is_active", true);
 
       if (error) {
-        console.error('Error fetching products:', error);
-        setError('❌ No se pudieron cargar los productos.');
+        console.error("Error fetching products:", error);
+        setError("❌ No se pudieron cargar los productos.");
       } else {
         setProducts(data || []);
       }
@@ -48,95 +48,93 @@ const Shop = () => {
   if (loading) return <div className="p-4 text-green-400">Cargando productos...</div>;
   if (error) return <div className="p-4 text-red-500">{error}</div>;
 
-  const promos = products.filter(p => p.is_promo);
-  const normales = products.filter(p => !p.is_promo);
-
   return (
     <div className="min-h-screen bg-black text-green-300 p-6 font-mono">
-      <header className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-green-400">🛒 CorakSmart</h1>
-        <div className="text-right">
-          <p className="text-yellow-400 font-bold">Nivel 1</p>
-          <p className="text-red-400">100 pts de Aura</p>
-        </div>
-      </header>
+      <h1 className="text-3xl font-bold text-green-400 mb-6">🛒 Tienda CorakSmart</h1>
 
-      {/* Sección promociones */}
-      <section className="mb-10">
-        <h2 className="text-center text-green-400 text-2xl font-bold mb-4">🔥 Promociones 🔥</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          {promos.map(product => (
+      {/* --- Sección Promociones (Dorado) --- */}
+      <h2 className="text-2xl font-bold text-yellow-400 mb-4">✨ Promociones</h2>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+        {products
+          .filter((p) => p.is_promo)
+          .map((product) => (
             <div
               key={product.id}
-              className="bg-gray-900 border-4 border-yellow-400 p-4 rounded-lg shadow-lg text-center"
+              className="bg-gray-900 border-4 border-yellow-400 p-4 rounded-lg shadow-[0_0_15px_rgba(255,215,0,0.8)]"
             >
-              {product.image && (
+              {product.image_url && (
                 <img
-                  src={`/${product.image}`}
+                  src={product.image_url}
                   alt={product.nombre}
-                  className="w-24 h-24 mx-auto mb-2 object-contain"
+                  className="w-full h-40 object-cover rounded mb-3"
                 />
               )}
-              <h3 className="text-yellow-300 font-bold">{product.nombre}</h3>
-              <p className="text-sm">{product.descripcion}</p>
-              <p className="font-bold text-green-400">${product.precio.toFixed(2)}</p>
+              <h2 className="text-xl font-bold text-yellow-300">{product.nombre}</h2>
+              <p className="text-sm text-yellow-200">{product.descripcion}</p>
+              <p className="font-bold mt-2 text-yellow-400">${product.precio.toFixed(2)}</p>
+              <p className="text-sm text-gray-400">Stock: {product.stock}</p>
+
               <button
                 onClick={() => addToCart(product)}
-                className="mt-2 w-full py-2 bg-yellow-400 text-black font-bold rounded hover:bg-yellow-300"
+                className="mt-3 w-full py-2 bg-yellow-400 text-black font-bold rounded hover:bg-yellow-300 transition-colors"
               >
-                ➕ Agregar
+                ➕ Agregar al carrito
               </button>
             </div>
           ))}
-        </div>
-      </section>
+      </div>
 
-      {/* Sección productos normales */}
-      <section>
-        <h2 className="text-center text-green-400 text-2xl font-bold mb-4">Objetos en venta</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          {normales.map(product => (
+      {/* --- Sección Productos Normales (Azules) --- */}
+      <h2 className="text-2xl font-bold text-blue-400 mb-4">🛍️ Objetos en venta</h2>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        {products
+          .filter((p) => !p.is_promo)
+          .map((product) => (
             <div
               key={product.id}
-              className="bg-gray-900 border-4 border-blue-400 p-4 rounded-lg shadow-lg text-center"
+              className="bg-gray-900 border-2 border-blue-400 p-4 rounded-lg shadow-[0_0_10px_rgba(0,0,255,0.6)]"
             >
-              {product.image && (
+              {product.image_url && (
                 <img
-                  src={`/${product.image}`}
+                  src={product.image_url}
                   alt={product.nombre}
-                  className="w-24 h-24 mx-auto mb-2 object-contain"
+                  className="w-full h-40 object-cover rounded mb-3"
                 />
               )}
-              <h3 className="text-blue-300 font-bold">{product.nombre}</h3>
-              <p className="text-sm">{product.descripcion}</p>
-              <p className="font-bold text-green-400">${product.precio.toFixed(2)}</p>
+              <h2 className="text-lg font-bold text-blue-300">{product.nombre}</h2>
+              <p className="text-sm text-blue-200">{product.descripcion}</p>
+              <p className="font-bold mt-2 text-blue-400">${product.precio.toFixed(2)}</p>
+              <p className="text-sm text-gray-400">Stock: {product.stock}</p>
+
               <button
                 onClick={() => addToCart(product)}
-                className="mt-2 w-full py-2 bg-blue-400 text-black font-bold rounded hover:bg-blue-300"
+                className="mt-3 w-full py-2 bg-blue-400 text-black font-bold rounded hover:bg-blue-300 transition-colors"
               >
-                ➕ Agregar
+                ➕ Agregar al carrito
               </button>
             </div>
           ))}
-        </div>
-      </section>
+      </div>
 
-      {/* Carrito */}
-      <aside className="mt-10 p-6 bg-gray-900 border-2 border-pink-500 rounded-lg">
+      {/* --- Carrito --- */}
+      <div className="mt-10 p-6 bg-gray-900 border-2 border-pink-500 rounded-lg">
         <h2 className="text-2xl font-bold text-pink-400">🛍️ Carrito</h2>
         {cart.length === 0 ? (
           <p className="text-gray-400">Tu carrito está vacío.</p>
         ) : (
           <ul className="mt-4 space-y-2">
-            {cart.map((item, idx) => (
-              <li key={idx} className="flex justify-between items-center">
+            {cart.map((item, index) => (
+              <li
+                key={index}
+                className="flex justify-between items-center border-b border-green-700 pb-1"
+              >
                 <span>{item.nombre}</span>
                 <span>${item.precio.toFixed(2)}</span>
               </li>
             ))}
           </ul>
         )}
-      </aside>
+      </div>
     </div>
   );
 };
