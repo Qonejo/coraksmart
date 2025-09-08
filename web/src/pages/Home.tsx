@@ -27,7 +27,7 @@ const Home = () => {
 
     setLoading(true);
 
-    // 1. Buscar si ya existe el usuario
+    // 1. Buscar si ya existe el usuario en la tabla "users"
     const { data: user, error: fetchError } = await supabase
       .from('users')
       .select('*')
