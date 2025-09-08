@@ -7,8 +7,8 @@ const Home = () => {
   const navigate = useNavigate();
   const [selectedEmoji, setSelectedEmoji] = useState<string | null>(null);
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const EMOJI_AVATARS = ['😀', '🐱', '🦊', '🐼', '🐸', '👾', '🦁', '🐰'];
 
@@ -17,75 +17,78 @@ const Home = () => {
     setError(null);
 
     if (!selectedEmoji) {
-      setError('❌ Por favor, selecciona un avatar.');
+      setError('⚠️ Por favor, selecciona un avatar.');
       return;
     }
     if (!password) {
-      setError('❌ Por favor, introduce una contraseña.');
+      setError('⚠️ Ingresa una contraseña.');
       return;
     }
 
     setLoading(true);
 
-    // 1. Buscar si ya existe el usuario en la tabla "users"
-    const { data: user, error: fetchError } = await supabase
-      .from('users')
-      .select('*')
-      .eq('emoji', selectedEmoji)
-      .single();
+    try {
+      // 1. Buscar si ya existe el usuario
+      const { data: user, error: fetchError } = await supabase
+        .from('users') // ✅ usar "users"
+        .select('*')
+        .eq('emoji', selectedEmoji)
+        .single();
 
-    if (fetchError && fetchError.code !== 'PGRST116') {
-      console.error('Error al consultar usuario:', fetchError);
-      setError('❌ Error al conectar con la base de datos.');
-      setLoading(false);
-      return;
-    }
-
-    // 2. Si no existe → crear usuario nuevo
-    if (!user) {
-      const { error: insertError } = await supabase.from('users').insert({
-        emoji: selectedEmoji,
-        password: password,
-        aura_points: 0,
-        aura_level: 1,
-      });
-
-      if (insertError) {
-        console.error('Error creando usuario:', insertError);
-        setError('❌ No se pudo registrar el nuevo usuario.');
-      } else {
-        navigate('/shop');
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        console.error('Error consultando usuario:', fetchError);
+        setError('❌ Error al conectar con la base de datos.');
+        setLoading(false);
+        return;
       }
-      setLoading(false);
-      return;
-    }
 
-    // 3. Si existe pero no tiene contraseña → asignar
-    if (user && !user.password) {
-      const { error: updateError } = await supabase
-        .from('users')
-        .update({ password: password })
-        .eq('id', user.id);
+      // 2. Si no existe → lo crea
+      if (!user) {
+        const { error: insertError } = await supabase.from('users').insert({
+          emoji: selectedEmoji,
+          password: password,
+          aura_points: 0,
+          aura_level: 1,
+        });
 
-      if (updateError) {
-        console.error('Error asignando contraseña:', updateError);
-        setError('❌ No se pudo asignar la contraseña.');
-      } else {
-        navigate('/shop');
+        if (insertError) {
+          console.error('Error creando usuario:', insertError);
+          setError('❌ No se pudo registrar el nuevo usuario.');
+        } else {
+          navigate('/shop');
+        }
+        setLoading(false);
+        return;
       }
-      setLoading(false);
-      return;
+
+      // 3. Si existe pero sin password → asigna
+      if (user && !user.password) {
+        const { error: updateError } = await supabase
+          .from('users')
+          .update({ password: password })
+          .eq('id', user.id);
+
+        if (updateError) {
+          console.error('Error actualizando usuario:', updateError);
+          setError('❌ No se pudo asignar la contraseña.');
+        } else {
+          navigate('/shop');
+        }
+        setLoading(false);
+        return;
+      }
+
+      // 4. Si existe y coincide → login
+      if (user.password === password) {
+        navigate('/shop');
+      } else {
+        setError('❌ Contraseña incorrecta');
+      }
+    } catch (err) {
+      console.error('Error inesperado:', err);
+      setError('❌ Ocurrió un error inesperado.');
     }
 
-    // 4. Si existe y coincide contraseña → login correcto
-    if (user.password === password) {
-      navigate('/shop');
-      setLoading(false);
-      return;
-    }
-
-    // 5. Contraseña incorrecta
-    setError('❌ Contraseña incorrecta');
     setLoading(false);
   };
 
@@ -93,14 +96,13 @@ const Home = () => {
     <div className="relative min-h-screen w-full flex items-center justify-center overflow-hidden font-mono bg-black">
       <MatrixBackground />
       <div className="relative z-10 w-full max-w-md p-8 space-y-6 bg-gray-900 bg-opacity-90 rounded-lg border-2 border-green-400 shadow-[0_0_20px_rgba(0,255,0,0.8)]">
-
         <div className="text-center">
           <h1 className="text-4xl font-bold text-green-400">⚡ CorakSmart ⚡</h1>
           <p className="text-green-300 mt-2">Selecciona tu avatar y entra a la tienda</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Emoji Grid */}
+          {/* Emojis */}
           <div className="grid grid-cols-4 gap-4">
             {EMOJI_AVATARS.map((emoji) => (
               <button
@@ -118,7 +120,7 @@ const Home = () => {
             ))}
           </div>
 
-          {/* Password Input */}
+          {/* Contraseña */}
           <input
             type="password"
             value={password}
@@ -128,9 +130,13 @@ const Home = () => {
             className="w-full px-4 py-2 text-center bg-transparent border-2 border-green-400 rounded-md text-green-300 placeholder-green-700 focus:outline-none focus:ring-2 focus:ring-green-400"
           />
 
-          {error && <p className="text-red-500 text-center text-sm">{error}</p>}
+          {error && (
+            <p className="text-center font-bold text-red-500" style={{ textShadow: '0 0 8px #ff0000' }}>
+              {error}
+            </p>
+          )}
 
-          {/* Submit Button */}
+          {/* Botón */}
           <button
             type="submit"
             disabled={loading}
@@ -140,9 +146,7 @@ const Home = () => {
           </button>
         </form>
 
-        <p className="text-center text-pink-500 text-sm">
-          🛑 Tienda privada – Solo usuarios autorizados
-        </p>
+        <p className="text-center text-pink-500 text-sm">🛑 Tienda privada – Solo usuarios autorizados</p>
       </div>
     </div>
   );
