@@ -1,24 +1,37 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import MatrixBackground from '../components/MatrixBackground';
+import { supabase } from '../lib/supabaseClient';
 
 const Home = () => {
+  const navigate = useNavigate();
   const [selectedEmoji, setSelectedEmoji] = useState<string | null>(null);
   const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   const EMOJI_AVATARS = ['😀', '🐱', '🦊', '🐼', '🐸', '👾', '🦁', '🐰'];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
+
     if (!selectedEmoji) {
       alert('Por favor, selecciona un avatar.');
       return;
     }
-    // Lógica de login se implementará después
-    console.log({
-      selectedEmoji,
-      password,
-    });
-    alert(`Login attempt with Avatar: ${selectedEmoji} and Password: ${password}`);
+
+    const { data, error } = await supabase
+      .from("user")
+      .select("*")
+      .eq("emoji", selectedEmoji)
+      .eq("password", password)
+      .single();
+
+    if (error || !data) {
+      setError("❌ Usuario o contraseña incorrectos");
+    } else {
+      navigate("/shop");
+    }
   };
 
   return (
@@ -69,6 +82,12 @@ const Home = () => {
           >
             ENTRAR
           </button>
+
+          {error && (
+            <p className="text-center font-bold text-red-500" style={{ textShadow: '0 0 8px #ff0000' }}>
+              {error}
+            </p>
+          )}
         </form>
 
         <p className="text-center text-pink-500 text-sm">
