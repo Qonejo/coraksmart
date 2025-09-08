@@ -7,6 +7,7 @@ const Home = () => {
   const navigate = useNavigate();
   const [selectedEmoji, setSelectedEmoji] = useState<string | null>(null);
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const EMOJI_AVATARS = ['😀', '🐱', '🦊', '🐼', '🐸', '👾', '🦁', '🐰'];
@@ -16,32 +17,33 @@ const Home = () => {
     setError(null);
 
     if (!selectedEmoji) {
-      alert('Por favor, selecciona un avatar.');
+      setError('❌ Por favor, selecciona un avatar.');
       return;
     }
-
     if (!password) {
-      setError("❌ Por favor, introduce una contraseña.");
+      setError('❌ Por favor, introduce una contraseña.');
       return;
     }
 
-    // Step 1: Check if user exists with the selected emoji
+    setLoading(true);
+
+    // 1. Buscar si ya existe el usuario
     const { data: user, error: fetchError } = await supabase
-      .from('user')
+      .from('users')
       .select('*')
       .eq('emoji', selectedEmoji)
       .single();
 
-    // Handle unexpected fetch errors
-    if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 means no rows found, which is fine
-      console.error('Error fetching user:', fetchError);
+    if (fetchError && fetchError.code !== 'PGRST116') {
+      console.error('Error al consultar usuario:', fetchError);
       setError('❌ Error al conectar con la base de datos.');
+      setLoading(false);
       return;
     }
 
-    // Case A: No user exists -> Create a new one (implicit registration)
+    // 2. Si no existe → crear usuario nuevo
     if (!user) {
-      const { error: insertError } = await supabase.from('user').insert({
+      const { error: insertError } = await supabase.from('users').insert({
         emoji: selectedEmoji,
         password: password,
         aura_points: 0,
@@ -49,38 +51,42 @@ const Home = () => {
       });
 
       if (insertError) {
-        console.error('Error creating user:', insertError);
+        console.error('Error creando usuario:', insertError);
         setError('❌ No se pudo registrar el nuevo usuario.');
       } else {
         navigate('/shop');
       }
+      setLoading(false);
       return;
     }
 
-    // Case B: User exists but has no password -> Set password
+    // 3. Si existe pero no tiene contraseña → asignar
     if (user && !user.password) {
       const { error: updateError } = await supabase
-        .from('user')
+        .from('users')
         .update({ password: password })
         .eq('id', user.id);
 
       if (updateError) {
-        console.error('Error setting password:', updateError);
+        console.error('Error asignando contraseña:', updateError);
         setError('❌ No se pudo asignar la contraseña.');
       } else {
         navigate('/shop');
       }
+      setLoading(false);
       return;
     }
 
-    // Case C: User exists and password matches -> Login
+    // 4. Si existe y coincide contraseña → login correcto
     if (user.password === password) {
       navigate('/shop');
+      setLoading(false);
       return;
     }
 
-    // Case D: User exists but password does not match -> Show error
+    // 5. Contraseña incorrecta
     setError('❌ Contraseña incorrecta');
+    setLoading(false);
   };
 
   return (
@@ -93,7 +99,7 @@ const Home = () => {
           <p className="text-green-300 mt-2">Selecciona tu avatar y entra a la tienda</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-4">
           {/* Emoji Grid */}
           <div className="grid grid-cols-4 gap-4">
             {EMOJI_AVATARS.map((emoji) => (
@@ -113,30 +119,25 @@ const Home = () => {
           </div>
 
           {/* Password Input */}
-          <div>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="CONTRASEÑA"
-              required
-              className="w-full px-4 py-2 text-center bg-transparent border-2 border-green-400 rounded-md text-green-300 placeholder-green-700 focus:outline-none focus:ring-2 focus:ring-green-400"
-            />
-          </div>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="CONTRASEÑA"
+            required
+            className="w-full px-4 py-2 text-center bg-transparent border-2 border-green-400 rounded-md text-green-300 placeholder-green-700 focus:outline-none focus:ring-2 focus:ring-green-400"
+          />
+
+          {error && <p className="text-red-500 text-center text-sm">{error}</p>}
 
           {/* Submit Button */}
           <button
             type="submit"
-            className="w-full py-3 font-bold text-gray-900 bg-green-400 rounded-md hover:bg-green-300 transition-colors duration-300 shadow-[0_0_15px_rgba(0,255,0,0.6)]"
+            disabled={loading}
+            className="w-full py-3 font-bold text-gray-900 bg-green-400 rounded-md hover:bg-green-300 transition-colors duration-300 shadow-[0_0_15px_rgba(0,255,0,0.6)] disabled:bg-gray-500"
           >
-            ENTRAR
+            {loading ? 'CONECTANDO...' : 'ENTRAR'}
           </button>
-
-          {error && (
-            <p className="text-center font-bold text-red-500" style={{ textShadow: '0 0 8px #ff0000' }}>
-              {error}
-            </p>
-          )}
         </form>
 
         <p className="text-center text-pink-500 text-sm">
