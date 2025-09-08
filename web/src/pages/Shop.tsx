@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
-import "../styles/style.css"; // 👈 importamos tu CSS RPG
+import "../styles/style.css"; // 👈 tu CSS RPG
 
 interface Product {
   id: string;
@@ -18,6 +18,12 @@ const Shop = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [cart, setCart] = useState<Product[]>([]);
+
+  // Datos mock de usuario
+  const [emoji] = useState("😃");
+  const [nivel] = useState(1);
+  const [auraPts] = useState(100);
+  const [expPercent] = useState(45); // % de experiencia
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -51,14 +57,37 @@ const Shop = () => {
 
   return (
     <div className="rpg-container">
-      {/* Header RPG */}
+      {/* HEADER RPG */}
       <header>
         <img id="logo" src="/logo.png" alt="logo" />
+        <h1 style={{ color: "#33ff33" }}>Tienda CorakSmart</h1>
         <div className="header-user-info">
           <div className="perfil-link">
-            <span className="perfil-emoji-header">🙂</span>
-            <span>Nivel 1 – 100 pts de aura</span>
+            <span className="perfil-emoji-header">{emoji}</span>
+            <span>Nivel {nivel}</span>
           </div>
+
+          {/* Barra de aura con puntos */}
+          <div className="aura-info">
+            <div className="aura-display">
+              <span className="aura-text">🔥 Aura</span>
+              <span className="aura-points">{auraPts} pts</span>
+            </div>
+          </div>
+
+          <div className="aura-progress-bar">
+            <div
+              className="aura-progress-fill"
+              style={{ width: `${expPercent}%` }}
+            ></div>
+          </div>
+
+          {/* Avatar / gif opcional */}
+          <img
+            src="/gif-avatar.gif"
+            alt="avatar"
+            className="aura-character"
+          />
         </div>
       </header>
 
