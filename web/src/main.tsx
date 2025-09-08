@@ -6,13 +6,9 @@ import './index.css'
 import Home from './pages/Home'
 import Shop from './pages/Shop'
 import Admin from './pages/Admin'
-import EmojiLogin from './pages/EmojiLogin' // Importar el nuevo componente
-
-const Placeholder = ({ pageName }: { pageName: string }) => (
-  <div className="bg-gray-900 text-white min-h-screen flex items-center justify-center font-mono">
-    <h1 className="text-4xl">Página de {pageName} (En construcción)</h1>
-  </div>
-);
+import EmojiLogin from './pages/EmojiLogin'
+import Profile from './pages/Profile'
+import Settings from './pages/Settings'
 
 const router = createBrowserRouter([
   {
@@ -25,11 +21,11 @@ const router = createBrowserRouter([
   },
   {
     path: '/profile',
-    element: <Placeholder pageName="Perfil" />,
+    element: <Profile />,
   },
   {
     path: '/settings',
-    element: <Placeholder pageName="Ajustes" />,
+    element: <Settings />,
   },
   {
     path: '/admin',
@@ -37,7 +33,7 @@ const router = createBrowserRouter([
   },
   {
     path: '/login',
-    element: <EmojiLogin />, // Usar el nuevo componente para la ruta /login
+    element: <EmojiLogin />,
   },
 ]);
 
