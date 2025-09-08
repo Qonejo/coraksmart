@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { supabase } from "../lib/supabaseClient";
+import React, { useEffect, useState } from 'react';
+import { supabase } from '../lib/supabaseClient';
 
 interface Product {
   id: string;
@@ -7,7 +7,9 @@ interface Product {
   descripcion: string;
   precio: number;
   stock: number;
-  image?: string; // ej: gomita.png en public/
+  image?: string;
+  is_active?: boolean;
+  is_promo?: boolean; // 👈 nueva columna en DB
 }
 
 const Shop = () => {
@@ -15,18 +17,20 @@ const Shop = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [cart, setCart] = useState<Product[]>([]);
-  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     const fetchProducts = async () => {
       setLoading(true);
       setError(null);
 
-      const { data, error } = await supabase.from("product").select("*");
+      const { data, error } = await supabase
+        .from('product')
+        .select('*')
+        .eq('is_active', true);
 
       if (error) {
-        console.error("Error fetching products:", error);
-        setError("❌ No se pudieron cargar los productos.");
+        console.error('Error fetching products:', error);
+        setError('❌ No se pudieron cargar los productos.');
       } else {
         setProducts(data || []);
       }
@@ -41,132 +45,98 @@ const Shop = () => {
     setCart([...cart, product]);
   };
 
-  const handleCheckout = async () => {
-    if (cart.length === 0) {
-      setError("⚠️ Tu carrito está vacío.");
-      return;
-    }
+  if (loading) return <div className="p-4 text-green-400">Cargando productos...</div>;
+  if (error) return <div className="p-4 text-red-500">{error}</div>;
 
-    setSaving(true);
-    setError(null);
-
-    // Crear orden en tabla orders
-    const { data: order, error: orderError } = await supabase
-      .from("orders")
-      .insert({
-        status: "pending",
-        total: cart.reduce((sum, item) => sum + item.precio, 0),
-      })
-      .select()
-      .single();
-
-    if (orderError) {
-      console.error("Error creando orden:", orderError);
-      setError("❌ No se pudo crear la orden.");
-      setSaving(false);
-      return;
-    }
-
-    // Insertar items en order_items
-    const orderItems = cart.map((item) => ({
-      order_id: order.id,
-      product_id: item.id,
-      quantity: 1,
-      price: item.precio,
-    }));
-
-    const { error: itemsError } = await supabase
-      .from("order_items")
-      .insert(orderItems);
-
-    if (itemsError) {
-      console.error("Error guardando productos de la orden:", itemsError);
-      setError("❌ No se pudieron guardar los productos en la orden.");
-      setSaving(false);
-      return;
-    }
-
-    setCart([]);
-    alert("✅ ¡Tu compra fue registrada con éxito!");
-    setSaving(false);
-  };
-
-  if (loading) {
-    return <div className="p-4 text-green-400">Cargando productos...</div>;
-  }
-
-  if (error) {
-    return <div className="p-4 text-red-500">{error}</div>;
-  }
+  const promos = products.filter(p => p.is_promo);
+  const normales = products.filter(p => !p.is_promo);
 
   return (
-    <div className="rpg-container">
-      {/* Panel de Productos */}
-      <div id="productos-panel">
-        <h2>Productos</h2>
-        <div className="productos-grid">
-          {products.map((product) => (
-            <div key={product.id} className="producto-item">
+    <div className="min-h-screen bg-black text-green-300 p-6 font-mono">
+      <header className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold text-green-400">🛒 CorakSmart</h1>
+        <div className="text-right">
+          <p className="text-yellow-400 font-bold">Nivel 1</p>
+          <p className="text-red-400">100 pts de Aura</p>
+        </div>
+      </header>
+
+      {/* Sección promociones */}
+      <section className="mb-10">
+        <h2 className="text-center text-green-400 text-2xl font-bold mb-4">🔥 Promociones 🔥</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          {promos.map(product => (
+            <div
+              key={product.id}
+              className="bg-gray-900 border-4 border-yellow-400 p-4 rounded-lg shadow-lg text-center"
+            >
               {product.image && (
                 <img
-                  src={`/${product.image}`} // desde public/
+                  src={`/${product.image}`}
                   alt={product.nombre}
-                  className="producto-imagen"
+                  className="w-24 h-24 mx-auto mb-2 object-contain"
                 />
               )}
-              <div className="producto-nombre">{product.nombre}</div>
-              <div className="producto-precio">${product.precio}</div>
-              <div
-                className={`producto-stock ${
-                  product.stock > 0 ? "" : "stock-agotado"
-                }`}
-              >
-                Stock: {product.stock}
-              </div>
+              <h3 className="text-yellow-300 font-bold">{product.nombre}</h3>
+              <p className="text-sm">{product.descripcion}</p>
+              <p className="font-bold text-green-400">${product.precio.toFixed(2)}</p>
               <button
                 onClick={() => addToCart(product)}
-                disabled={product.stock === 0}
-                className="boton-agregar"
+                className="mt-2 w-full py-2 bg-yellow-400 text-black font-bold rounded hover:bg-yellow-300"
               >
                 ➕ Agregar
               </button>
             </div>
           ))}
         </div>
-      </div>
+      </section>
 
-      {/* Panel del Carrito */}
-      <div id="carrito-panel">
-        <h2>Carrito</h2>
-        <div id="carrito-contenido">
-          {cart.length === 0 ? (
-            <p className="empty-cart-message">Tu carrito está vacío.</p>
-          ) : (
-            <ul id="carrito-lista">
-              {cart.map((item, index) => (
-                <li key={index}>
-                  {item.nombre} — ${item.precio}
-                </li>
-              ))}
-            </ul>
-          )}
+      {/* Sección productos normales */}
+      <section>
+        <h2 className="text-center text-green-400 text-2xl font-bold mb-4">Objetos en venta</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          {normales.map(product => (
+            <div
+              key={product.id}
+              className="bg-gray-900 border-4 border-blue-400 p-4 rounded-lg shadow-lg text-center"
+            >
+              {product.image && (
+                <img
+                  src={`/${product.image}`}
+                  alt={product.nombre}
+                  className="w-24 h-24 mx-auto mb-2 object-contain"
+                />
+              )}
+              <h3 className="text-blue-300 font-bold">{product.nombre}</h3>
+              <p className="text-sm">{product.descripcion}</p>
+              <p className="font-bold text-green-400">${product.precio.toFixed(2)}</p>
+              <button
+                onClick={() => addToCart(product)}
+                className="mt-2 w-full py-2 bg-blue-400 text-black font-bold rounded hover:bg-blue-300"
+              >
+                ➕ Agregar
+              </button>
+            </div>
+          ))}
         </div>
-        <div id="carrito-resumen">
-          <div className="total-line">
-            <span>Total:</span>
-            <span id="carrito-total">
-              ${cart.reduce((sum, i) => sum + i.precio, 0)}
-            </span>
-          </div>
-          <button
-            onClick={handleCheckout}
-            disabled={saving}
-            className={`boton-comprar ${cart.length === 0 ? "disabled" : ""}`}
-          >
-            {saving ? "Guardando..." : "Comprar"}
-          </button>
-        </div>
-      </div>
+      </section>
+
+      {/* Carrito */}
+      <aside className="mt-10 p-6 bg-gray-900 border-2 border-pink-500 rounded-lg">
+        <h2 className="text-2xl font-bold text-pink-400">🛍️ Carrito</h2>
+        {cart.length === 0 ? (
+          <p className="text-gray-400">Tu carrito está vacío.</p>
+        ) : (
+          <ul className="mt-4 space-y-2">
+            {cart.map((item, idx) => (
+              <li key={idx} className="flex justify-between items-center">
+                <span>{item.nombre}</span>
+                <span>${item.precio.toFixed(2)}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </aside>
     </div>
   );
 };
