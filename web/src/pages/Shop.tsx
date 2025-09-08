@@ -9,7 +9,7 @@ const Shop = () => {
     const fetchProducts = async () => {
       setLoading(true);
       const { data, error } = await supabase
-        .from('product')
+        .from('products')
         .select('*');
 
       if (error) {
