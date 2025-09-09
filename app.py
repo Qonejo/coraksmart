@@ -17,6 +17,7 @@ import click
 import requests
 from uuid import uuid4
 
+
 app = Flask(__name__)
 app.jinja_env.add_extension('jinja2.ext.do')
 
