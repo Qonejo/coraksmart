@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useRef, useEffect } from "react";
 
 const MatrixBackground: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -11,9 +11,10 @@ const MatrixBackground: React.FC = () => {
     if (!ctx) return;
 
     // Letras
-    const katakana = 'アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン';
-    const latin = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    const nums = '0123456789';
+    const katakana =
+      "アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン";
+    const latin = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const nums = "0123456789";
     const alphabet = katakana + latin + nums;
     const fontSize = 16;
 
@@ -50,7 +51,9 @@ const MatrixBackground: React.FC = () => {
         ctx.font = `${fontSize}px monospace`;
 
         for (let i = 0; i < rainDrops.length; i++) {
-          const text = alphabet.charAt(Math.floor(Math.random() * alphabet.length));
+          const text = alphabet.charAt(
+            Math.floor(Math.random() * alphabet.length)
+          );
           ctx.fillText(text, i * fontSize, rainDrops[i] * fontSize);
 
           if (rainDrops[i] * fontSize > canvas.height && Math.random() > 0.975) {
@@ -83,3 +86,4 @@ const MatrixBackground: React.FC = () => {
 };
 
 export default MatrixBackground;
+

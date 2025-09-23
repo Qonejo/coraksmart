@@ -74,21 +74,21 @@ const Home = () => {
   };
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center bg-black font-mono">
+    <div className="relative h-screen flex items-center justify-center bg-black font-mono">
       <MatrixBackground />
       <div className="relative z-10 w-full max-w-md p-8 bg-gray-900 bg-opacity-90 rounded-lg border-2 border-green-400">
         <h1 className="text-4xl font-bold text-green-400 text-center">⚡ CorakSmart ⚡</h1>
-        <form onSubmit={handleSubmit} className="space-y-4 mt-6">
-          <div className="grid grid-cols-4 gap-4">
+        <form onSubmit={handleSubmit} className="space-y-6 mt-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {EMOJI_AVATARS.map((emoji) => (
               <button
                 key={emoji}
                 type="button"
                 onClick={() => setSelectedEmoji(emoji)}
-                className={`text-4xl p-2 rounded-md ${
+                className={`text-5xl md:text-4xl p-2 rounded-md transition-all duration-200 ${
                   selectedEmoji === emoji
-                    ? 'bg-green-900 border-2 border-green-400'
-                    : 'bg-gray-800 border-2 border-gray-600 hover:border-green-500'
+                    ? 'bg-green-900 border-2 border-green-400 transform scale-110'
+                    : 'bg-gray-800 border-2 border-gray-600 hover:border-green-500 hover:scale-105'
                 }`}
               >
                 {emoji}
@@ -101,15 +101,15 @@ const Home = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="CONTRASEÑA"
-            className="w-full px-4 py-2 text-center bg-transparent border-2 border-green-400 rounded-md text-green-300"
+            className="w-full px-4 py-2 text-center bg-transparent border-2 border-green-400 rounded-md text-green-300 placeholder-green-500 focus:outline-none focus:ring-2 focus:ring-green-300"
           />
 
-          {error && <p className="text-red-500 text-center">{error}</p>}
+          {error && <p className="text-red-500 text-center animate-pulse">{error}</p>}
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 bg-green-400 text-black font-bold rounded hover:bg-green-300 disabled:bg-gray-500"
+            className="w-full py-3 bg-green-400 text-black font-bold rounded hover:bg-green-300 disabled:bg-gray-500 transition-colors duration-300"
           >
             {loading ? 'CONECTANDO...' : 'ENTRAR'}
           </button>

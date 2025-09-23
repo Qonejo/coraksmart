@@ -38,7 +38,7 @@ header {
 h2 {
     font-size: 1.2em;
     text-align: center;
-    padding: 15px 20px; /* Añadimos padding horizontal */
+    padding: 15px 20px;
     margin: 0;
     background-color: #444;
     border-top: 4px solid #888;
@@ -56,10 +56,8 @@ h2 {
     min-width: 350px;
     border-right: 4px solid #fff;
 }
-/* Cuadrícula de productos con 3 columnas en móvil */
 .productos-grid {
     display: grid;
-    /* ¡CAMBIO! Ajustamos el tamaño mínimo para permitir 3 columnas */
     grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
     gap: 15px;
     padding: 15px;
@@ -67,9 +65,8 @@ h2 {
 .producto-item { background-color: #111; border: 2px solid #888; text-align: center; padding: 10px; transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s; position: relative; display: flex; flex-direction: column; justify-content: space-between; }
 .producto-item img { max-width: 120px; height: 120px; object-fit: contain; align-self: center; margin-bottom: 10px; cursor: pointer; }
 .producto-nombre { font-size: 0.8em; margin-top: 10px; height: 40px; }
-#promociones-panel .productos-grid { /* AÑADIR NUEVA REGLA (Línea 65 aprox.) */
-    justify-content: center;
-}
+#promociones-panel .productos-grid { justify-content: center; }
+
 /* --- LÓGICA DE PRECIOS Y PROMOCIONES --- */
 .producto-precio { font-size: 0.9em; color: #33ff33; margin-top: 5px; }
 .promo-item { border-color: #ffcc00; }
@@ -82,13 +79,10 @@ h2 {
     background-color: #333;
     display: flex;
     flex-direction: column;
-    max-height: 90vh; /* Altura máxima para desktop */
+    max-height: 90vh;
     border-left: 4px solid #fff;
 }
-.panel-header-actions {
-    display: none; /* Lo ocultamos por defecto, solo se verá en la barra flotante */
-}
-.perfil-link { color: #ffcc00; text-decoration: none; font-size: 0.8em; }
+.panel-header-actions { display: none; }
 #carrito-contenido { flex-grow: 1; overflow-y: auto; padding: 15px; }
 #carrito-lista { list-style: none; padding: 0; margin: 0; }
 #carrito-lista li { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; font-size: 0.8em; border-bottom: 1px dashed #666; }
@@ -96,656 +90,99 @@ h2 {
 #carrito-resumen { padding: 15px; border-top: 4px solid #fff; background-color: #444; }
 .total-line { display: flex; justify-content: space-between; font-size: 1.2em; margin-bottom: 15px; }
 #carrito-total { color: #33ff33; }
-.boton-comprar { display: block; width: 100%; padding: 15px 0; background-color: #ffcc00; color: #000; text-align: center; text-decoration: none; font-size: 1em; border: none; cursor: pointer; }
+.boton-comprar { display: block; width: 100%; padding: 15px 0; background-color: #ffcc00; color: #000; text-align: center; font-size: 1em; border: none; cursor: pointer; }
 .boton-comprar.disabled { background-color: #666; color: #999; pointer-events: none; }
 
-/* --- ESTILOS PARA STOCK, DESCRIPCIÓN Y VARIACIONES --- */
+/* --- STOCK, DESCRIPCIÓN Y VARIACIONES --- */
 .producto-stock { font-size: 0.7em; margin-top: 10px; color: #aaa; }
 .producto-stock.stock-agotado { color: #ff4d4d; font-weight: bold; }
 .producto-item.agotado { opacity: 0.6; filter: grayscale(80%); cursor: not-allowed; border-color: #555; }
-.producto-descripcion { visibility: hidden; opacity: 0; width: 200px; background-color: #111; color: #fff; text-align: center; border-radius: 6px; padding: 10px; border: 2px solid #ffcc00; font-size: 0.7em; position: absolute; z-index: 10; bottom: 110%; left: 50%; margin-left: -100px; transition: opacity 0.3s; }
+.producto-descripcion { visibility: hidden; opacity: 0; width: 200px; background-color: #111; color: #fff; border-radius: 6px; padding: 10px; border: 2px solid #ffcc00; font-size: 0.7em; position: absolute; z-index: 10; bottom: 110%; left: 50%; margin-left: -100px; transition: opacity 0.3s; }
 .producto-item:hover .producto-descripcion { visibility: visible; opacity: 1; }
 .producto-descripcion::after { content: ""; position: absolute; top: 100%; left: 50%; margin-left: -5px; border-width: 5px; border-style: solid; border-color: #ffcc00 transparent transparent transparent; }
-.producto-descripcion .amarillo { color: #ffdd77; }
-.producto-descripcion .verde { color: #55ff55; }
-.variaciones-container { display: flex; flex-direction: column; gap: 5px; margin-top: 10px; width: 100%; }
-.boton-variacion, .boton-agregar { font-family: inherit; font-size: 0.7em; padding: 8px; border: 1px solid #888; background: #333; color: #fff; cursor: pointer; width: 100%; text-align: center; text-decoration: none; display: inline-block; }
+.variaciones-container { display: flex; flex-direction: column; gap: 5px; margin-top: 10px; }
+.boton-variacion, .boton-agregar { font-size: 0.7em; padding: 8px; border: 1px solid #888; background: #333; color: #fff; cursor: pointer; width: 100%; text-align: center; }
 .boton-variacion:hover, .boton-agregar:hover { background: #555; border-color: #ffcc00; }
-.boton-variacion span { font-size: 0.8em; color: #aaa; display: block; margin-top: 3px; }
-.boton-variacion:disabled { background: #2a2a2a; border-color: #444; color: #666; cursor: not-allowed; }
-.boton-variacion .verde { color: #55ff55; }
 
-/* --- EFECTOS VISUALES UNIFICADOS Y CORREGIDOS --- */
+/* --- EFECTOS VISUALES --- */
 .producto-item:hover { transform: scale(1.05); }
 .promo-item:hover { transform: scale(1.08) translateY(-5px); box-shadow: 0 0 15px #ffcc00; }
-.promo-item::before, .promo-item::after { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: transparent; z-index: -1; opacity: 0; }
-.promo-item:hover::before { box-shadow: -35px -40px 0 #ff00ff, -20px -20px 0 #00ffff, 0px 0px 0 #ffff00, 30px -30px 0 #00ff00, 25px 25px 0 #ff00ff, 40px 5px 0 #00ffff, -15px 35px 0 #ffff00; animation: colorful-sparkle 0.8s ease-out; }
-.promo-item:hover::after { box-shadow: 35px 40px 0 #00ff00, 20px 20px 0 #ff00ff, 0px 0px 0 #00ffff, -30px 30px 0 #ffff00, -25px -25px 0 #00ff00, -40px -5px 0 #ff00ff, 15px -35px 0 #00ffff; animation: colorful-sparkle 0.8s ease-out; animation-delay: 0.15s; }
-@keyframes colorful-sparkle { 0% { opacity: 0; transform: scale(0.2) rotate(15deg); } 50% { opacity: 1; } 100% { opacity: 0; transform: scale(1.8) rotate(-15deg); box-shadow: -100px -80px 0 #ff00ff, -40px 40px 0 #00ffff, 0px 0px 0 #ffff00, 80px -60px 0 #00ff00, 50px 50px 0 #ff00ff, 90px 10px 0 #00ffff, -30px 70px 0 #ffff00; } }
 
-/* --- ESTILOS PARA EL MODAL DE IMAGEN (CON FIX) --- */
+/* --- MODAL DE IMAGEN --- */
 .modal-hidden { display: none !important; }
-#image-modal { position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.85); display: flex; justify-content: center; align-items: center; transition: opacity 0.3s ease; }
-.modal-content-image { max-width: 80%; max-height: 80%; animation: zoom-in 0.3s ease; }
-#close-modal { position: absolute; top: 15px; right: 35px; color: #fff; font-size: 40px; font-weight: bold; cursor: pointer; transition: color 0.2s; }
-#close-modal:hover { color: #bbb; }
-@keyframes zoom-in { from {transform: scale(0.5)} to {transform: scale(1)} }
+#image-modal { position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.85); display: flex; justify-content: center; align-items: center; }
+.modal-content-image { max-width: 80%; max-height: 80%; }
+#close-modal { position: absolute; top: 15px; right: 35px; color: #fff; font-size: 40px; font-weight: bold; cursor: pointer; }
 
-/* --- ESTILOS PARA SECCIONES DE PRODUCTOS Y AURA --- */
+/* --- SECCIONES DE PRODUCTOS Y AURA --- */
 #seccion-promociones { background-color: #4a2d5e; border-bottom: 4px solid #fff; margin-bottom: 20px; }
 .aura-display { display: flex; align-items: center; gap: 10px; border: 2px solid #888; padding: 5px 15px; background-color: #111; }
 .aura-text { font-size: 1.2em; animation: aura-glow 2s infinite linear; }
 .aura-points { font-size: 1.2em; color: #ffcc00; }
-.aura-character { 
-    max-width: 96px; 
-    max-height: 96px; 
-    width: auto; 
-    height: auto; 
-    object-fit: contain; /* Mantiene proporciones originales */
-}
+.aura-character { max-width: 96px; max-height: 96px; }
 
-/* --- BARRA DE PROGRESO VISUAL --- */
-.visual-progress-bar {
-    position: relative;
-    margin-top: 10px;
-    width: 200px;
-    height: 30px;
-}
-
-.progress-bar-base {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-}
-
-.exp-orbs-container {
-    position: absolute;
-    top: 5px;
-    left: 0;
-    width: 100%;
-    height: 20px;
-    pointer-events: none;
-}
-
-.exp-orb {
-    position: absolute;
-    width: 10px;
-    height: 10px;
-    top: 0;
-}
+/* --- PROGRESO VISUAL --- */
+.visual-progress-bar { position: relative; margin-top: 10px; width: 200px; height: 30px; }
+.progress-bar-base { width: 100%; height: 100%; object-fit: contain; }
+.exp-orbs-container { position: absolute; top: 5px; left: 0; width: 100%; height: 20px; }
+.exp-orb { position: absolute; width: 10px; height: 10px; }
 
 /* --- MODAL DE FELICITACIONES --- */
-#level-up-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.9);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 10000;
-    animation: fadeIn 0.5s ease-in;
-}
+#level-up-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); display: flex; justify-content: center; align-items: center; z-index: 10000; }
+.level-up-content { background: #1a1a1a; border: 4px solid #ffcc00; border-radius: 20px; padding: 30px; text-align: center; }
 
-.level-up-content {
-    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-    border: 4px solid #ffcc00;
-    border-radius: 20px;
-    padding: 30px;
-    text-align: center;
-    max-width: 400px;
-    width: 90%;
-    box-shadow: 0 0 30px rgba(255, 204, 0, 0.5);
-    animation: bounceIn 0.8s ease-out;
-}
-
-.level-up-content h2 {
-    color: #ffcc00;
-    font-size: 1.5em;
-    margin-bottom: 20px;
-    text-shadow: 0 0 10px #ffcc00;
-    animation: glow 2s ease-in-out infinite alternate;
-}
-
-.celebration-animation {
-    margin: 20px 0;
-    animation: bounce 1s ease-in-out infinite;
-}
-
-.celebration-character {
-    max-width: 120px;
-    max-height: 120px;
-    width: auto;
-    height: auto;
-    border-radius: 50%;
-    border: 3px solid #ffcc00;
-    box-shadow: 0 0 20px rgba(255, 204, 0, 0.8);
-    object-fit: contain; /* Mantiene proporciones originales */
-}
-
-.level-up-content h3 {
-    color: #fff;
-    font-size: 1.2em;
-    margin: 20px 0;
-}
-
-.reward-info {
-    background: rgba(255, 204, 0, 0.1);
-    border: 2px solid #ffcc00;
-    border-radius: 10px;
-    padding: 15px;
-    margin: 20px 0;
-}
-
-.reward-info h4 {
-    color: #ffcc00;
-    font-size: 1em;
-    margin-bottom: 10px;
-}
-
-.reward-info p {
-    color: #fff;
-    font-size: 0.9em;
-    line-height: 1.4;
-}
-
-.claim-reward-button {
-    background: linear-gradient(135deg, #ffcc00 0%, #ff9900 100%);
-    color: #000;
-    border: none;
-    padding: 15px 25px;
-    border-radius: 25px;
-    font-family: 'Press Start 2P', cursive;
-    font-size: 0.8em;
-    cursor: pointer;
-    margin: 10px 5px;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(255, 204, 0, 0.4);
-    animation: pulse 2s ease-in-out infinite;
-}
-
-.claim-reward-button:hover {
-    background: linear-gradient(135deg, #ff9900 0%, #ffcc00 100%);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(255, 204, 0, 0.6);
-}
-
-.close-level-button {
-    background: #444;
-    color: #fff;
-    border: 2px solid #666;
-    padding: 10px 20px;
-    border-radius: 15px;
-    font-family: 'Press Start 2P', cursive;
-    font-size: 0.7em;
-    cursor: pointer;
-    margin: 10px 5px;
-    transition: all 0.3s ease;
-}
-
-.close-level-button:hover {
-    background: #666;
-    border-color: #888;
-}
-
-/* --- ANIMACIONES --- */
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-@keyframes bounceIn {
-    0% {
-        transform: scale(0.3) rotate(-10deg);
-        opacity: 0;
-    }
-    50% {
-        transform: scale(1.05) rotate(5deg);
-    }
-    70% {
-        transform: scale(0.9) rotate(-2deg);
-    }
-    100% {
-        transform: scale(1) rotate(0deg);
-        opacity: 1;
-    }
-}
-
-@keyframes glow {
-    from {
-        text-shadow: 0 0 10px #ffcc00, 0 0 20px #ffcc00, 0 0 30px #ffcc00;
-    }
-    to {
-        text-shadow: 0 0 20px #ffcc00, 0 0 30px #ffcc00, 0 0 40px #ffcc00;
-    }
-}
-
-@keyframes bounce {
-    0%, 20%, 50%, 80%, 100% {
-        transform: translateY(0);
-    }
-    40% {
-        transform: translateY(-10px);
-    }
-    60% {
-        transform: translateY(-5px);
-    }
-}
-
-@keyframes pulse {
-    0% {
-        transform: scale(1);
-    }
-    50% {
-        transform: scale(1.05);
-    }
-    100% {
-        transform: scale(1);
-    }
-}
-@keyframes aura-glow { 0%, 100% { text-shadow: 0 0 5px #ff00ff; } 25% { text-shadow: 0 0 5px #00ffff; } 50% { text-shadow: 0 0 5px #ffff00; } 75% { text-shadow: 0 0 5px #00ff00; } }
-
-.aura-info { 
-    display: flex; 
-    align-items: center; 
-    gap: 10px; 
-}
-.aura-progress-bar { 
-    width: 100%; 
-    height: 8px; 
-    background-color: #555; 
-    border: 1px solid #888; 
-}
-.aura-progress-fill { 
-    height: 100%; 
-    background-color: #ffcc00; 
-    width: 0%; /* El width se controla desde el HTML (inline style) */
-}
-
-/* --- BARRA DE PROGRESO VISUAL CON IMÁGENES --- */
-.visual-progress-bar {
-    position: relative;
-    margin-top: 5px;
-    height: 40px; /* Altura suficiente para las imágenes */
-    width: 200px; /* Ancho fijo para la barra */
-    max-width: 100%; /* Responsive */
-}
-
-.progress-bar-base {
-    position: absolute;
-    top: 0;
-    left: 0;
-    height: 100%;
-    width: auto;
-    max-width: 100%;
-    image-rendering: pixelated; /* Para mantener el estilo pixelado */
-}
-
-.exp-orbs-container {
-    position: absolute;
-    top: 5px; /* 5 píxeles abajo de la barra base */
-    left: 5px; /* 5 píxeles a la derecha según requerimiento */
-    height: 30px;
-    width: calc(100% - 10px); /* Ajustar por el offset izquierdo */
-    pointer-events: none; /* Para que no interfiera con clics */
-}
-
-.exp-orb {
-    position: absolute;
-    top: 0;
-    height: 18px; /* Tamaño ajustado para mejor visualización */
-    width: auto;
-    image-rendering: pixelated;
-    z-index: 10; /* Encima de la barra base */
-    animation: exp-orb-glow 2s ease-in-out infinite alternate;
-    filter: drop-shadow(0 0 3px rgba(255, 255, 0, 0.8)); /* Brillo dorado */
-}
-
-/* Animación para las orbes de experiencia */
-@keyframes exp-orb-glow {
-    0% {
-        filter: brightness(1);
-        transform: scale(1);
-    }
-    100% {
-        filter: brightness(1.2);
-        transform: scale(1.05);
-    }
-}
-.header-actions { 
-    display: flex; 
-    gap: 20px; 
-    align-items: center;
-    margin-top: 10px;
-}
-.lobby-link {
-    /* Estilos para el botón de la arena */
-    color: #ff3333;
-    text-decoration: none;
-    font-size: 0.9em;
-    border: 2px solid #ff3333;
-    padding: 5px 10px;
-    border-radius: 4px;
-    transition: background-color 0.2s, color 0.2s;
-}
-.lobby-link:hover {
-    background-color: #ff3333;
-    color: #000;
-}
-/* ... (Todo tu CSS desde 'body' hasta '.rpg-container' se queda igual) ... */
-
-/* --- TÍTULOS DE SECCIÓN DE ANCHO COMPLETO (FIX) --- */
-h2 {
-    font-size: 1.2em;
-    text-align: center;
-    padding: 15px 20px; /* Añadimos padding horizontal */
-    margin: 0;
-    background-color: #444;
-    border-top: 4px solid #888;
-    border-bottom: 4px solid #888;
-}
-
-/* ... (El resto de tus estilos hasta el bloque @media se quedan igual) ... */
-
-
-/* ============================================= */
-/* === ESTILOS PARA DISPOSITIVOS MÓVILES === */
-/* ============================================= */
+/* --- RESPONSIVE --- */
 @media (max-width: 768px) {
-    
-    /* Asegurar que no haya espacios en los elementos raíz */
-    html {
-        margin-bottom: 0 !important;
-        padding-bottom: 0 !important;
-    }
-    
-    /* Ajustes del body para móvil */
-    body {
-        padding: 0;
-        margin-bottom: 0 !important;
-        overflow-x: hidden; /* Evita scroll horizontal */
-    }
-    
-    /* Centrar el logo en header */
-    header {
-        flex-direction: column;
-        gap: 15px;
-        margin: 0;
-        padding: 15px;
-        border-left: none;
-        border-right: none;
-        text-align: center; /* Centrar contenido del header */
-    }
-    
-    header img {
-        margin: 0 auto; /* Centrar el logo específicamente */
-        display: block;
-    }
-    
-    /* Ajustar aura display en móvil */
-    .aura-display {
-        align-items: center;
-        text-align: center;
-    }
-    
-    .visual-progress-bar {
-        width: 180px; /* Reducir ancho en móvil */
-        margin: 0 auto; /* Centrar la barra */
-    }
-    
-    .exp-orb {
-        height: 14px; /* Orbes más pequeñas en móvil */
-    }
-    
-    /* 1. Hacemos que el contenedor principal apile los elementos verticalmente */
-    .rpg-container {
-        flex-direction: column;
-        padding: 10px; /* Reducimos un poco el padding en móviles */
-        gap: 10px;
-        margin: 0;
-        width: 100%;
-        box-sizing: border-box;
-    }
-
-    /* 3. ¡MUY IMPORTANTE! Añadimos un espacio de seguridad en la parte inferior de los productos */
-    /* para que los últimos no queden ocultos detrás de la barra del carrito. */
-    #productos-panel {
-        border-right: none;
-        border-left: none;
-        padding: 15px 10px;
-        /* La altura de este padding-bottom debe ser un poco mayor que la altura que podría tener el carrito */
-        padding-bottom: 250px; 
-        margin: 0;
-        width: 100%;
-        box-sizing: border-box;
-    }
-    
-    #productos-panel h2 {
-        width: 100%;
-        box-sizing: border-box;
-        margin: 0 0 20px 0;
-        padding: 15px 10px;
-        border-left: none;
-        border-right: none;
-    }
-
-    /* 2. Modificamos el panel del carrito para que sea una barra fija en la parte inferior */
-    #carrito-panel {
-        position: fixed !important;   /* Lo fijamos a la ventana del navegador */
-        bottom: 0 !important;         /* Lo pegamos a la parte inferior */
-        left: 0 !important;           /* Hacemos que ocupe todo el ancho */
-        width: 100% !important;
-        
-        top: auto !important;         /* Anulamos la propiedad 'top' de la vista de escritorio */
-        z-index: 1000 !important;     /* Nos aseguramos de que esté por encima de otros elementos */
-        
-        /* Limitamos su altura máxima y permitimos scroll si el carrito es muy largo */
-        max-height: 45vh !important;  /* Podrá ocupar hasta el 45% de la altura de la pantalla */
-        overflow-y: auto !important;  /* Si el contenido excede la altura, se podrá hacer scroll dentro del carrito */
-        
-        /* Ajustes estéticos para que se vea bien como barra inferior */
-        background-color: #222;
-        border-top: 3px solid #fff;
-        border-right: none;
-        border-left: none;
-        border-bottom: none;
-        margin: 0 !important;         /* Quitamos cualquier margen */
-        border-radius: 0 !important;  /* Quitamos los bordes redondeados si los tuviera */
-        
-        box-shadow: 0 -3px 10px rgba(0,0,0,0.7);
-        transition: height 0.3s ease-in-out;
-        padding: 0 !important;
-        box-sizing: border-box;
-        
-        /* Forzar posicionamiento móvil */
-        transform: translateZ(0); /* Activar aceleración hardware */
-        -webkit-transform: translateZ(0);
-        backface-visibility: hidden;
-        -webkit-backface-visibility: hidden;
-        
-        /* Reset de estilos desktop */
-        flex-direction: column;
-        flex: none !important;
-        height: auto !important;
-        min-height: 70px !important;
-    }
-
-    /* Estado expandido del carrito móvil */
-    #carrito-panel.expanded {
-        height: 280px !important;
-        position: fixed !important;
-        bottom: 0 !important;
-        z-index: 9999 !important;
-    }
-
-    /* Ocultar título en móvil para ahorrar espacio */
-    #carrito-panel h2 {
-        display: none;
-    }
-
-    /* Contenido del carrito expandido */
-    #carrito-contenido {
-        display: block;
-        height: calc(100% - 70px); /* Altura ajustada */
-        overflow-y: auto;
-        width: 100%;
-        padding: 10px 15px;
-        border-top: 2px dashed #555;
-        box-sizing: border-box;
-        background-color: #222;
-    }
-
-    /* Resumen del carrito - siempre visible */
-    #carrito-resumen {
-        display: flex !important;
-        align-items: center;
-        justify-content: space-between;
-        width: 100% !important;
-        height: 70px !important;
-        padding: 0 20px;
-        border: none;
-        background-color: #222;
-        cursor: pointer;
-        position: absolute !important;
-        bottom: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        z-index: 10000 !important;
-        box-sizing: border-box;
-        border-top: 1px solid #444;
-        margin: 0 !important;
-        
-        /* Asegurar que esté completamente en el borde inferior */
-        margin-bottom: 0 !important;
-        padding-bottom: 0 !important;
-        border-bottom: none !important;
-        border-bottom-left-radius: 0 !important;
-        border-bottom-right-radius: 0 !important;
-        
-        /* Forzar posicionamiento */
-        transform: translateZ(0);
-        -webkit-transform: translateZ(0);
-    }
-    /* Ajustes del texto y botones en el resumen móvil */
-    .total-line { 
-        margin-bottom: 0;
-        font-size: 0.9em;
-    }
-    
-    #carrito-total {
-        font-size: 1.1em;
-        font-weight: bold;
-    }
-    
-    .boton-comprar { 
-        width: auto; 
-        padding: 8px 12px; 
-        font-size: 0.65em;
-        white-space: pre-line; /* Permite saltos de línea */
-        line-height: 1.2;
-        text-align: center;
-    }
-
-    /* Productos grid ajustado para móvil */
-    .productos-grid {
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-        gap: 10px;
-        padding: 0;
-        margin: 0;
-    }
-    
-    /* Opcional: Ajustar el tamaño de la fuente en la tarjeta de producto para móviles */
-    .producto-item {
-        padding: 10px;
-        font-size: 0.9em;
-        margin: 0;
-    }
-    
-    /* Header ajustado */
-    .header-user-info {
-        text-align: center;
-        width: 100%;
-    }
-    
-    .header-user-info .perfil-link {
-        font-size: 0.7em;
-    }
+  .rpg-container { flex-direction: column; }
+  #carrito-panel { position: fixed; bottom: 0; width: 100%; }
 }
 
-/* ========= FIX ADICIONAL PARA DISPOSITIVOS MÓVILES ========= */
-@media (max-width: 850px) and (hover: none) and (pointer: coarse) {
-    /* Específico para dispositivos táctiles móviles */
-    #carrito-panel {
-        position: fixed !important;
-        bottom: env(safe-area-inset-bottom, 0) !important;
-        transform: translate3d(0, 0, 0) !important;
-        will-change: height;
-    }
-    
-    #carrito-resumen {
-        position: absolute !important;
-        bottom: 0 !important;
-        transform: translate3d(0, 0, 0) !important;
-    }
+/* ============================================= */
+/* === ESTILOS PARA LOGIN CON EMOJIS (NUEVO) === */
+/* ============================================= */
+.login-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.7);
+  border: 2px solid #33ff33;
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+  z-index: 10;
+  box-shadow: 0 0 15px rgba(0, 255, 0, 0.6);
+  width: 90%;
+  max-width: 400px;
 }
 
-/* ========= MEJORAS VISUALES FINALES (MÓVIL Y ESCRITORIO) ========= */
-
-/* --- 1 & 2: Ajustes para la barra flotante en móvil --- */
-@media (max-width: 850px) {
-    #carrito-resumen {
-        gap: 10px; /* Reducimos el espacio general */
-    }
-    .total-line {
-        font-size: 0.9em; /* Hacemos el texto "TOTAL" más pequeño */
-    }
-    #carrito-total {
-        font-size: 1em; /* Hacemos el número del total un poco más pequeño */
-    }
-    .boton-comprar {
-        font-size: 0.7em; /* Hacemos el texto del botón más pequeño */
-        padding: 8px 10px; /* Ajustamos el padding */
-        /* Para moverlo 20px a la izquierda, lo separamos del borde */
-        margin-right: 20px;
-    }
+.emoji-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+  gap: 10px;
+  margin: 15px 0;
 }
 
-/* --- 3 & 4: Ajustes para los botones +/- en el inventario de escritorio --- */
-
-/* Alineamos todo a la izquierda en la lista del carrito */
-#carrito-lista li {
-    justify-content: flex-start; /* Empuja todo a la izquierda */
-    gap: 15px; /* Crea un espacio entre el nombre y los botones */
+.emoji-grid button {
+  font-size: 2rem;
+  background: rgba(30, 30, 30, 0.8);
+  border: 2px solid #444;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  padding: 10px;
+  color: white;
+}
+.emoji-grid button:hover {
+  border-color: #33ff33;
+  background: rgba(50, 50, 50, 0.9);
+  transform: scale(1.1);
+}
+.emoji-grid button.selected {
+  border-color: #33ff33;
+  background: rgba(0, 255, 0, 0.3);
+  transform: scale(1.1);
+  box-shadow: 0 0 10px rgba(0, 255, 0, 0.8);
 }
 
-/* Hacemos los botones +/- más grandes y con más espacio */
-#carrito-lista .item-controles button {
-font-size: 1.2em;  /* Aumentamos el tamaño de la fuente (+ y -) */
-padding: 4px 10px; /* Aumentamos el padding para hacerlos más grandes */
-margin-left: 8px; /* Aumentamos la separación entre ellos */
-}
-    
-    /* ====== GALERÍA DE PRODUCTOS RESPONSIVA ====== */
-    #gallery-prev, #gallery-next {
-        width: 40px !important;
-        height: 40px !important;
-        font-size: 18px !important;
-    }
-    
-    #gallery-counter {
-        font-size: 8px !important;
-        padding: 3px 10px !important;
-    }
-    
-    /* ====== PANEL DE ADMIN RESPONSIVO ====== */
-    .admin-actions {
-        flex-wrap: wrap;
-        gap: 5px;
-    }
-    
-    .admin-actions a {
-        font-size: 8px !important;
-        padding: 6px 10px !important;
-    }
+.input-section { margin-top: 15px; }

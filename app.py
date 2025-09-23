@@ -396,14 +396,40 @@ def logout():
 
 @app.route("/admin/eliminar-producto/<product_id>", methods=["POST"])
 def admin_eliminar_producto(product_id):
-    if not session.get("logged_in"): return jsonify({"success": False}), 401
+    if not session.get("logged_in"):
+        return jsonify({"success": False, "message": "Not authorized"}), 401
+
+    # Check if the product is part of any bundle
+    bundles_containing_product = []
+    all_bundles = Product.query.filter(Product.bundle_items.isnot(None)).all()
+    for bundle in all_bundles:
+        try:
+            item_ids_json = bundle.bundle_items
+            if isinstance(item_ids_json, str):
+                item_ids = json.loads(item_ids_json)
+            else:
+                item_ids = item_ids_json # Assume it's already a list/dict
+
+            if isinstance(item_ids, list) and product_id in item_ids:
+                bundles_containing_product.append(bundle.nombre)
+        except (json.JSONDecodeError, TypeError):
+            # Ignore bundles with malformed data
+            continue
     
-    producto = Product.query.get(product_id)
+    if bundles_containing_product:
+        bundle_names = ", ".join(bundles_containing_product)
+        return jsonify({
+            "success": False,
+            "message": f"El producto no puede ser eliminado porque es parte de los siguientes bundles: {bundle_names}"
+        }), 400
+
+    producto = db.session.get(Product, product_id)
     if producto:
         db.session.delete(producto)
         db.session.commit()
         return jsonify({"success": True})
-    return jsonify({"success": False}), 404
+
+    return jsonify({"success": False, "message": "Producto no encontrado"}), 404
 
 @app.route("/admin/completar-pedido/<pedido_id>", methods=["POST"])
 def admin_completar_pedido(pedido_id):
