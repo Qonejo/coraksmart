@@ -147,25 +147,55 @@ h2 {
   transform: translate(-50%, -50%);
   z-index: 10;
 
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 
-  border: 2px solid #33ff33;
-  border-radius: 10px;
+  border: 1px solid rgba(0, 255, 0, 0.4);
+  border-radius: 12px;
 
-  padding: 20px;
+  padding: 25px;
   text-align: center;
 
   width: 90%;
   max-width: 420px;
-  box-shadow: 0 0 20px rgba(0, 255, 0, 0.6);
+
+  box-shadow:
+    0 0 10px rgba(0, 255, 0, 0.4),
+    0 0 20px rgba(0, 255, 0, 0.2),
+    inset 0 0 15px rgba(0, 255, 0, 0.15);
+
+  animation: glowPulse 2s infinite alternate;
 }
 
-@supports not ((-webkit-backdrop-filter: blur(8px)) or (backdrop-filter: blur(8px))) {
+@supports not ((-webkit-backdrop-filter: blur(10px)) or (backdrop-filter: blur(10px))) {
   .login-container {
     background: rgba(0, 0, 0, 0.7);
   }
+}
+
+@keyframes glowPulse {
+  from {
+    box-shadow:
+      0 0 10px rgba(0, 255, 0, 0.3),
+      inset 0 0 10px rgba(0, 255, 0, 0.1);
+  }
+  to {
+    box-shadow:
+      0 0 20px rgba(0, 255, 0, 0.7),
+      0 0 40px rgba(0, 255, 0, 0.3),
+      inset 0 0 20px rgba(0, 255, 0, 0.2);
+  }
+}
+
+.matrix-title {
+  color: #00ff88;
+  text-shadow:
+    0 0 5px #00ff88,
+    0 0 10px #00ff88,
+    0 0 20px #00ff88;
+  font-weight: bold;
+  letter-spacing: 2px;
 }
 
 .emoji-grid {
@@ -177,28 +207,30 @@ h2 {
 }
 
 .emoji-grid button {
-  font-size: 1.8rem;
-  background: rgba(20, 20, 20, 0.7);
-  border: 2px solid #222;
+  font-size: 2rem;
+  background: rgba(20, 20, 20, 0.8);
+  border: 1px solid #333;
   border-radius: 8px;
   cursor: pointer;
-
-  padding: 12px;
+  padding: 10px;
   color: white;
-
   transition: all 0.2s ease;
 }
 
 .emoji-grid button:hover {
-  border-color: #33ff33;
-  background: rgba(0, 255, 0, 0.15);
-  transform: scale(1.1);
+  transform: scale(1.15);
+  border-color: #00ff88;
+  box-shadow:
+    0 0 10px #00ff88,
+    0 0 20px rgba(0, 255, 0, 0.5);
 }
 
 .emoji-grid button.selected {
-  border-color: #33ff33;
-  background: rgba(0, 255, 0, 0.25);
-  box-shadow: 0 0 12px #33ff33;
+  background: rgba(0, 255, 120, 0.2);
+  border-color: #00ff88;
+  box-shadow:
+    0 0 15px #00ff88,
+    inset 0 0 10px rgba(0, 255, 0, 0.4);
 }
 
 .input-section {
@@ -210,14 +242,43 @@ h2 {
 .input-section input {
   flex: 1;
   padding: 8px;
-  background: #111;
-  border: 2px solid #444;
-  color: white;
+  background: rgba(0, 0, 0, 0.8);
+  border: 1px solid #00ff88;
+  color: #00ff88;
+  text-align: center;
+  box-shadow: 0 0 8px rgba(0, 255, 0, 0.4);
 }
 
-.input-section button {
-  padding: 8px 12px;
-  background: #33ff33;
-  border: none;
-  cursor: pointer;
+.input-section input::placeholder {
+  color: rgba(0, 255, 0, 0.4);
+}
+
+button[type="submit"] {
+  background: linear-gradient(90deg, #00ff88, #00cc66);
+  color: black;
+  box-shadow: 0 0 10px #00ff88;
+}
+
+button[type="submit"]:hover {
+  box-shadow:
+    0 0 20px #00ff88,
+    0 0 40px rgba(0, 255, 0, 0.5);
+  transform: scale(1.05);
+}
+
+
+body::after {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(0, 255, 0, 0.03),
+    rgba(0, 255, 0, 0.03) 1px,
+    transparent 2px
+  );
 }
