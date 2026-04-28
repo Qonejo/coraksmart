@@ -145,8 +145,11 @@ h2 {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(6px);
+  z-index: 10;
+
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 
   border: 2px solid #33ff33;
   border-radius: 10px;
@@ -154,11 +157,15 @@ h2 {
   padding: 20px;
   text-align: center;
 
-  z-index: 20;
-
   width: 90%;
   max-width: 420px;
-  box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+  box-shadow: 0 0 20px rgba(0, 255, 0, 0.6);
+}
+
+@supports not ((-webkit-backdrop-filter: blur(8px)) or (backdrop-filter: blur(8px))) {
+  .login-container {
+    background: rgba(0, 0, 0, 0.7);
+  }
 }
 
 .emoji-grid {
