@@ -7,7 +7,7 @@ import Admin from './pages/Admin';
 import EmojiLogin from './pages/EmojiLogin';
 import Profile from './pages/Profile';
 import Settings from './pages/Settings';
-import './styles/style.css';
+import './index.css';
 
 const router = createBrowserRouter([
   { path: '/', element: <Home /> },
