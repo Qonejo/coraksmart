@@ -41,7 +41,7 @@ const EmojiLogin = () => {
       <MatrixBackground />
 
       <div className="login-container">
-        <h1 className="text-3xl font-bold text-green-400 mb-4">⚡ CorakSmart ⚡</h1>
+        <h1 className="matrix-title text-3xl mb-4">⚡ CorakSmart ⚡</h1>
 
         <form onSubmit={handleSubmit}>
           <div className="emoji-grid">
