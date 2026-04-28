@@ -142,27 +142,23 @@ h2 {
 /* ============================================= */
 .login-container {
   position: fixed;
-  inset: 0;
-  margin: auto;
-  background: rgba(0, 0, 0, 0.55);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(6px);
 
   border: 2px solid #33ff33;
-  border-radius: 12px;
+  border-radius: 10px;
 
-  padding: 25px;
+  padding: 20px;
   text-align: center;
 
   z-index: 20;
 
-  box-shadow:
-    0 0 20px rgba(0, 255, 0, 0.6),
-    0 0 40px rgba(0, 255, 0, 0.3);
-
   width: 90%;
   max-width: 420px;
-  max-height: calc(100vh - 2rem);
-  overflow-y: auto;
+  box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
 }
 
 .emoji-grid {

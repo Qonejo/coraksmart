@@ -1,6 +1,5 @@
+@import './styles/style.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* 👇 aquí importas tu estilo RPG */
-@import './styles/style.css';
