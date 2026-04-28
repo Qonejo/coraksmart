@@ -37,7 +37,7 @@ const EmojiLogin = () => {
   };
 
   return (
-    <div className="relative w-full h-screen bg-black">
+    <div className="w-full h-screen overflow-hidden">
       <MatrixBackground />
 
       <div className="login-container">
