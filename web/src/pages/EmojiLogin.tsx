@@ -1,39 +1,73 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import MatrixBackground from '../components/MatrixBackground';
+import { supabase } from '../lib/supabaseClient';
+
+const EMOJI_AVATARS = ['😀', '🚀', '👻', '🌵', '🎮', '💎', '👽', '💀', '🤖', '🦊', '🐱', '🐼'];
 
 const EmojiLogin = () => {
   const [emojis, setEmojis] = useState<string[]>([]);
   const [selectedEmoji, setSelectedEmoji] = useState<string | null>(null);
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // A hardcoded list of emojis as a fallback or for initial display
-  const EMOJI_AVATARS = ['😀', '🚀', '👻', '🌵', '🎮', '💎', '👽', '💀', '🤖', '🦊', '🐱', '🐼'];
-
   useEffect(() => {
-    // You can replace this with a fetch call if needed
     setEmojis(EMOJI_AVATARS);
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setSuccess(null);
+
     if (!selectedEmoji) {
       setError('Por favor, selecciona un emoji.');
       return;
     }
+
+    if (!password.trim()) {
+      setError('Por favor, ingresa tu contraseña.');
+      return;
+    }
+
     setLoading(true);
-    console.log(`Logging in with ${selectedEmoji} and password ${password}`);
-    // Mock login logic
-    setTimeout(() => {
-      setLoading(false);
-      if (password === '123') {
-        alert('Login successful!');
-      } else {
-        setError('Contraseña incorrecta.');
+
+    try {
+      const { data, error: queryError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('emoji', selectedEmoji)
+        .eq('password', password)
+        .single();
+
+      if (queryError) {
+        if (queryError.code === 'PGRST116') {
+          setError('Usuario no encontrado');
+        } else {
+          const isConnectionError = /Failed to fetch|NetworkError|ERR_NAME_NOT_RESOLVED/i.test(queryError.message || '');
+          if (isConnectionError) {
+            setError('Error al conectar con la base de datos');
+          } else {
+            setError(queryError.message || 'Error desconocido en el login.');
+          }
+        }
+        return;
       }
-    }, 1000);
+
+      if (!data) {
+        setError('Usuario no encontrado');
+        return;
+      }
+
+      setSuccess('Login exitoso');
+    } catch (unexpectedError) {
+      const message = unexpectedError instanceof Error ? unexpectedError.message : 'Error inesperado en el login.';
+      const isConnectionError = /Failed to fetch|NetworkError|ERR_NAME_NOT_RESOLVED/i.test(message);
+      setError(isConnectionError ? 'Error al conectar con la base de datos' : message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -68,6 +102,7 @@ const EmojiLogin = () => {
           </div>
 
           {error && <p className="text-red-500 mt-3">{error}</p>}
+          {success && <p className="text-green-400 mt-3">{success}</p>}
 
           <button
             type="submit"
